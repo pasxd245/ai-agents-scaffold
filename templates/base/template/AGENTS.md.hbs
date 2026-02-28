@@ -48,11 +48,11 @@ At the start of every session, an agent MUST:
 
 | Directory  | Authority                   | Agent Permissions                     |
 | ---------- | --------------------------- | ------------------------------------- |
-| `context/` | Human-maintained, canonical | ❌ READ-ONLY (No edits, no deletions)  |
-| `prompts/` | Human-curated prompts       | ❌ READ-ONLY (No edits, no deletions)  |
-| `skills/`  | Human-approved procedures   | ❌ READ-ONLY (No edits, no deletions)  |
-| `memory/`  | Agent learnings, drafts     | ✅ READ + WRITE                        |
-| `plan/`    | Promotion logs, decisions   | ⚠️ APPEND-ONLY to promotions.md        |
+| `context/` | Human-maintained, canonical | READ-ONLY (No edits, no deletions)    |
+| `prompts/` | Human-curated prompts       | READ-ONLY (No edits, no deletions)    |
+| `skills/`  | Human-approved procedures   | READ-ONLY (No edits, no deletions)    |
+| `memory/`  | Agent learnings, drafts     | READ + WRITE                          |
+| `plan/`    | Promotion logs, decisions   | APPEND-ONLY to promotions.md          |
 
 **If a discovery contradicts `context/`:**
 
@@ -71,15 +71,15 @@ At the start of every session, an agent MUST:
 
 #### Agents MAY
 
-- ✅ Capture reusable insights in `.agents/memory/`
-- ✅ Suggest promotions to `context/` or `skills/` (in memory files)
+- Capture reusable insights in `.agents/memory/`
+- Suggest promotions to `context/` or `skills/` (in memory files)
 
 #### Agents MUST NOT
 
-- ❌ Store secrets, credentials, or personal data
-- ❌ Delete or modify existing files in `context/` or `skills/`
-- ❌ Write to `context/` or `skills/` without explicit human instruction
-- ❌ Generate speculative "rules" without concrete evidence
+- Store secrets, credentials, or personal data
+- Delete or modify existing files in `context/` or `skills/`
+- Write to `context/` or `skills/` without explicit human instruction
+- Generate speculative "rules" without concrete evidence
 
 #### Memory File Format (Recommended)
 
@@ -196,13 +196,13 @@ The `name` field must match the directory name (kebab-case, lowercase).
 When a human **explicitly instructs** an agent to modify, create, or delete files under `.agents/`: [`context/`, `skills`, `plan/`],
 the agent MAY proceed BUT MUST:
 
-1. ⚠️ **Warn the human first** that authoritative or governance knowledge will be modified
-2. ✅ **Wait for explicit confirmation**
-3. 📝 **Log the change** in `plan/promotions.md` (or appropriate governance log) with a brief rationale
+1. **Warn the human first** that authoritative or governance knowledge will be modified
+2. **Wait for explicit confirmation**
+3. **Log the change** in `plan/promotions.md` (or appropriate governance log) with a brief rationale
 
 **Example warning**:
 
-> ⚠️ **Warning**: You’ve asked me to modify authoritative knowledge under `.agents/`.
+> **Warning**: You've asked me to modify authoritative knowledge under `.agents/`.
 > This may affect future agent behavior and project governance.
 > Please confirm you want to proceed. [Yes/No]
 

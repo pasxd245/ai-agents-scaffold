@@ -1,0 +1,8 @@
+# CLAUDE.md — Project Instructions for Claude Code
+
+> **Shared knowledge base**: [AGENTS.md](../AGENTS.md) defines pair
+> programming workflows, decision frameworks, and the `.agents/`
+> directory structure. Load it first for full context before starting
+> any task.
+
+## Project overview

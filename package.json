@@ -1,0 +1,38 @@
+{
+  "name": "a2scaffold",
+  "version": "0.1.0",
+  "description": "CLI tool to scaffold AI agent configuration files in any repository",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "bin": {
+    "a2scaffold": "bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "templates/"
+  ],
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "scaffold",
+    "template",
+    "cli"
+  ],
+  "author": "Vien Pham",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "@nci-gis/js-tmpl": "0.0.1-beta.2",
+    "js-yaml": "^4.1.1"
+  }
+}
