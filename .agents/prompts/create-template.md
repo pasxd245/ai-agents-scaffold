@@ -69,5 +69,5 @@ After generating, run the validation prompt at
 Then test:
 
 ```bash
-node bin/cli.js --template <name> --output /tmp/test -n "test-project"
+node bin/cli.js --use <name> --output /tmp/test -n "test-project"
 ```

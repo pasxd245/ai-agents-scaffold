@@ -50,7 +50,7 @@ templates/
 5. **Test locally:**
 
    ```bash
-   node bin/cli.js --template <your-template> --output /tmp/test-output
+   node bin/cli.js --use <your-template> --output /tmp/test-output
    ```
 
 6. **Submit a PR.**

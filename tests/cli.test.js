@@ -13,7 +13,7 @@ describe('CLI', () => {
       encoding: 'utf8',
     });
     assert.ok(out.includes('a2scaffold'));
-    assert.ok(out.includes('--template'));
+    assert.ok(out.includes('--use'));
     assert.ok(out.includes('--output'));
     assert.ok(out.includes('--name'));
   });
@@ -48,7 +48,7 @@ describe('CLI', () => {
       () =>
         execFileSync(
           'node',
-          [CLI_PATH, '--template', 'nonexistent', '-o', '/tmp/bad-test'],
+          [CLI_PATH, '--use', 'nonexistent', '-o', '/tmp/bad-test'],
           { encoding: 'utf8' }
         ),
       /Template "nonexistent" not found/

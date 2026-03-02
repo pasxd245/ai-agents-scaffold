@@ -59,7 +59,7 @@ Under `templates/<template-name>/template/`, create the output structure:
 ### 5. Test locally
 
 ```bash
-node bin/cli.js --template <template-name> --output /tmp/test-output
+node bin/cli.js --use <template-name> --output /tmp/test-output
 ```
 
 Verify:

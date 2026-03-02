@@ -23,7 +23,7 @@ Usage:
   a2scaffold [options]
 
 Options:
-  -t, --template <name>   Template to use (default: "base")
+  -u, --use <name>        Template to use (default: "base")
   -o, --output <dir>      Output directory (default: ".")
   -n, --name <name>       Project name (default: directory name)
   -l, --list              List available templates
@@ -34,8 +34,8 @@ Options:
 
 Examples:
   npx a2scaffold
-  npx a2scaffold --template base --name my-project
-  npx a2scaffold -t base -o ./my-repo -n my-repo --force
+  npx a2scaffold --use base --name my-project
+  npx a2scaffold -u base -o ./my-repo -n my-repo --force
 `.trim();
 
 /**
@@ -66,7 +66,7 @@ function listOutputFiles(templateDir, extname = '.hbs') {
 async function run() {
   const { values } = parseArgs({
     options: {
-      template: { type: 'string', short: 't', default: 'base' },
+      use: { type: 'string', short: 'u', default: 'base' },
       output: { type: 'string', short: 'o', default: '.' },
       name: { type: 'string', short: 'n' },
       list: { type: 'boolean', short: 'l', default: false },
@@ -97,7 +97,7 @@ async function run() {
     return;
   }
 
-  const templateName = values.template;
+  const templateName = values.use;
   const outputDir = path.resolve(values.output);
   const projectName = values.name || path.basename(outputDir);
 

@@ -46,7 +46,7 @@ tests/
 ## Data Flow
 
 ```text
-CLI args (--template, --name, --output)
+CLI args (--use, --name, --output)
   → resolveTemplatePath(templateName)
   → load values.yaml + merge CLI overrides
   → checkExistingFiles (safety)

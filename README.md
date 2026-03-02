@@ -54,7 +54,7 @@ a2scaffold --name my-project
 a2scaffold --output ./my-repo
 
 # Use a specific template
-a2scaffold --template base
+a2scaffold --use base
 
 # Preview what would be generated
 a2scaffold --dry-run
@@ -70,7 +70,7 @@ a2scaffold --force
 
 | Flag | Short | Default | Description |
 | --- | --- | --- | --- |
-| `--template` | `-t` | `base` | Template to use |
+| `--use` | `-u` | `base` | Template to use |
 | `--output` | `-o` | `.` | Output directory |
 | `--name` | `-n` | dir name | Project name |
 | `--list` | `-l` | | List available templates |
