@@ -13,6 +13,7 @@ This generates the base AI agent setup in your current directory:
 
 ```text
 .agents/
+  AGENTS.md       # Pair programming guide for AI agents
   context/        # Canonical knowledge (human-curated)
   memory/         # Agent-generated learnings
   prompts/        # Scanning & generation prompts
@@ -21,7 +22,6 @@ This generates the base AI agent setup in your current directory:
     PDCA.md       # PDCA methodology
     promotions.md # Promotion log
     cycles/       # Individual PDCA rounds
-AGENTS.md         # Pair programming guide for AI agents
 .claude/CLAUDE.md # Claude Code project instructions
 .github/copilot-instructions.md  # Copilot project instructions
 ```

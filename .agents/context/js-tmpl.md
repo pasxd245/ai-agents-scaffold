@@ -27,7 +27,7 @@ This avoids writing temporary merged values files to disk.
 ## Template File Rules
 
 - js-tmpl only processes files ending in `.hbs` (via `walkTemplateTree`)
-- The `.hbs` extension is stripped in output: `AGENTS.md.hbs` → `AGENTS.md`
+- The `.hbs` extension is stripped in output: `.agents/AGENTS.md.hbs` → `.agents/AGENTS.md`
 - Empty files (e.g., `.gitkeep.hbs`) render to empty output — Handlebars
   compiles `""` to `""`
 - Dynamic directory/file names use `${var}` syntax (not Handlebars `{{}}`)

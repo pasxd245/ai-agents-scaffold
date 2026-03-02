@@ -148,7 +148,7 @@ async function run() {
   console.log(`  Output: ${outputDir}`);
   console.log(`  Project name: ${projectName}`);
   console.log('\nNext steps:');
-  console.log('  1. Review the generated AGENTS.md');
+  console.log('  1. Review the generated .agents/AGENTS.md');
   console.log('  2. Add project-specific context to .agents/context/');
   console.log('  3. Start pairing with your AI agent!');
 }
