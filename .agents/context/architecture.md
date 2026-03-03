@@ -30,6 +30,16 @@ templates/
 
 tests/
   *.test.js           # Tests using node:test
+
+docs/
+  usage.md            # Detailed CLI usage guide
+  api.md              # Programmatic API reference
+
+.github/workflows/
+  ci.yml              # CI — tests on push/PR to main and dev
+  release.yml         # Release — tag push → tests → changelog → GitHub Release → npm publish
+
+cliff.toml            # git-cliff configuration for conventional commit changelogs
 ```
 
 ## Key Design Decisions
@@ -53,3 +63,17 @@ CLI args (--use, --name, --output)
   → renderDirectory(config)
   → output files written to target dir
 ```
+
+## Release Pipeline
+
+```text
+git tag v0.0.1 → push tag
+  → CI runs tests (pnpm test)
+  → git-cliff generates release notes (latest tag only)
+  → GitHub Release created with release notes
+  → npm publish (requires NPM_TOKEN secret)
+  → git-cliff generates full CHANGELOG.md
+  → Bot commits CHANGELOG.md to main
+```
+
+Configuration: `cliff.toml` (conventional commits, groups by type, skips `chore(release)` and `chore(deps)`)

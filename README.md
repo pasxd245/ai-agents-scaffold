@@ -95,6 +95,11 @@ await scaffold({
 });
 ```
 
+## Documentation
+
+- [CLI Usage Guide](docs/usage.md) — detailed options, workflows, and examples
+- [API Reference](docs/api.md) — programmatic API for custom tooling
+
 ## Contributing Templates
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add new templates.
