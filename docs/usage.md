@@ -23,7 +23,18 @@ Run with no arguments to scaffold the base AI agent setup into the current direc
 npx a2scaffold
 ```
 
-## Options
+## Commands
+
+a2scaffold has two command groups:
+
+| Command | Description |
+| --- | --- |
+| `a2scaffold [options]` | Scaffold AI agent config files (default) |
+| `a2scaffold skill <action>` | Manage agent skills — [see Skills Guide](skills.md) |
+
+Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
+
+## Scaffold options
 
 | Flag | Short | Default | Description |
 | --- | --- | --- | --- |
@@ -156,9 +167,13 @@ Before writing, the CLI checks whether any output files already exist in the tar
 - **Conflicts found, no `--force`**: the CLI prints the conflicting file list and exits with code 1.
 - **Conflicts found, `--force`**: the CLI prints a warning and overwrites the files.
 
+## Skills management
+
+a2scaffold includes a `skill` subcommand for installing and validating [Agent Skills](https://agentskills.io/specification). See the [Skills Guide](skills.md) for full documentation.
+
 ## Exit codes
 
 | Code | Meaning |
 | --- | --- |
 | `0` | Success |
-| `1` | Error (file conflicts, invalid template, missing arguments, etc.) |
+| `1` | Error (file conflicts, invalid template, invalid skill, missing arguments, etc.) |

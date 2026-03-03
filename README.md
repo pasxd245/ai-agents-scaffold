@@ -97,7 +97,8 @@ await scaffold({
 
 ## Documentation
 
-- [CLI Usage Guide](docs/usage.md) — detailed options, workflows, and examples
+- [CLI Usage Guide](docs/usage.md) — scaffolding options, workflows, and examples
+- [Skills Guide](docs/skills.md) — install, list, and validate agent skills
 - [API Reference](docs/api.md) — programmatic API for custom tooling
 
 ## Contributing Templates
