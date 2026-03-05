@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { scaffold } from '../src/scaffold.js';
 import { listTemplates, resolveTemplatePath } from '../src/templates.js';
 import { checkExistingFiles } from '../src/safety.js';
+import { validateSkill, listSkills, installSkill } from '../src/skills.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -20,10 +21,11 @@ a2scaffold v${pkg.version}
   Scaffold AI agent configuration files in any repository.
 
 Usage:
-  a2scaffold [options]
+  a2scaffold [options]              Scaffold files (default command)
+  a2scaffold skill <action>         Manage agent skills
 
-Options:
-  -t, --template <name>   Template to use (default: "base")
+Scaffold Options:
+  -u, --use <name>        Template to use (default: "base")
   -o, --output <dir>      Output directory (default: ".")
   -n, --name <name>       Project name (default: directory name)
   -l, --list              List available templates
@@ -32,10 +34,27 @@ Options:
   -h, --help              Show this help
   -v, --version           Show version
 
+Skill Commands:
+  skill add <source>      Install a skill from local path or GitHub
+  skill list              List installed skills
+  skill validate [name]   Validate installed skills
+
+Skill Sources:
+  ./path/to/skill         Local directory
+  owner/repo/path         GitHub shorthand
+  https://github.com/...  Full GitHub URL
+
+Skill Options:
+  -d, --agents-dir <dir>  Path to .agents/ directory (default: ".agents")
+  -f, --force             Overwrite existing skill
+
 Examples:
   npx a2scaffold
-  npx a2scaffold --template base --name my-project
-  npx a2scaffold -t base -o ./my-repo -n my-repo --force
+  npx a2scaffold --use base --name my-project
+  npx a2scaffold skill add ./my-skill
+  npx a2scaffold skill add anthropics/skills/code-review
+  npx a2scaffold skill list
+  npx a2scaffold skill validate
 `.trim();
 
 /**
@@ -63,10 +82,60 @@ function listOutputFiles(templateDir, extname = '.hbs') {
   return results;
 }
 
-async function run() {
+const VALUE_FLAGS = new Set([
+  'u', 'use', 'o', 'output', 'n', 'name', 'd', 'agents-dir',
+]);
+
+/**
+ * Check if an argv token is a flag whose value should be skipped.
+ */
+function isValueFlag(token) {
+  if (!token.startsWith('-')) return false;
+  if (token.startsWith('--') && token.includes('=')) return false;
+  const flag = token.replace(/^-+/, '');
+  return VALUE_FLAGS.has(flag);
+}
+
+/**
+ * Find the index of the first positional (non-flag) argument.
+ * Returns -1 if no positional is found.
+ */
+function findFirstPositional(argv) {
+  let skip = false;
+  for (let i = 0; i < argv.length; i++) {
+    if (skip) { skip = false; continue; }
+    if (argv[i] === '--') return -1;
+    if (argv[i].startsWith('-')) {
+      skip = isValueFlag(argv[i]);
+      continue;
+    }
+    return i;
+  }
+  return -1;
+}
+
+/**
+ * Detect command from argv. Returns { command, args } where command is
+ * 'scaffold' (default) or 'skill', and args is the remaining argv slice.
+ */
+function detectCommand(argv) {
+  const idx = findFirstPositional(argv);
+  if (idx === -1) return { command: 'scaffold', args: argv };
+
+  if (argv[idx] === 'skill') {
+    return { command: 'skill', args: argv.slice(idx + 1) };
+  }
+  if (argv[idx] === 'init') {
+    return { command: 'scaffold', args: [...argv.slice(0, idx), ...argv.slice(idx + 1)] };
+  }
+  return { command: 'scaffold', args: argv };
+}
+
+async function runScaffold(argv) {
   const { values } = parseArgs({
+    args: argv,
     options: {
-      template: { type: 'string', short: 't', default: 'base' },
+      use: { type: 'string', short: 'u', default: 'base' },
       output: { type: 'string', short: 'o', default: '.' },
       name: { type: 'string', short: 'n' },
       list: { type: 'boolean', short: 'l', default: false },
@@ -97,7 +166,7 @@ async function run() {
     return;
   }
 
-  const templateName = values.template;
+  const templateName = values.use;
   const outputDir = path.resolve(values.output);
   const projectName = values.name || path.basename(outputDir);
 
@@ -148,9 +217,143 @@ async function run() {
   console.log(`  Output: ${outputDir}`);
   console.log(`  Project name: ${projectName}`);
   console.log('\nNext steps:');
-  console.log('  1. Review the generated AGENTS.md');
+  console.log('  1. Review the generated .agents/AGENTS.md');
   console.log('  2. Add project-specific context to .agents/context/');
   console.log('  3. Start pairing with your AI agent!');
+}
+
+function parseSkillArgs(args) {
+  const { values, positionals } = parseArgs({
+    args,
+    options: {
+      'agents-dir': { type: 'string', short: 'd', default: '.agents' },
+      force: { type: 'boolean', short: 'f', default: false },
+    },
+    allowPositionals: true,
+    strict: true,
+  });
+  return {
+    agentsDir: path.resolve(values['agents-dir']),
+    force: values.force,
+    positionals,
+  };
+}
+
+function runSkillAdd(source, agentsDir, force) {
+  if (!source) {
+    console.error('Error: skill add requires a source argument.\n');
+    console.error('Usage: a2scaffold skill add <source>');
+    console.error('  source: local path, GitHub shorthand, or GitHub URL');
+    process.exit(1);
+  }
+  const skillsDir = path.join(agentsDir, 'skills');
+  const result = installSkill(source, skillsDir, { force });
+  console.log(`Installed skill "${result.name}" to ${result.path}`);
+}
+
+function runSkillList(agentsDir) {
+  const skills = listSkills(agentsDir);
+  if (skills.length === 0) {
+    console.log('No skills installed.\n');
+    console.log('Install one with: a2scaffold skill add <source>');
+    return;
+  }
+  console.log('Installed skills:\n');
+  for (const s of skills) {
+    console.log(`  ${s.name}`);
+    if (s.description) {
+      console.log(`    ${s.description}`);
+    }
+  }
+}
+
+function runSkillValidate(targetName, agentsDir) {
+  const skillsDir = path.join(agentsDir, 'skills');
+
+  if (!fs.existsSync(skillsDir)) {
+    console.log('No skills directory found.');
+    return;
+  }
+
+  const dirs = targetName
+    ? [path.join(skillsDir, targetName)]
+    : fs
+        .readdirSync(skillsDir, { withFileTypes: true })
+        .filter((e) => e.isDirectory())
+        .map((e) => path.join(skillsDir, e.name));
+
+  if (dirs.length === 0) {
+    console.log('No skills to validate.');
+    return;
+  }
+
+  let allValid = true;
+  for (const dir of dirs) {
+    const name = path.basename(dir);
+    const result = validateSkill(dir);
+    if (result.valid) {
+      console.log(`  ${name} — valid`);
+    } else {
+      allValid = false;
+      console.error(`  ${name} — invalid`);
+      for (const err of result.errors) {
+        console.error(`    - ${err}`);
+      }
+    }
+  }
+
+  if (!allValid) {
+    process.exit(1);
+  }
+}
+
+async function runSkill(args) {
+  const subcommand = args[0];
+
+  if (!subcommand || subcommand === '--help' || subcommand === '-h') {
+    console.log(HELP);
+    return;
+  }
+
+  const { agentsDir, force, positionals } = parseSkillArgs(args.slice(1));
+
+  switch (subcommand) {
+    case 'add':
+      runSkillAdd(positionals[0], agentsDir, force);
+      return;
+    case 'list':
+      runSkillList(agentsDir);
+      return;
+    case 'validate':
+      runSkillValidate(positionals[0], agentsDir);
+      return;
+    default:
+      console.error(`Unknown skill command: ${subcommand}`);
+      console.error('Available: add, list, validate');
+      process.exit(1);
+  }
+}
+
+async function run() {
+  const argv = process.argv.slice(2);
+
+  // Handle top-level --help and --version before command detection
+  if (argv.includes('--help') || argv.includes('-h')) {
+    console.log(HELP);
+    return;
+  }
+  if (argv.includes('--version') || argv.includes('-v')) {
+    console.log(pkg.version);
+    return;
+  }
+
+  const { command, args } = detectCommand(argv);
+
+  if (command === 'skill') {
+    await runSkill(args);
+  } else {
+    await runScaffold(args);
+  }
 }
 
 run().catch((err) => { // NOSONAR

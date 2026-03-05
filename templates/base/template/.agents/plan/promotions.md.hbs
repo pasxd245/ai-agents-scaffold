@@ -1,7 +1,7 @@
 # Promotion Log
 
 > Append-only log of memory entries promoted to `context/` or `skills/`.
-> See [PDCA.md](PDCA.md) for methodology and [AGENTS.md](../../AGENTS.md) for promotion criteria.
+> See [PDCA.md](PDCA.md) for methodology and [AGENTS.md](../AGENTS.md) for promotion criteria.
 
 ---
 

@@ -107,6 +107,6 @@ below.
 
 - **Rounds are append-only** — do not delete or rewrite history
 - **Promotions** from Act phase are logged in [promotions.md](promotions.md)
-- **Promotion criteria** are defined in [AGENTS.md](../../AGENTS.md)
+- **Promotion criteria** are defined in [AGENTS.md](../AGENTS.md)
 - Agents may update the `Do` and `Check` sections of active rounds
 - Only humans may move a round to `Complete` status

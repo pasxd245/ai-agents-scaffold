@@ -29,8 +29,8 @@ Create the following under `templates/<name>/`:
 templates/<name>/
   values.yaml         ← Default values for all variables
   template/           ← .hbs files mirroring output structure
-    AGENTS.md.hbs     ← Customized for the use case
     .agents/           ← Standard directory structure
+      AGENTS.md.hbs   ← Customized for the use case
       context/
         .gitkeep.hbs
         <framework-patterns>.md.hbs   ← Pre-populated context
@@ -69,5 +69,5 @@ After generating, run the validation prompt at
 Then test:
 
 ```bash
-node bin/cli.js --template <name> --output /tmp/test -n "test-project"
+node bin/cli.js --use <name> --output /tmp/test -n "test-project"
 ```

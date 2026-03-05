@@ -1,0 +1,108 @@
+name: Release
+
+# Triggered only on version tags (e.g. v1.2.3 or v1.2.3-beta.1)
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  id-token: write    # Required for OIDC-based npm provenance publishing
+  contents: write    # Required to create GitHub releases
+  pull-requests: write  # Required to open the changelog PR
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed by git-cliff to generate accurate changelogs
+
+      - name: Verify tag is on main
+        # Prevents releasing from a feature branch or orphaned commit
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "Error: tag must point to a commit on main"; exit 1; }
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"  # Configures .npmrc for npm publish
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm run --if-present build
+
+      - name: Install git-cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff@2.6.1  # Pin version for reproducible changelog generation
+
+      - name: Version safety check
+        # Ensures the git tag (e.g. v1.2.3) matches package.json version (1.2.3)
+        # Prevents publishing a mismatched release
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "$PKG_VERSION" ]; then
+            echo "Error: tag version ($TAG) does not match package.json version ($PKG_VERSION)"
+            exit 1
+          fi
+
+      - name: Compute dist-tag
+        id: dist-tag
+        # Tags containing a hyphen (e.g. v1.0.0-beta.1) are published as "next"
+        # Stable releases (e.g. v1.0.0) are published as "latest"
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if echo "$VERSION" | grep -qE '-'; then
+            echo "dist_tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "dist_tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate release notes
+        # Generates notes only for the current tag (used as GitHub release body)
+        run: git cliff --tag "${{ github.ref_name }}" -o RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: RELEASE_NOTES.md
+          tag_name: ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-') }}  # Pre-release if tag contains a hyphen
+
+      - name: Generate CHANGELOG.md
+        # Regenerates the full changelog across all tags
+        run: git cliff -o CHANGELOG.md
+
+      - name: Open changelog PR
+        # Opens a PR against main to commit the updated CHANGELOG.md
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/changelog-${{ github.ref_name }}
+          commit-message: "chore(release): update changelog for ${{ github.ref_name }}"
+          title: "chore(release): update changelog for ${{ github.ref_name }}"
+          body: "Automated changelog update for release ${{ github.ref_name }}."
+          base: main
+          add-paths: |
+            CHANGELOG.md
+
+      - name: Publish to npm
+        # Uses OIDC (id-token: write) for provenance — no NPM_TOKEN secret needed
+        run: npm publish --verbose --tag ${{ steps.dist-tag.outputs.dist_tag }} --access public --provenance

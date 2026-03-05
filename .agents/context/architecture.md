@@ -30,6 +30,16 @@ templates/
 
 tests/
   *.test.js           # Tests using node:test
+
+docs/
+  usage.md            # Detailed CLI usage guide
+  api.md              # Programmatic API reference
+
+.github/workflows/
+  ci.yml              # CI — tests on push/PR to main and dev
+  release.yml         # Release — tag push → tests → changelog → GitHub Release → npm publish
+
+cliff.toml            # git-cliff configuration for conventional commit changelogs
 ```
 
 ## Key Design Decisions
@@ -46,10 +56,28 @@ tests/
 ## Data Flow
 
 ```text
-CLI args (--template, --name, --output)
+CLI args (--use, --name, --output)
   → resolveTemplatePath(templateName)
   → load values.yaml + merge CLI overrides
   → checkExistingFiles (safety)
   → renderDirectory(config)
   → output files written to target dir
 ```
+
+## Release Pipeline
+
+```text
+git tag v0.0.1 → push tag (v* pattern)
+  → version safety check (tag == package.json version)
+  → pnpm install --frozen-lockfile
+  → pnpm test --if-present
+  → pnpm run build --if-present
+  → git-cliff generates release notes (current tag only) → RELEASE_NOTES.md
+  → GitHub Release created (prerelease if tag contains hyphen)
+  → git-cliff generates full CHANGELOG.md
+  → peter-evans/create-pull-request opens PR to main with CHANGELOG.md
+  → npm publish --provenance (OIDC via id-token: write — no NPM_TOKEN needed)
+    dist-tag: "latest" for stable (e.g. v1.0.0), "next" for pre-release (e.g. v1.0.0-beta.1)
+```
+
+Configuration: `cliff.toml` (conventional commits, groups by type, skips `chore(release)` and `chore(deps)`)

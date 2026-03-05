@@ -21,8 +21,8 @@ describe('scaffold base template', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
-  it('generates AGENTS.md', () => {
-    assert.ok(fs.existsSync(path.join(tmpDir, 'AGENTS.md')));
+  it('generates .agents/AGENTS.md', () => {
+    assert.ok(fs.existsSync(path.join(tmpDir, '.agents', 'AGENTS.md')));
   });
 
   it('generates .agents/ directory structure', () => {
@@ -88,7 +88,7 @@ describe('scaffold base template', () => {
   });
 
   it('AGENTS.md contains expected content', () => {
-    const content = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
+    const content = fs.readFileSync(path.join(tmpDir, '.agents', 'AGENTS.md'), 'utf8');
     assert.ok(content.includes('Pair Programming Guide'));
     assert.ok(content.includes('.agents/'));
   });

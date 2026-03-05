@@ -1,8 +1,8 @@
 # Round 02: Promote Round_01 Learnings + Add Prompts
 
-**Status**: Review
+**Status**: Complete
 **Date started**: 2026-02-28
-**Date completed**: —
+**Date completed**: 2026-02-28
 
 ## Goal
 
@@ -50,8 +50,10 @@ prompts directory as a useful resource.
 
 **Learnings**:
 
-- (to be filled after Check phase)
+- Structuring promotions as their own PDCA round works well — it forces explicit verification that promoted content is accurate
+- Having `context/` and `skills/` as separate directories with clear authority rules prevents agents from "self-promoting" unvalidated learnings
+- Prompts in `prompts/` complement skills — prompts are open-ended guidance while skills are rigid procedures
 
 **Promotions**:
 
-- (this round IS the promotions)
+- This round IS the promotions (js-tmpl patterns → context/, template checklist → skills/)

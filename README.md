@@ -13,6 +13,7 @@ This generates the base AI agent setup in your current directory:
 
 ```text
 .agents/
+  AGENTS.md       # Pair programming guide for AI agents
   context/        # Canonical knowledge (human-curated)
   memory/         # Agent-generated learnings
   prompts/        # Scanning & generation prompts
@@ -21,7 +22,6 @@ This generates the base AI agent setup in your current directory:
     PDCA.md       # PDCA methodology
     promotions.md # Promotion log
     cycles/       # Individual PDCA rounds
-AGENTS.md         # Pair programming guide for AI agents
 .claude/CLAUDE.md # Claude Code project instructions
 .github/copilot-instructions.md  # Copilot project instructions
 ```
@@ -54,7 +54,7 @@ a2scaffold --name my-project
 a2scaffold --output ./my-repo
 
 # Use a specific template
-a2scaffold --template base
+a2scaffold --use base
 
 # Preview what would be generated
 a2scaffold --dry-run
@@ -70,7 +70,7 @@ a2scaffold --force
 
 | Flag | Short | Default | Description |
 | --- | --- | --- | --- |
-| `--template` | `-t` | `base` | Template to use |
+| `--use` | `-u` | `base` | Template to use |
 | `--output` | `-o` | `.` | Output directory |
 | `--name` | `-n` | dir name | Project name |
 | `--list` | `-l` | | List available templates |
@@ -94,6 +94,12 @@ await scaffold({
   overrides: { project: { name: 'my-project' } },
 });
 ```
+
+## Documentation
+
+- [CLI Usage Guide](docs/usage.md) — scaffolding options, workflows, and examples
+- [Skills Guide](docs/skills.md) — install, list, and validate agent skills
+- [API Reference](docs/api.md) — programmatic API for custom tooling
 
 ## Contributing Templates
 
