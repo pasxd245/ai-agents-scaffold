@@ -20,10 +20,15 @@
   },
   "keywords": [
     "ai",
+    "agent",
     "agents",
     "scaffold",
+    "scaffolding",
+    "generator",
+    "boilerplate",
+    "cli",
     "template",
-    "cli"
+    "llm"
   ],
   "author": "Vien Pham",
   "license": "MIT",
