@@ -72,3 +72,23 @@ user-facing documentation (`docs/usage.md`, `docs/api.md`).
 **Promotions**:
 
 - [ ] → context/ : CI/CD pipeline patterns (needs validation after first real release)
+
+---
+
+### 2026-03-05 — Correction note (appended post-completion)
+
+The release workflow described in the Do section above reflected the **initial** implementation.
+It was subsequently refactored before v0.0.1 was tagged. Key differences from what was documented:
+
+| Aspect | As documented in Do | Actual current state |
+| --- | --- | --- |
+| git-cliff install | `orhun/git-cliff-action@v4` | `taiki-e/install-action@v2` (git-cliff@2.6.1) |
+| npm auth | `NPM_TOKEN` secret | OIDC (`id-token: write` + `--provenance`) |
+| CHANGELOG commit | Bot commits directly to main | `peter-evans/create-pull-request@v6` opens a PR to main |
+| Tag pattern | `v*.*.*` | `v*` |
+| `pnpm test` | `pnpm test` | `pnpm test --if-present` |
+| Build step | absent | `pnpm run build --if-present` added |
+| Version safety check | absent | added (tag vs package.json version guard) |
+| Dist-tag computation | absent | added (`latest` vs `next` based on hyphen in version) |
+
+`context/architecture.md` (Release Pipeline section) updated to reflect the actual pipeline.
