@@ -31,6 +31,14 @@
     "llm"
   ],
   "author": "Vien Pham",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pasxd245/ai-agents-scaffold.git"
+  },
+  "homepage": "https://github.com/pasxd245/ai-agents-scaffold#readme",
+  "bugs": {
+    "url": "https://github.com/pasxd245/ai-agents-scaffold/issues"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=20.0.0"
