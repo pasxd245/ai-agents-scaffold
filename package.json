@@ -1,6 +1,6 @@
 {
   "name": "a2scaffold",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CLI tool to scaffold AI agent configuration files in any repository",
   "type": "module",
   "main": "src/index.js",
