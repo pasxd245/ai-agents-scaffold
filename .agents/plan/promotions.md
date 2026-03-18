@@ -32,3 +32,9 @@
 **Source**: `.github/workflows/release.yml` + Round_03 correction note
 **Rationale**: Round_03 documented an initial workflow design that was refactored before v0.0.1 was tagged. Updated `context/architecture.md` to reflect the actual pipeline (OIDC, PR-based changelog, dist-tag logic). Also appended a correction table to Round_03 and created `memory/2026-03-05-release-workflow-refactor.md`.
 **Promoted by**: Vien Pham
+
+## 2026-03-19: Prompt Conventions → context/conventions.md
+
+**Source**: reflect-agents prompt validation and .prompt.md adoption
+**Rationale**: Documented the `.prompt.md` extension and YAML frontmatter convention after establishing it across all three prompt files.
+**Promoted by**: Vien Pham

@@ -35,6 +35,12 @@
 - `name` field must match directory name (kebab-case, lowercase)
 - Optional subdirs: `scripts/`, `references/`, `assets/`
 
+## Prompt Conventions
+
+- Prompt files use `.prompt.md` extension for auto-loading by agent tooling
+- Must include YAML frontmatter: `name`, `description`, `argument-hint`, `agent`
+- Stored in `.agents/prompts/`
+
 ## File Naming
 
 - Source modules: `camelCase.js` in `src/`
