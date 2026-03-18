@@ -38,7 +38,8 @@ At the start of every session, an agent MUST:
 
 1. Read **all files recursively** in `.agents/context/`
 2. Read **relevant files** in `.agents/skills/` (based on task)
-3. Optionally review recent or task-relevant files in `.agents/memory/`
+3. **Prompt auto-loading**: All `.agents/prompts/*.prompt.md` files are automatically loaded as runtime instructions by supported agent tooling.
+4. Optionally review recent or task-relevant files in `.agents/memory/`
 
 **Conflict resolution**: If any conflict exists between directories, `context/` is authoritative.
 
@@ -46,13 +47,13 @@ At the start of every session, an agent MUST:
 
 ### Authority Rules
 
-| Directory  | Authority                   | Agent Permissions                     |
-| ---------- | --------------------------- | ------------------------------------- |
-| `context/` | Human-maintained, canonical | ❌ READ-ONLY (No edits, no deletions)  |
-| `prompts/` | Human-curated prompts       | ❌ READ-ONLY (No edits, no deletions)  |
-| `skills/`  | Human-approved procedures   | ❌ READ-ONLY (No edits, no deletions)  |
-| `memory/`  | Agent learnings, drafts     | ✅ READ + WRITE                        |
-| `plan/`    | Promotion logs, decisions   | ⚠️ APPEND-ONLY to promotions.md        |
+| Directory  | Authority                   | Agent Permissions                    |
+| ---------- | --------------------------- | ------------------------------------ |
+| `context/` | Human-maintained, canonical | ❌ READ-ONLY (No edits, no deletions) |
+| `prompts/` | Human-curated prompts       | ❌ READ-ONLY (No edits, no deletions) |
+| `skills/`  | Human-approved procedures   | ❌ READ-ONLY (No edits, no deletions) |
+| `memory/`  | Agent learnings, drafts     | ✅ READ + WRITE                       |
+| `plan/`    | Promotion logs, decisions   | ⚠️ APPEND-ONLY to promotions.md       |
 
 **If a discovery contradicts `context/`:**
 

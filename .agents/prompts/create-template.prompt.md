@@ -1,3 +1,10 @@
+---
+name: Create a new template
+description: Gather requirements and generate a new a2scaffold template with the standard .agents/ structure.
+argument-hint: Template name (kebab-case)
+agent: agent
+---
+
 # Prompt: Create a New Template
 
 > Use this prompt when a user wants to generate a new template for
@@ -14,6 +21,7 @@ information, then generate the template structure.
 ### 1. Gather requirements
 
 Ask the user:
+
 - **Template name**: What should this template be called? (kebab-case)
 - **Target use case**: What framework/language/workflow is this for?
 - **Files to generate**: What files should the template produce beyond

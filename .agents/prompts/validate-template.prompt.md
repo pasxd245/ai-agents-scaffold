@@ -1,3 +1,10 @@
+---
+name: Validate a template
+description: Scan an existing template for correctness (structure, variables, safety) before merging or releasing.
+argument-hint: Template name under templates/
+agent: agent
+---
+
 # Prompt: Validate a Template
 
 > Use this prompt to scan an existing template for correctness before
