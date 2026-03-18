@@ -1,4 +1,4 @@
-# CLAUDE.md — Project Instructions for Claude Code
+# CLAUDE.md — Project Instructions
 
 ## General instructions
 

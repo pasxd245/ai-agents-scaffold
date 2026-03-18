@@ -1,4 +1,4 @@
-# Project Instructions for GitHub Copilot
+# copilot-instructions.md — Project Instructions
 
 ## General instructions
 
