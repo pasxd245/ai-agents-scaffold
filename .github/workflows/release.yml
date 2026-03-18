@@ -107,5 +107,5 @@ jobs:
         # Uses OIDC (id-token: write) for provenance — no NPM_TOKEN secret needed
         run: npm publish --verbose --tag ${{ steps.dist-tag.outputs.dist_tag }} --access public --provenance
         # To publish unscoped packages with a token, it requires a Granular Access Token with bypass 2FA:
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
