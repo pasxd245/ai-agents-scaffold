@@ -3,6 +3,26 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.0.2] - 2026-03-18
+
+### Bug Fixes
+
+- *(agents)* Align prompt files with authority rules and add consistent frontmatter
+- *(templates)* Sync base template with .agents/ updates and normalize titles
+- *(ci)* Comment out unused NPM_TOKEN env in release workflow
+
+### Documentation
+
+- *(agents)* Add prompt conventions to context and log promotion
+
+### Miscellaneous
+
+- Add tmp/temp to gitignore and .codex scaffold to base template
+
+### Reverted
+
+- *(ci)* Restore NPM_TOKEN env in release workflow
+
 ## [0.0.1] - 2026-03-06
 
 ### Features
