@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { scaffold } from '../src/scaffold.js';
 import { listTemplates, resolveTemplatePath } from '../src/templates.js';
 import { checkExistingFiles } from '../src/safety.js';
-import { validateSkill, listSkills, installSkill } from '../src/skills.js';
+import { validateSkill, listSkills, installSkill, installSkillRef } from '../src/skills.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -38,6 +38,7 @@ Skill Commands:
   skill add <source>      Install a skill from local path or GitHub
   skill list              List installed skills
   skill validate [name]   Validate installed skills
+  skill ref [options]     Create skill references (lightweight pointers)
 
 Skill Sources:
   ./path/to/skill         Local directory
@@ -48,6 +49,12 @@ Skill Options:
   -d, --agents-dir <dir>  Path to .agents/ directory (default: ".agents")
   -f, --force             Overwrite existing skill
 
+Skill Ref Options:
+      --skill <name|all>  Skill name or "all" to ref every skill (required)
+      --from <dir>        Source agents dir (default: ".agents")
+      --to <dir>          Destination agents dir (required)
+  -f, --force             Overwrite existing skill refs
+
 Examples:
   npx a2scaffold
   npx a2scaffold --use base --name my-project
@@ -55,6 +62,8 @@ Examples:
   npx a2scaffold skill add anthropics/skills/code-review
   npx a2scaffold skill list
   npx a2scaffold skill validate
+  npx a2scaffold skill ref --skill clean-code --to .claude
+  npx a2scaffold skill ref --skill all --from ../shared/.agents --to .agents
 `.trim();
 
 /**
@@ -239,6 +248,46 @@ function parseSkillArgs(args) {
   };
 }
 
+function parseSkillRefArgs(args) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      skill: { type: 'string' },
+      from: { type: 'string', default: '.agents' },
+      to: { type: 'string' },
+      force: { type: 'boolean', short: 'f', default: false },
+    },
+    strict: true,
+  });
+
+  if (!values.skill) {
+    console.error('Error: --skill is required.\n');
+    console.error('Usage: a2scaffold skill ref --skill <name|all> --to <dir>');
+    process.exit(1);
+  }
+
+  if (!values.to) {
+    console.error('Error: --to is required.\n');
+    console.error('Usage: a2scaffold skill ref --skill <name|all> --to <dir>');
+    process.exit(1);
+  }
+
+  return {
+    skill: values.skill,
+    from: values.from,
+    to: values.to,
+    force: values.force,
+  };
+}
+
+async function runSkillRef(args) {
+  const { skill, from, to, force } = parseSkillRefArgs(args);
+  const results = await installSkillRef({ from, to, skill, force });
+  for (const result of results) {
+    console.log(`Created skill ref "${result.name}" at ${result.path}`);
+  }
+}
+
 function runSkillAdd(source, agentsDir, force) {
   if (!source) {
     console.error('Error: skill add requires a source argument.\n');
@@ -315,6 +364,12 @@ async function runSkill(args) {
     return;
   }
 
+  // ref has its own arg parser; other subcommands share parseSkillArgs
+  if (subcommand === 'ref') {
+    await runSkillRef(args.slice(1));
+    return;
+  }
+
   const { agentsDir, force, positionals } = parseSkillArgs(args.slice(1));
 
   switch (subcommand) {
@@ -329,7 +384,7 @@ async function runSkill(args) {
       return;
     default:
       console.error(`Unknown skill command: ${subcommand}`);
-      console.error('Available: add, list, validate');
+      console.error('Available: add, list, ref, validate');
       process.exit(1);
   }
 }

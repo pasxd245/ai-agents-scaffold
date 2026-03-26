@@ -3,6 +3,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import yaml from 'js-yaml';
+import { scaffold } from './scaffold.js';
 
 const NAME_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 const MAX_NAME_LEN = 64;
@@ -308,4 +309,186 @@ function installFromGitHub(parsed, targetDir, options) {
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+}
+
+/**
+ * Check whether a skill directory contains a skill-ref (pointer) file.
+ *
+ * @param {string} skillDir - Path to a skill directory containing SKILL.md
+ * @returns {{ isRef: boolean, content: string|null }}
+ */
+export function isSkillRef(skillDir) {
+  const skillFile = path.join(skillDir, 'SKILL.md');
+
+  if (!fs.existsSync(skillFile)) {
+    return { isRef: false, content: null };
+  }
+
+  const content = fs.readFileSync(skillFile, 'utf8');
+  const parsed = parseFrontmatter(content);
+
+  if (!parsed) {
+    return { isRef: false, content: null };
+  }
+
+  const isRef = parsed.frontmatter.metadata?.type === 'skill-ref';
+  return { isRef, content: isRef ? content : null };
+}
+
+/**
+ * Discover all skills in an agents directory.
+ *
+ * @param {string} agentsDir - Path to an agents directory (e.g. .agents/)
+ * @returns {Array<{ name: string, skillDir: string }>}
+ */
+export function discoverSkills(agentsDir) {
+  const skillsDir = path.join(agentsDir, 'skills');
+
+  if (!fs.existsSync(skillsDir)) {
+    return [];
+  }
+
+  const entries = fs.readdirSync(skillsDir, { withFileTypes: true });
+  const skills = [];
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+
+    const skillDir = path.join(skillsDir, entry.name);
+    const skillFile = path.join(skillDir, 'SKILL.md');
+
+    if (!fs.existsSync(skillFile)) continue;
+
+    try {
+      const content = fs.readFileSync(skillFile, 'utf8');
+      const parsed = parseFrontmatter(content);
+      if (parsed?.frontmatter.name) {
+        skills.push({
+          name: parsed.frontmatter.name,
+          skillDir,
+        });
+      }
+    } catch {
+      // Skip skills with unparseable SKILL.md
+    }
+  }
+
+  return skills.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Resolve the list of skills to reference based on the skill option.
+ */
+function resolveSkillsToRef(resolvedFrom, skill) {
+  if (skill === 'all') {
+    const skills = discoverSkills(resolvedFrom);
+    if (skills.length === 0) {
+      throw new Error(`No skills found in ${resolvedFrom}/skills/`);
+    }
+    return skills;
+  }
+
+  const skillDir = path.join(resolvedFrom, 'skills', skill);
+  if (!fs.existsSync(skillDir)) {
+    throw new Error(
+      `Skill "${skill}" not found in ${resolvedFrom}/skills/`
+    );
+  }
+  const skillFile = path.join(skillDir, 'SKILL.md');
+  if (!fs.existsSync(skillFile)) {
+    throw new Error(
+      `Skill "${skill}" has no SKILL.md in ${resolvedFrom}/skills/`
+    );
+  }
+  return [{ name: skill, skillDir }];
+}
+
+/**
+ * Check destination for conflicts before writing a skill ref.
+ * Throws if a real skill exists or if a ref exists without --force.
+ */
+function checkDestConflict(destSkillDir, name, force) {
+  const destSkillFile = path.join(destSkillDir, 'SKILL.md');
+
+  if (!fs.existsSync(destSkillFile)) return;
+
+  const destRef = isSkillRef(destSkillDir);
+
+  if (!destRef.isRef) {
+    throw new Error(
+      `Cannot overwrite real skill "${name}". Remove it manually first.`
+    );
+  }
+
+  if (!force) {
+    throw new Error(
+      `Skill ref "${name}" already exists. Use --force to overwrite.`
+    );
+  }
+}
+
+/**
+ * Create skill references (lightweight pointer files) in a destination
+ * agents directory, pointing back to skills in a source agents directory.
+ *
+ * @param {object} options
+ * @param {string} options.from - Source agents dir (e.g. ".agents")
+ * @param {string} options.to - Destination agents dir (e.g. ".claude")
+ * @param {string} options.skill - Skill name or "all"
+ * @param {boolean} [options.force=false] - Overwrite existing skill-refs
+ * @returns {Promise<Array<{ name: string, path: string }>>}
+ */
+export async function installSkillRef({ from, to, skill, force = false }) {
+  const resolvedFrom = path.resolve(from);
+  const resolvedTo = path.resolve(to);
+
+  if (resolvedFrom === resolvedTo) {
+    throw new Error('Source and destination agents dirs must differ.');
+  }
+
+  const skillsToRef = resolveSkillsToRef(resolvedFrom, skill);
+  const results = [];
+
+  for (const { name, skillDir } of skillsToRef) {
+    const destSkillDir = path.join(resolvedTo, 'skills', name);
+
+    checkDestConflict(destSkillDir, name, force);
+
+    // If source is already a skill-ref, copy verbatim
+    const sourceRef = isSkillRef(skillDir);
+    if (sourceRef.isRef) {
+      fs.mkdirSync(destSkillDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(destSkillDir, 'SKILL.md'), sourceRef.content, 'utf8'
+      );
+      results.push({ name, path: destSkillDir });
+      continue;
+    }
+
+    // Compute paths for the template
+    const sourceRoot = path.resolve(resolvedFrom, '..');
+    const agentsDirName = path.basename(resolvedFrom);
+    const rootPath = path.relative(destSkillDir, sourceRoot);
+    const sourcePath = path.join(
+      agentsDirName, 'skills', name, 'SKILL.md'
+    );
+
+    // Render using the skill-ref template
+    await scaffold({
+      templateName: 'skill-ref',
+      outputDir: resolvedTo,
+      overrides: {
+        skill: {
+          name,
+          path: path.join('skills', name),
+          rootPath,
+          sourcePath,
+        },
+      },
+    });
+
+    results.push({ name, path: destSkillDir });
+  }
+
+  return results;
 }

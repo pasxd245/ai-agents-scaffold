@@ -9,7 +9,11 @@ import {
   listSkills,
   parseSkillSource,
   installSkill,
+  isSkillRef,
+  discoverSkills,
+  installSkillRef,
 } from '../src/skills.js';
+import yaml from 'js-yaml';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, 'fixtures');
@@ -251,5 +255,251 @@ describe('installSkill (local)', () => {
       () => installSkill(source, tmpTarget),
       /Source skill is invalid/
     );
+  });
+});
+
+// ── isSkillRef ─────────────────────────────────────────────────────
+
+describe('isSkillRef', () => {
+  it('returns false for a regular skill', () => {
+    const result = isSkillRef(path.join(FIXTURES, 'valid-skill'));
+    assert.equal(result.isRef, false);
+    assert.equal(result.content, null);
+  });
+
+  it('returns true for a skill-ref', () => {
+    const result = isSkillRef(path.join(FIXTURES, 'skill-ref-skill'));
+    assert.equal(result.isRef, true);
+    assert.ok(result.content);
+    assert.ok(result.content.includes('type: skill-ref'));
+  });
+
+  it('returns false when SKILL.md is missing', () => {
+    const result = isSkillRef(path.join(FIXTURES, 'base-output'));
+    assert.equal(result.isRef, false);
+    assert.equal(result.content, null);
+  });
+
+  it('returns false when no frontmatter', () => {
+    const result = isSkillRef(path.join(FIXTURES, 'no-frontmatter-skill'));
+    assert.equal(result.isRef, false);
+    assert.equal(result.content, null);
+  });
+});
+
+// ── discoverSkills ─────────────────────────────────────────────────
+
+describe('discoverSkills', () => {
+  it('discovers skills in an agents directory', () => {
+    const tmpAgents = path.join(FIXTURES, '_tmp-discover');
+    const skillA = path.join(tmpAgents, 'skills', 'skill-a');
+    const skillB = path.join(tmpAgents, 'skills', 'skill-b');
+    fs.mkdirSync(skillA, { recursive: true });
+    fs.mkdirSync(skillB, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillA, 'SKILL.md'),
+      '---\nname: skill-a\ndescription: A.\n---\n'
+    );
+    fs.writeFileSync(
+      path.join(skillB, 'SKILL.md'),
+      '---\nname: skill-b\ndescription: B.\n---\n'
+    );
+
+    try {
+      const skills = discoverSkills(tmpAgents);
+      assert.equal(skills.length, 2);
+      assert.equal(skills[0].name, 'skill-a');
+      assert.equal(skills[1].name, 'skill-b');
+      assert.ok(skills[0].skillDir.endsWith('skill-a'));
+    } finally {
+      fs.rmSync(tmpAgents, { recursive: true });
+    }
+  });
+
+  it('returns empty array when no skills directory', () => {
+    const skills = discoverSkills('/tmp/nonexistent-agents');
+    assert.equal(skills.length, 0);
+  });
+
+  it('returns empty array for empty skills directory', () => {
+    const tmpAgents = path.join(FIXTURES, '_tmp-discover-empty');
+    fs.mkdirSync(path.join(tmpAgents, 'skills'), { recursive: true });
+
+    try {
+      const skills = discoverSkills(tmpAgents);
+      assert.equal(skills.length, 0);
+    } finally {
+      fs.rmSync(tmpAgents, { recursive: true });
+    }
+  });
+});
+
+// ── installSkillRef ────────────────────────────────────────────────
+
+describe('installSkillRef', () => {
+  let tmpFrom;
+  let tmpTo;
+
+  beforeEach(() => {
+    tmpFrom = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-from-'));
+    tmpTo = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-to-'));
+
+    // Create a valid skill in the source agents dir
+    const skillDir = path.join(tmpFrom, 'skills', 'test-skill');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, 'SKILL.md'),
+      '---\nname: test-skill\ndescription: A test skill.\n---\n\n## Procedure\n1. Do it\n'
+    );
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpFrom, { recursive: true, force: true });
+    fs.rmSync(tmpTo, { recursive: true, force: true });
+  });
+
+  it('creates a single skill ref', async () => {
+    const results = await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'test-skill',
+    });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].name, 'test-skill');
+
+    const output = fs.readFileSync(
+      path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md'), 'utf8'
+    );
+    assert.ok(output.includes('name: test-skill'));
+    assert.ok(output.includes('type: skill-ref'));
+    assert.ok(output.includes('rootPath:'));
+    assert.ok(output.includes('@rootPath/'));
+  });
+
+  it('creates refs for all skills with --skill all', async () => {
+    // Add a second skill
+    const skillDir = path.join(tmpFrom, 'skills', 'another-skill');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, 'SKILL.md'),
+      '---\nname: another-skill\ndescription: Another.\n---\n'
+    );
+
+    const results = await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'all',
+    });
+
+    assert.equal(results.length, 2);
+    const names = results.map((r) => r.name).sort((a, b) => a.localeCompare(b));
+    assert.deepEqual(names, ['another-skill', 'test-skill']);
+  });
+
+  it('copies skill-ref source verbatim', async () => {
+    // Replace source skill with a skill-ref
+    const refDir = path.join(tmpFrom, 'skills', 'ref-skill');
+    fs.mkdirSync(refDir, { recursive: true });
+    const refContent =
+      '---\nname: ref-skill\nmetadata:\n  type: skill-ref\n  rootPath: ../../..\n---\n\n# Refer to Skill Details at:\n\n@rootPath/.agents/skills/ref-skill/SKILL.md\n';
+    fs.writeFileSync(path.join(refDir, 'SKILL.md'), refContent);
+
+    const results = await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'ref-skill',
+    });
+
+    assert.equal(results.length, 1);
+    const output = fs.readFileSync(
+      path.join(tmpTo, 'skills', 'ref-skill', 'SKILL.md'), 'utf8'
+    );
+    assert.equal(output, refContent);
+  });
+
+  it('errors when from === to', async () => {
+    await assert.rejects(
+      () => installSkillRef({ from: tmpFrom, to: tmpFrom, skill: 'test-skill' }),
+      /must differ/
+    );
+  });
+
+  it('errors when dest has a real skill', async () => {
+    // Create a real skill at dest
+    const destSkill = path.join(tmpTo, 'skills', 'test-skill');
+    fs.mkdirSync(destSkill, { recursive: true });
+    fs.writeFileSync(
+      path.join(destSkill, 'SKILL.md'),
+      '---\nname: test-skill\ndescription: Real.\n---\n'
+    );
+
+    await assert.rejects(
+      () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill', force: true }),
+      /Cannot overwrite real skill/
+    );
+  });
+
+  it('errors when dest has existing ref without --force', async () => {
+    // First install
+    await installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' });
+
+    // Second install without force
+    await assert.rejects(
+      () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' }),
+      /already exists/
+    );
+  });
+
+  it('overwrites existing ref with --force', async () => {
+    await installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' });
+
+    const results = await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'test-skill',
+      force: true,
+    });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].name, 'test-skill');
+  });
+
+  it('errors when source skill does not exist', async () => {
+    await assert.rejects(
+      () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'nonexistent' }),
+      /not found/
+    );
+  });
+
+  it('computes correct rootPath', async () => {
+    await installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' });
+
+    const output = fs.readFileSync(
+      path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md'), 'utf8'
+    );
+    const match = output.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    const frontmatter = yaml.load(match[1]);
+
+    // rootPath should be a relative path from dest skill dir to source parent
+    const destSkillDir = path.join(tmpTo, 'skills', 'test-skill');
+    const sourceRoot = path.resolve(tmpFrom, '..');
+    const expected = path.relative(destSkillDir, sourceRoot);
+
+    assert.equal(frontmatter.metadata.rootPath, expected);
+  });
+
+  it('errors when no skills found with --skill all', async () => {
+    const emptyFrom = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-empty-'));
+    fs.mkdirSync(path.join(emptyFrom, 'skills'), { recursive: true });
+
+    try {
+      await assert.rejects(
+        () => installSkillRef({ from: emptyFrom, to: tmpTo, skill: 'all' }),
+        /No skills found/
+      );
+    } finally {
+      fs.rmSync(emptyFrom, { recursive: true, force: true });
+    }
   });
 });
