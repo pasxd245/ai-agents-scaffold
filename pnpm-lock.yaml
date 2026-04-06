@@ -9,16 +9,16 @@ importers:
   .:
     dependencies:
       '@nci-gis/js-tmpl':
-        specifier: 0.0.1-beta.2
-        version: 0.0.1-beta.2
+        specifier: 0.0.1
+        version: 0.0.1
       js-yaml:
         specifier: ^4.1.1
         version: 4.1.1
 
 packages:
 
-  '@nci-gis/js-tmpl@0.0.1-beta.2':
-    resolution: {integrity: sha512-28mtcx6ssfAFuSom1NFTqY9hxmAm5Rrh/QCQ4hJxvE+gNaOU77+7jFyw1xA4kmu0j5YrzeyXkKxkTNcgUU4ttA==}
+  '@nci-gis/js-tmpl@0.0.1':
+    resolution: {integrity: sha512-ZsGjla4Jt5E5pm9cF7e/CKRikb5VAaKFHzQl6BexlXDAsmScq9yYAsY7xApHK/CxzIJ5ZuN/Mx9cJXMbGvMBCw==}
     engines: {node: '>=20.0.0', pnpm: '>=10.0.0'}
     hasBin: true
 
@@ -63,7 +63,7 @@ packages:
 
 snapshots:
 
-  '@nci-gis/js-tmpl@0.0.1-beta.2':
+  '@nci-gis/js-tmpl@0.0.1':
     dependencies:
       config: 4.4.1
       handlebars: 4.7.8

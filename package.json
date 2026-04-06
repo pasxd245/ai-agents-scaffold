@@ -45,7 +45,7 @@
   },
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
-    "@nci-gis/js-tmpl": "0.0.1-beta.2",
+    "@nci-gis/js-tmpl": "0.0.1",
     "js-yaml": "^4.1.1"
   }
 }

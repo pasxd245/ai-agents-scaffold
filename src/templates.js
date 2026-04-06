@@ -20,7 +20,7 @@ export function listTemplates() {
 /**
  * Resolve paths for a given template name.
  * @param {string} name - Template name (e.g. "base")
- * @returns {{ templateDir: string, valuesFile: string, partialsDir: string }}
+ * @returns {{ templateDir: string, valuesFile: string, partialsDir?: string }}
  */
 export function resolveTemplatePath(name) {
   const templateRoot = path.join(TEMPLATES_DIR, name);
@@ -48,11 +48,9 @@ export function resolveTemplatePath(name) {
     );
   }
 
-  if (!fs.existsSync(partialsDir)) {
-    throw new Error(
-      `Template "${name}" is missing a partials/ directory at ${partialsDir}`
-    );
-  }
-
-  return { templateDir, valuesFile, partialsDir };
+  return {
+    templateDir,
+    valuesFile,
+    partialsDir: fs.existsSync(partialsDir) ? partialsDir : undefined,
+  };
 }

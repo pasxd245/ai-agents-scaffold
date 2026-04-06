@@ -37,7 +37,7 @@
 
 ### Template
 
-- [ ] `templates/skill-ref/` exists with valid structure (values.yaml, template/, partials/)
+- [ ] `templates/skill-ref/` exists with valid structure (values.yaml, template/, optional partials/)
 - [ ] Template renders correctly via `scaffold()` with skill overrides
 - [ ] Output SKILL.md contains correct frontmatter (`name`, `metadata.type: skill-ref`, `rootPath`)
 - [ ] `${skill.path}` path interpolation produces correct output directory

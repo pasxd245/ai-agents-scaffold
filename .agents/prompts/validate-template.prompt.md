@@ -21,7 +21,7 @@ checks and report any issues found.
 
 1. Verify `values.yaml` exists and is valid YAML
 2. Verify `template/` directory exists and contains at least one `.hbs` file
-3. Verify `partials/` directory exists (even if only contains `.gitkeep`)
+3. If `partials/` exists, verify it only contains intentional partials or `.gitkeep`
 
 ### Content checks
 
@@ -53,7 +53,7 @@ checks and report any issues found.
 ### Structure: PASS / FAIL
 - [x] values.yaml exists
 - [x] template/ directory exists
-- [x] partials/ directory exists
+- [x] partials/ directory is valid when present
 
 ### Variables: PASS / WARN
 - Defined: [list]

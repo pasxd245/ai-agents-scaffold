@@ -52,9 +52,7 @@ export function validateSkill(skillDir) {
   const dirName = path.basename(skillDir);
 
   // Required: name
-  if (!frontmatter.name) {
-    errors.push('Missing required field: name');
-  } else {
+  if (frontmatter?.name) {
     const name = String(frontmatter.name);
     if (name.length > MAX_NAME_LEN) {
       errors.push(`name exceeds ${MAX_NAME_LEN} characters`);
@@ -72,16 +70,18 @@ export function validateSkill(skillDir) {
         `name "${name}" does not match directory name "${dirName}"`
       );
     }
+  } else {
+    errors.push('Missing required field: name');
   }
 
   // Required: description
-  if (!frontmatter.description) {
-    errors.push('Missing required field: description');
-  } else {
+  if (frontmatter?.description) {
     const desc = String(frontmatter.description);
     if (desc.length > MAX_DESC_LEN) {
       errors.push(`description exceeds ${MAX_DESC_LEN} characters`);
     }
+  } else {
+    errors.push('Missing required field: description');
   }
 
   // Optional: compatibility
@@ -123,7 +123,7 @@ export function listSkills(agentsDir) {
     try {
       const content = fs.readFileSync(skillFile, 'utf8');
       const parsed = parseFrontmatter(content);
-      if (parsed && parsed.frontmatter.name) {
+      if (parsed?.frontmatter?.name) {
         skills.push({
           name: parsed.frontmatter.name,
           description: parsed.frontmatter.description || '',
@@ -469,8 +469,8 @@ export async function installSkillRef({ from, to, skill, force = false }) {
     const sourceRoot = path.resolve(resolvedFrom, '..');
     const agentsDirName = path.basename(resolvedFrom);
     const rootPath = path.relative(destSkillDir, sourceRoot);
-    const sourcePath = path.join(
-      agentsDirName, 'skills', name, 'SKILL.md'
+    const sourceDir = path.join(
+      agentsDirName, 'skills', name
     );
 
     // Render using the skill-ref template
@@ -482,7 +482,7 @@ export async function installSkillRef({ from, to, skill, force = false }) {
           name,
           path: path.join('skills', name),
           rootPath,
-          sourcePath,
+          sourceDir,
         },
       },
     });

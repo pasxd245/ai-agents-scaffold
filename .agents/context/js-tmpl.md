@@ -14,7 +14,7 @@ import { renderDirectory } from '@nci-gis/js-tmpl';
 
 await renderDirectory({
   templateDir,   // Absolute path to template/ dir
-  partialsDir,   // Absolute path to partials/ dir (must exist)
+  partialsDir,   // Optional absolute path to partials/ dir
   outDir,        // Absolute path to output directory
   extname: '.hbs',
   view: { ...values, env: process.env },
@@ -35,12 +35,13 @@ This avoids writing temporary merged values files to disk.
 
 ## Partials Directory
 
-`registerPartials(partialsDir, extname)` calls `fs.readdir` on the
-directory — it **throws if the directory does not exist**. Every template
-must include a `partials/` directory, even if empty.
+`registerPartials(partialsDir, extname)` skips silently when
+`partialsDir` is falsy. If you pass a partials path, it calls
+`fs.readdir` on that directory and **throws if the directory does not
+exist**.
 
-Convention: add a `.gitkeep` (not `.gitkeep.hbs`) inside `partials/` so
-git tracks the empty directory.
+Convention: add a `.gitkeep` (not `.gitkeep.hbs`) inside `partials/` when
+the template uses partials and you need git to track the directory.
 
 ## Path Resolution
 

@@ -52,7 +52,7 @@ templates/<name>/
     .claude/CLAUDE.md.hbs
     .github/copilot-instructions.md.hbs
     <additional-files>.hbs            ← Template-specific files
-  partials/
+  partials/                            ← Optional, only for `{{> partial}}`
     .gitkeep
 ```
 

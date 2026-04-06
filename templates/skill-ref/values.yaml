@@ -1,5 +1,6 @@
 skill:
   name: ""
+  description: "A reference to a skill."
   path: ""          # dest dir path, e.g. "skills/clean-code"
   rootPath: ""      # relative path from dest skill dir to source project root
-  sourcePath: ""    # path from source root to SKILL.md
+  sourceDir: ""     # path from source root to skill directory

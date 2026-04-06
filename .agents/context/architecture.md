@@ -26,7 +26,7 @@ templates/
   <template-name>/
     values.yaml       # Default variable values for this template
     template/         # .hbs files mirroring desired output structure
-    partials/         # Handlebars partials (can be empty, dir must exist)
+    partials/         # Optional Handlebars partials directory
 
 tests/
   *.test.js           # Tests using node:test

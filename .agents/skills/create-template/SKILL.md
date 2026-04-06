@@ -19,11 +19,13 @@ This skill activates whenever:
 
 ```bash
 mkdir -p templates/<template-name>/template
-mkdir -p templates/<template-name>/partials
-touch templates/<template-name>/partials/.gitkeep
 ```
 
 Use **kebab-case** for `<template-name>`: `python-crew`, `langchain-rag`, etc.
+
+Create `templates/<template-name>/partials/` only if the template uses
+Handlebars partials. When you need it, add `.gitkeep` so git tracks the
+directory.
 
 ### 2. Create values.yaml
 
@@ -47,6 +49,7 @@ Under `templates/<template-name>/template/`, create the output structure:
 - Empty placeholders: use `.gitkeep.hbs` with empty content
 - Dynamic paths: use `${var}` syntax in directory/file names
 - Content: use Handlebars `\{{var}}`, `\{{#if}}`, `\{{#each}}`
+- Create `partials/` only when the template uses `{{> partial}}`
 
 ### 4. Handle Handlebars edge cases
 

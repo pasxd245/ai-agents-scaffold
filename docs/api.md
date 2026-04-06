@@ -23,11 +23,11 @@ Render a template to the output directory.
 
 **Parameters:**
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `options.templateName` | `string` | Yes | Template name (e.g. `"base"`) |
-| `options.outputDir` | `string` | Yes | Target directory to write files |
-| `options.overrides` | `object` | No | Values to deep-merge over template defaults |
+| Name                   | Type     | Required | Description                                 |
+| ---------------------- | -------- | -------- | ------------------------------------------- |
+| `options.templateName` | `string` | Yes      | Template name (e.g. `"base"`)               |
+| `options.outputDir`    | `string` | Yes      | Target directory to write files             |
+| `options.overrides`    | `object` | No       | Values to deep-merge over template defaults |
 
 **Returns:** `Promise<{ outputDir: string, template: string }>`
 
@@ -98,22 +98,22 @@ Resolve filesystem paths for a given template. Useful for inspecting template co
 
 **Parameters:**
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `name` | `string` | Yes | Template name (e.g. `"base"`) |
+| Name   | Type     | Required | Description                   |
+| ------ | -------- | -------- | ----------------------------- |
+| `name` | `string` | Yes      | Template name (e.g. `"base"`) |
 
-**Returns:** `{ templateDir: string, valuesFile: string, partialsDir: string }`
+**Returns:** `{ templateDir: string, valuesFile: string, partialsDir?: string }`
 
-| Property | Description |
-| --- | --- |
-| `templateDir` | Path to the `template/` directory containing `.hbs` files |
-| `valuesFile` | Path to the `values.yaml` defaults file |
-| `partialsDir` | Path to the `partials/` directory for Handlebars partials |
+| Property      | Description                                                             |
+| ------------- | ----------------------------------------------------------------------- |
+| `templateDir` | Path to the `template/` directory containing `.hbs` files               |
+| `valuesFile`  | Path to the `values.yaml` defaults file                                 |
+| `partialsDir` | Path to the `partials/` directory for Handlebars partials, when present |
 
 **Throws:**
 
 - `Error` if the template name is not found (message includes available templates)
-- `Error` if `template/`, `values.yaml`, or `partials/` is missing
+- `Error` if `template/` or `values.yaml` is missing
 
 **Example:**
 
@@ -123,7 +123,7 @@ import { resolveTemplatePath } from 'a2scaffold';
 const paths = resolveTemplatePath('base');
 console.log(paths.templateDir);  // ".../templates/base/template"
 console.log(paths.valuesFile);   // ".../templates/base/values.yaml"
-console.log(paths.partialsDir);  // ".../templates/base/partials"
+console.log(paths.partialsDir);  // ".../templates/base/partials" or undefined
 ```
 
 ---
@@ -134,11 +134,11 @@ Check which output files already exist in the target directory. Use this to dete
 
 **Parameters:**
 
-| Name | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `templateDir` | `string` | Yes | | Path to the template's `template/` directory |
-| `outDir` | `string` | Yes | | Target output directory to check |
-| `extname` | `string` | No | `".hbs"` | Template file extension |
+| Name          | Type     | Required | Default  | Description                                  |
+| ------------- | -------- | -------- | -------- | -------------------------------------------- |
+| `templateDir` | `string` | Yes      |          | Path to the template's `template/` directory |
+| `outDir`      | `string` | Yes      |          | Target output directory to check             |
+| `extname`     | `string` | No       | `".hbs"` | Template file extension                      |
 
 **Returns:** `string[]` — list of conflicting file paths, relative to `outDir`. Empty array if no conflicts.
 
@@ -171,17 +171,17 @@ Validate a skill directory against the [agentskills.io specification](https://ag
 
 **Parameters:**
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `skillDir` | `string` | Yes | Path to the skill directory |
+| Name       | Type     | Required | Description                 |
+| ---------- | -------- | -------- | --------------------------- |
+| `skillDir` | `string` | Yes      | Path to the skill directory |
 
 **Returns:** `{ valid: boolean, errors: string[], skill: object|null }`
 
-| Property | Description |
-| --- | --- |
-| `valid` | `true` if the skill passes all validation checks |
-| `errors` | Array of validation error messages (empty if valid) |
-| `skill` | Parsed SKILL.md frontmatter object, or `null` if invalid |
+| Property | Description                                              |
+| -------- | -------------------------------------------------------- |
+| `valid`  | `true` if the skill passes all validation checks         |
+| `errors` | Array of validation error messages (empty if valid)      |
+| `skill`  | Parsed SKILL.md frontmatter object, or `null` if invalid |
 
 **Validation rules:**
 
@@ -214,9 +214,9 @@ List all installed skills in an `.agents/` directory.
 
 **Parameters:**
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `agentsDir` | `string` | Yes | Path to the `.agents/` directory |
+| Name        | Type     | Required | Description                      |
+| ----------- | -------- | -------- | -------------------------------- |
+| `agentsDir` | `string` | Yes      | Path to the `.agents/` directory |
 
 **Returns:** `Array<{ name: string, description: string, path: string }>` — sorted by name. Empty array if no skills are installed.
 
@@ -239,19 +239,19 @@ Parse a skill source string into a structured object. Use this to inspect a sour
 
 **Parameters:**
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `source` | `string` | Yes | Skill source (local path, GitHub shorthand, or URL) |
+| Name     | Type     | Required | Description                                         |
+| -------- | -------- | -------- | --------------------------------------------------- |
+| `source` | `string` | Yes      | Skill source (local path, GitHub shorthand, or URL) |
 
 **Returns:** `{ type: string, localPath?: string, owner?: string, repo?: string, skillPath?: string, ref?: string }`
 
 **Supported formats:**
 
-| Format | Example | `type` |
-| --- | --- | --- |
-| Local path | `./my-skill`, `/absolute/path` | `"local"` |
-| GitHub shorthand | `owner/repo/path/to/skill` | `"github"` |
-| GitHub URL | `https://github.com/owner/repo/tree/main/skill` | `"github"` |
+| Format           | Example                                         | `type`     |
+| ---------------- | ----------------------------------------------- | ---------- |
+| Local path       | `./my-skill`, `/absolute/path`                  | `"local"`  |
+| GitHub shorthand | `owner/repo/path/to/skill`                      | `"github"` |
+| GitHub URL       | `https://github.com/owner/repo/tree/main/skill` | `"github"` |
 
 **Throws:** `Error` if the source string cannot be parsed.
 
@@ -275,18 +275,18 @@ Install a skill from a source into a target directory.
 
 **Parameters:**
 
-| Name | Type | Required | Default | Description |
-| --- | --- | --- | --- | --- |
-| `source` | `string` | Yes | | Skill source (local path, GitHub shorthand, or URL) |
-| `targetDir` | `string` | Yes | | Target directory (e.g. `.agents/skills/`) |
-| `options.force` | `boolean` | No | `false` | Overwrite existing skill |
+| Name            | Type      | Required | Default | Description                                         |
+| --------------- | --------- | -------- | ------- | --------------------------------------------------- |
+| `source`        | `string`  | Yes      |         | Skill source (local path, GitHub shorthand, or URL) |
+| `targetDir`     | `string`  | Yes      |         | Target directory (e.g. `.agents/skills/`)           |
+| `options.force` | `boolean` | No       | `false` | Overwrite existing skill                            |
 
 **Returns:** `{ name: string, path: string }`
 
-| Property | Description |
-| --- | --- |
-| `name` | The installed skill's directory name |
-| `path` | Absolute path to the installed skill directory |
+| Property | Description                                    |
+| -------- | ---------------------------------------------- |
+| `name`   | The installed skill's directory name           |
+| `path`   | Absolute path to the installed skill directory |
 
 **Throws:**
 

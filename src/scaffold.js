@@ -50,11 +50,14 @@ export async function scaffold({ templateName, outputDir, overrides = {} }) {
   // Build config object directly for renderDirectory
   const config = {
     templateDir,
-    partialsDir,
     outDir: path.resolve(outputDir),
     extname: '.hbs',
     view: { ...mergedValues, env: process.env },
   };
+
+  if (partialsDir) {
+    config.partialsDir = partialsDir;
+  }
 
   await renderDirectory(config);
 
