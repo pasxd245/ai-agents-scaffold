@@ -12,7 +12,7 @@ import {
   isSkillRef,
   discoverSkills,
   installSkillRef,
-} from '../src/skills.js';
+} from '../src/skills/index.js';
 import yaml from 'js-yaml';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

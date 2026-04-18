@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { installSkill } from '../../skills.js';
+import { installSkill } from '../../skills/index.js';
 
 /**
  * @param {string | undefined} source

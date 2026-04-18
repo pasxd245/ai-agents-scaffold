@@ -9,4 +9,4 @@ export {
   isSkillRef,
   discoverSkills,
   installSkillRef,
-} from './skills.js';
+} from './skills/index.js';

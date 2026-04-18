@@ -1,4 +1,4 @@
-import { listSkills } from '../../skills.js';
+import { listSkills } from '../../skills/index.js';
 
 /** @param {string} agentsDir */
 export function runSkillList(agentsDir) {

@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { validateSkill } from '../../skills.js';
+import { validateSkill } from '../../skills/index.js';
 
 /**
  * @param {string | undefined} targetName

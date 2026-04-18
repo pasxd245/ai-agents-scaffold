@@ -1,4 +1,4 @@
-import { installSkillRef } from '../../skills.js';
+import { installSkillRef } from '../../skills/index.js';
 import { parseSkillRefArgs } from '../args.js';
 
 /** @param {string[]} args */
