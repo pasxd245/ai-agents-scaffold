@@ -8,7 +8,7 @@
     ".": "./src/index.js"
   },
   "bin": {
-    "a2scaffold": "bin/cli.js"
+    "a2scaffold": "bin/a2scaffold"
   },
   "files": [
     "bin/",

@@ -1,23 +1,21 @@
-#!/usr/bin/env node
-
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
-import { scaffold } from '../src/scaffold.js';
-import { listTemplates, resolveTemplatePath } from '../src/templates.js';
-import { checkExistingFiles } from '../src/safety.js';
+import { scaffold } from '../scaffold.js';
+import { listTemplates, resolveTemplatePath } from '../templates.js';
+import { checkExistingFiles } from '../safety.js';
 import {
   validateSkill,
   listSkills,
   installSkill,
   installSkillRef,
-} from '../src/skills.js';
+} from '../skills.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
+  fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8')
 );
 
 const HELP = `
@@ -73,13 +71,19 @@ Examples:
 
 /**
  * Walk template directory and list output file paths.
+ *
+ * @param {string} templateDir
+ * @param {string} [extname]
+ * @returns {string[]}
  */
 function listOutputFiles(templateDir, extname = '.hbs') {
+  /** @type {string[]} */
   const results = [];
+  /** @type {string[]} */
   const queue = [''];
 
   while (queue.length) {
-    const rel = queue.shift();
+    const rel = /** @type {string} */ (queue.shift());
     const abs = path.join(templateDir, rel);
     const stat = fs.statSync(abs);
 
@@ -109,6 +113,9 @@ const VALUE_FLAGS = new Set([
 
 /**
  * Check if an argv token is a flag whose value should be skipped.
+ *
+ * @param {string} token
+ * @returns {boolean}
  */
 function isValueFlag(token) {
   if (!token.startsWith('-')) return false;
@@ -120,6 +127,9 @@ function isValueFlag(token) {
 /**
  * Find the index of the first positional (non-flag) argument.
  * Returns -1 if no positional is found.
+ *
+ * @param {string[]} argv
+ * @returns {number}
  */
 function findFirstPositional(argv) {
   let skip = false;
@@ -141,6 +151,9 @@ function findFirstPositional(argv) {
 /**
  * Detect command from argv. Returns { command, args } where command is
  * 'scaffold' (default) or 'skill', and args is the remaining argv slice.
+ *
+ * @param {string[]} argv
+ * @returns {{ command: 'scaffold' | 'skill', args: string[] }}
  */
 function detectCommand(argv) {
   const idx = findFirstPositional(argv);
@@ -158,6 +171,7 @@ function detectCommand(argv) {
   return { command: 'scaffold', args: argv };
 }
 
+/** @param {string[]} argv */
 async function runScaffold(argv) {
   const { values } = parseArgs({
     args: argv,
@@ -193,8 +207,8 @@ async function runScaffold(argv) {
     return;
   }
 
-  const templateName = values.use;
-  const outputDir = path.resolve(values.output);
+  const templateName = /** @type {string} */ (values.use);
+  const outputDir = path.resolve(/** @type {string} */ (values.output));
   const projectName = values.name || path.basename(outputDir);
 
   // Validate template exists
@@ -249,6 +263,7 @@ async function runScaffold(argv) {
   console.log('  3. Start pairing with your AI agent!');
 }
 
+/** @param {string[]} args */
 function parseSkillArgs(args) {
   const { values, positionals } = parseArgs({
     args,
@@ -260,12 +275,13 @@ function parseSkillArgs(args) {
     strict: true,
   });
   return {
-    agentsDir: path.resolve(values['agents-dir']),
-    force: values.force,
+    agentsDir: path.resolve(/** @type {string} */ (values['agents-dir'])),
+    force: Boolean(values.force),
     positionals,
   };
 }
 
+/** @param {string[]} args */
 function parseSkillRefArgs(args) {
   const { values } = parseArgs({
     args,
@@ -292,12 +308,13 @@ function parseSkillRefArgs(args) {
 
   return {
     skill: values.skill,
-    from: values.from,
+    from: /** @type {string} */ (values.from),
     to: values.to,
-    force: values.force,
+    force: Boolean(values.force),
   };
 }
 
+/** @param {string[]} args */
 async function runSkillRef(args) {
   const { skill, from, to, force } = parseSkillRefArgs(args);
   const results = await installSkillRef({ from, to, skill, force });
@@ -306,6 +323,11 @@ async function runSkillRef(args) {
   }
 }
 
+/**
+ * @param {string | undefined} source
+ * @param {string} agentsDir
+ * @param {boolean} force
+ */
 function runSkillAdd(source, agentsDir, force) {
   if (!source) {
     console.error('Error: skill add requires a source argument.\n');
@@ -318,6 +340,7 @@ function runSkillAdd(source, agentsDir, force) {
   console.log(`Installed skill "${result.name}" to ${result.path}`);
 }
 
+/** @param {string} agentsDir */
 function runSkillList(agentsDir) {
   const skills = listSkills(agentsDir);
   if (skills.length === 0) {
@@ -334,6 +357,10 @@ function runSkillList(agentsDir) {
   }
 }
 
+/**
+ * @param {string | undefined} targetName
+ * @param {string} agentsDir
+ */
 function runSkillValidate(targetName, agentsDir) {
   const skillsDir = path.join(agentsDir, 'skills');
 
@@ -374,6 +401,7 @@ function runSkillValidate(targetName, agentsDir) {
   }
 }
 
+/** @param {string[]} args */
 async function runSkill(args) {
   const subcommand = args[0];
 
@@ -407,7 +435,7 @@ async function runSkill(args) {
   }
 }
 
-async function run() {
+export async function run() {
   const argv = process.argv.slice(2);
 
   // Handle top-level --help and --version before command detection
@@ -428,9 +456,3 @@ async function run() {
     await runScaffold(args);
   }
 }
-
-run().catch((err) => {
-  // NOSONAR
-  console.error(`Error: ${err.message}`);
-  process.exit(1);
-});

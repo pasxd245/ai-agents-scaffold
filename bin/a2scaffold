@@ -1,3 +1,7 @@
-#!/usr/bin/env bash
-# CLI entry point for a2scaffold
-node "$(dirname "$0")/../src/cli/main.js" "$@"
+#!/usr/bin/env node
+import { run } from '../src/cli/main.js';
+
+run().catch((err) => {
+  console.error(`Error: ${err.message}`);
+  process.exit(1);
+});

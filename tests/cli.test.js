@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CLI_PATH = path.join(__dirname, '..', 'bin', 'cli.js');
+const CLI_PATH = path.join(__dirname, '..', 'bin', 'a2scaffold');
 
 describe('CLI', () => {
   it('--help shows usage information', () => {

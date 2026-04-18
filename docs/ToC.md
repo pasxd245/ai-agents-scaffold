@@ -39,13 +39,14 @@ These live outside `docs/` but are linked here for discovery. See
 
 ## Source entry points (not docs, but useful)
 
-| Path                                       | Role                           |
-| ------------------------------------------ | ------------------------------ |
-| [../src/scaffold.js](../src/scaffold.js)   | Template rendering             |
-| [../src/skills.js](../src/skills.js)       | Skills management & validation |
-| [../src/templates.js](../src/templates.js) | Template discovery             |
-| [../bin/cli.js](../bin/cli.js)             | CLI entry point                |
-| [../templates/](../templates/)             | Bundled templates              |
+| Path                                       | Role                                        |
+| ------------------------------------------ | ------------------------------------------- |
+| [../src/scaffold.js](../src/scaffold.js)   | Template rendering                          |
+| [../src/skills.js](../src/skills.js)       | Skills management & validation              |
+| [../src/templates.js](../src/templates.js) | Template discovery                          |
+| [../bin/a2scaffold](../bin/a2scaffold)     | CLI launcher (delegates to src/cli/main.js) |
+| [../src/cli/main.js](../src/cli/main.js)   | CLI implementation (arg parse + dispatch)   |
+| [../templates/](../templates/)             | Bundled templates                           |
 
 ---
 
