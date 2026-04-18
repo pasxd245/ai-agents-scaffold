@@ -3,7 +3,9 @@ import path from 'node:path';
 import yaml from 'js-yaml';
 import { renderDirectory } from '@nci-gis/js-tmpl';
 /** @typedef {import('@nci-gis/js-tmpl').RenderDirectoryConfig} RenderDirectoryConfig */
-import { resolveTemplatePath } from './templates.js';
+import { resolveTemplatePath } from '../templates/index.js';
+
+export { checkExistingFiles } from './conflicts.js';
 
 /**
  * Deep-merge two objects. Source values override target.
@@ -39,7 +41,7 @@ function deepMerge(target, source) {
  * @param {object} options
  * @param {string} options.templateName - Template name (e.g. "base")
  * @param {string} options.outputDir - Target directory to write files
- * @param {object} [options.overrides={}] - Values to merge over defaults
+ * @param {object} [options.overrides] - Values to merge over defaults
  * @returns {Promise<{ outputDir: string, template: string }>}
  */
 export async function scaffold({ templateName, outputDir, overrides = {} }) {

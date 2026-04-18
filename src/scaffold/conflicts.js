@@ -37,9 +37,10 @@ function predictOutputPaths(templateDir, extname = '.hbs') {
 
 /**
  * Check which output files already exist in the target directory.
+ *
  * @param {string} templateDir - Path to template/ directory
  * @param {string} outDir - Target output directory
- * @param {string} [extname='.hbs'] - Template file extension
+ * @param {string} [extname] - Template file extension (default `.hbs`)
  * @returns {string[]} List of existing file paths (relative to outDir)
  */
 export function checkExistingFiles(templateDir, outDir, extname = '.hbs') {

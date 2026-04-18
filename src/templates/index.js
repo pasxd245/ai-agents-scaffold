@@ -3,11 +3,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEMPLATES_DIR = path.join(__dirname, '..', 'templates');
+const TEMPLATES_DIR = path.join(__dirname, '..', '..', 'templates');
 
 /**
  * List all available template names.
  * Each subdirectory under templates/ is a template.
+ *
+ * @returns {string[]}
  */
 export function listTemplates() {
   const entries = fs.readdirSync(TEMPLATES_DIR, { withFileTypes: true });
@@ -19,6 +21,7 @@ export function listTemplates() {
 
 /**
  * Resolve paths for a given template name.
+ *
  * @param {string} name - Template name (e.g. "base")
  * @returns {{ templateDir: string, valuesFile: string, partialsDir?: string }}
  */

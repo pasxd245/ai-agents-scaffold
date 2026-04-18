@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { scaffold } from '../scaffold.js';
+import { scaffold } from '../scaffold/index.js';
 import { discoverSkills, isSkillRef } from './list.js';
 
 /**

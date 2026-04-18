@@ -2,9 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
-import { scaffold } from '../../scaffold.js';
-import { listTemplates, resolveTemplatePath } from '../../templates.js';
-import { checkExistingFiles } from '../../safety.js';
+import { scaffold, checkExistingFiles } from '../../scaffold/index.js';
+import { listTemplates, resolveTemplatePath } from '../../templates/index.js';
 import { HELP, pkg } from '../help.js';
 
 /**

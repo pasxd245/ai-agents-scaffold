@@ -1,6 +1,5 @@
-export { scaffold } from './scaffold.js';
-export { listTemplates, resolveTemplatePath } from './templates.js';
-export { checkExistingFiles } from './safety.js';
+export { scaffold, checkExistingFiles } from './scaffold/index.js';
+export { listTemplates, resolveTemplatePath } from './templates/index.js';
 export {
   validateSkill,
   listSkills,

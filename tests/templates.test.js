@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { listTemplates, resolveTemplatePath } from '../src/templates.js';
+import { listTemplates, resolveTemplatePath } from '../src/templates/index.js';
 
 const templatesRoot = path.join(
   path.dirname(path.dirname(resolveTemplatePath('base').templateDir))
