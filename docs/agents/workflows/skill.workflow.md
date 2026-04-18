@@ -70,9 +70,16 @@ flowchart TD
 - `description`: 1-1024 chars
 - `compatibility` (optional): ≤500 chars
 
-> **Planned:** validator will also resolve `metadata.type: skill-ref` entries
-> and check the target chain is not broken (missing target, cycle, or
-> terminal target that fails its own validation). Not yet implemented.
+**Skill-ref chain validation** (implemented in [src/skills/ref-chain.js](../../../src/skills/ref-chain.js)):
+
+When a skill has `metadata.type: skill-ref`, `validateSkill` also walks the
+ref chain — resolving each hop via `metadata.rootPath` + the `@rootPath/<path>`
+line in the body — and reports:
+
+- `broken ref: target does not exist at "<path>"` — dead pointer
+- `ref cycle detected: A → B → A` — visited-set detection
+- `ref chain exceeds max depth (5)` — MAX_REF_DEPTH cap
+- `terminal skill invalid: <err>` — bubbles errors from the raw terminal
 
 ## `skill ref` — create skill-refs
 

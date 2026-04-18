@@ -86,6 +86,114 @@ describe('validateSkill', () => {
   });
 });
 
+// ── validateSkill — skill-ref chain ─────────────────────────────────
+
+describe('validateSkill (skill-ref chain)', () => {
+  /**
+   * Helper: create a raw valid skill at <parent>/skills/<name>
+   */
+  function createRawSkill(parent, name) {
+    const dir = path.join(parent, 'skills', name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, 'SKILL.md'),
+      `---\nname: ${name}\ndescription: A real skill.\n---\n`
+    );
+    return dir;
+  }
+
+  /**
+   * Helper: create a skill-ref at <parent>/skills/<name> pointing to target.
+   * `rootPath` must be the relative path from ref dir to a project root
+   * such that `<root>/<sourceDir>` = target.
+   */
+  function createRef(parent, name, rootPath, sourceDir) {
+    const dir = path.join(parent, 'skills', name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      path.join(dir, 'SKILL.md'),
+      `---\nname: ${name}\ndescription: A ref.\nmetadata:\n  type: skill-ref\n  rootPath: ${rootPath}\n---\n\n# Refer to Skill Details at:\n\n@rootPath/${sourceDir}\n`
+    );
+    return dir;
+  }
+
+  it('accepts a one-hop ref whose terminal is a valid raw skill', () => {
+    const tmp = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-chain-ok-'));
+    try {
+      const src = path.join(tmp, 'src-agents');
+      const dst = path.join(tmp, 'dst-agents');
+      createRawSkill(src, 'my-skill');
+      // ref dir: tmp/dst-agents/skills/my-skill → rootPath 3 levels up to tmp
+      createRef(dst, 'my-skill', '../../..', 'src-agents/skills/my-skill');
+
+      const result = validateSkill(path.join(dst, 'skills', 'my-skill'));
+      assert.equal(result.valid, true, result.errors.join('; '));
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('reports broken ref when target does not exist', () => {
+    const tmp = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-chain-broken-'));
+    try {
+      const dst = path.join(tmp, 'dst-agents');
+      createRef(dst, 'ghost', '../../..', 'src-agents/skills/ghost');
+
+      const result = validateSkill(path.join(dst, 'skills', 'ghost'));
+      assert.equal(result.valid, false);
+      assert.ok(
+        result.errors.some((e) => e.includes('broken ref')),
+        `expected broken-ref error, got: ${result.errors.join('; ')}`
+      );
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('detects a ref cycle', () => {
+    const tmp = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-chain-cycle-'));
+    try {
+      const agentsA = path.join(tmp, 'agents-a');
+      const agentsB = path.join(tmp, 'agents-b');
+      // A → B → A
+      createRef(agentsA, 'loop', '../../..', 'agents-b/skills/loop');
+      createRef(agentsB, 'loop', '../../..', 'agents-a/skills/loop');
+
+      const result = validateSkill(path.join(agentsA, 'skills', 'loop'));
+      assert.equal(result.valid, false);
+      assert.ok(
+        result.errors.some((e) => e.includes('ref cycle')),
+        `expected cycle error, got: ${result.errors.join('; ')}`
+      );
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+
+  it('bubbles terminal errors when the raw target is invalid', () => {
+    const tmp = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-chain-bad-term-'));
+    try {
+      const src = path.join(tmp, 'src-agents');
+      const dst = path.join(tmp, 'dst-agents');
+      // Terminal has no frontmatter (invalid)
+      const terminalDir = path.join(src, 'skills', 'broken');
+      fs.mkdirSync(terminalDir, { recursive: true });
+      fs.writeFileSync(path.join(terminalDir, 'SKILL.md'), 'no frontmatter\n');
+
+      createRef(dst, 'broken', '../../..', 'src-agents/skills/broken');
+
+      const result = validateSkill(path.join(dst, 'skills', 'broken'));
+      assert.equal(result.valid, false);
+      assert.ok(
+        result.errors.some((e) => e.includes('terminal skill invalid')),
+        `expected bubbled error, got: ${result.errors.join('; ')}`
+      );
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
 // ── listSkills ──────────────────────────────────────────────────────
 
 describe('listSkills', () => {
