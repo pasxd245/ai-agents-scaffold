@@ -39,14 +39,16 @@ These live outside `docs/` but are linked here for discovery. See
 
 ## Source entry points (not docs, but useful)
 
-| Path                                       | Role                                        |
-| ------------------------------------------ | ------------------------------------------- |
-| [../src/scaffold.js](../src/scaffold.js)   | Template rendering                          |
-| [../src/skills.js](../src/skills.js)       | Skills management & validation              |
-| [../src/templates.js](../src/templates.js) | Template discovery                          |
-| [../bin/a2scaffold](../bin/a2scaffold)     | CLI launcher (delegates to src/cli/main.js) |
-| [../src/cli/main.js](../src/cli/main.js)   | CLI implementation (arg parse + dispatch)   |
-| [../templates/](../templates/)             | Bundled templates                           |
+| Path                                   | Role                                       |
+| -------------------------------------- | ------------------------------------------ |
+| [../src/index.js](../src/index.js)     | Public API barrel (re-exports)             |
+| [../src/scaffold/](../src/scaffold/)   | `scaffold()` + conflict detection          |
+| [../src/skills/](../src/skills/)       | Skills management, validation, refs        |
+| [../src/templates/](../src/templates/) | Template discovery                         |
+| [../src/cli/](../src/cli/)             | CLI implementation (arg parse + dispatch)  |
+| [../src/utils/](../src/utils/)         | Shared helpers (frontmatter, git download) |
+| [../bin/a2scaffold](../bin/a2scaffold) | CLI launcher (imports src/cli/index.js)    |
+| [../templates/](../templates/)         | Bundled templates                          |
 
 ---
 
@@ -55,4 +57,4 @@ These live outside `docs/` but are linked here for discovery. See
 - **Looking for a topic?** Scan the tables above — one bullet per doc.
 - **Writing a new doc?** Add a row here in the matching section.
 - **Moving a doc?** Update the row here; other docs only link to ToC, not to each other.
-- **Inline code references** (e.g. `src/skills.js#L32`) stay inline — don't route those through ToC.
+- **Inline code references** (e.g. `src/skills/validate.js#L14`) stay inline — don't route those through ToC.

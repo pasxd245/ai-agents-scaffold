@@ -48,7 +48,7 @@ metadata:
 - `rootPath` = `path.relative(destSkillDir, sourceProjectRoot)`
 - `sourceDir` = `<agentsDirName>/skills/<skillName>` (e.g. `.agents/skills/create-template`)
 
-These are computed by `installSkillRef()` in `src/skills.js`.
+These are computed by `installSkillRef()` in `src/skills/ref.js`.
 
 ## Passthrough behavior
 

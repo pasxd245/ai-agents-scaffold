@@ -63,7 +63,7 @@ flowchart TD
   L -->|no| M[exit 0]
 ```
 
-**Validation rules** (see [src/skills.js](../../../src/skills.js#L32)):
+**Validation rules** (see [src/skills/validate.js](../../../src/skills/validate.js)):
 
 - `SKILL.md` must exist with YAML frontmatter
 - `name`: 1-64 chars, `^[a-z0-9]([a-z0-9-]*[a-z0-9])?$`, matches dir name
