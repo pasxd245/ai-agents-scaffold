@@ -3,7 +3,7 @@ name: create-template
 description: Step-by-step procedure for adding a new template to a2scaffold. Use when a contributor wants to add a new template or you need to scaffold a new template directory structure.
 metadata:
   author: a2scaffold
-  version: "1.0"
+  version: '1.0'
 ---
 
 ## Trigger
@@ -34,7 +34,7 @@ Define all variables the template will use:
 ```yaml
 # templates/<template-name>/values.yaml
 project:
-  name: "my-project"
+  name: 'my-project'
 # Add template-specific variables here
 ```
 

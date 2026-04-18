@@ -53,9 +53,7 @@ describe('scaffold base template', () => {
   });
 
   it('generates .agents/plan/PDCA.md', () => {
-    assert.ok(
-      fs.existsSync(path.join(tmpDir, '.agents', 'plan', 'PDCA.md'))
-    );
+    assert.ok(fs.existsSync(path.join(tmpDir, '.agents', 'plan', 'PDCA.md')));
   });
 
   it('generates .agents/plan/promotions.md', () => {
@@ -88,7 +86,10 @@ describe('scaffold base template', () => {
   });
 
   it('AGENTS.md contains expected content', () => {
-    const content = fs.readFileSync(path.join(tmpDir, '.agents', 'AGENTS.md'), 'utf8');
+    const content = fs.readFileSync(
+      path.join(tmpDir, '.agents', 'AGENTS.md'),
+      'utf8'
+    );
     assert.ok(content.includes('Pair Programming Guide'));
     assert.ok(content.includes('.agents/'));
   });

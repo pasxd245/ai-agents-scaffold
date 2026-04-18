@@ -66,9 +66,7 @@ export function validateSkill(skillDir) {
       errors.push('name must not contain consecutive hyphens');
     }
     if (name !== dirName) {
-      errors.push(
-        `name "${name}" does not match directory name "${dirName}"`
-      );
+      errors.push(`name "${name}" does not match directory name "${dirName}"`);
     }
   } else {
     errors.push('Missing required field: name');
@@ -256,7 +254,13 @@ function installFromGitHub(parsed, targetDir, options) {
 
   try {
     // Clone with sparse checkout
-    const cloneArgs = ['clone', '--depth', '1', '--filter=blob:none', '--sparse'];
+    const cloneArgs = [
+      'clone',
+      '--depth',
+      '1',
+      '--filter=blob:none',
+      '--sparse',
+    ];
     if (ref) {
       cloneArgs.push('--branch', ref);
     }
@@ -272,14 +276,10 @@ function installFromGitHub(parsed, targetDir, options) {
     }
 
     // Determine source directory within clone
-    const clonedSkillDir = skillPath
-      ? path.join(tmpDir, skillPath)
-      : tmpDir;
+    const clonedSkillDir = skillPath ? path.join(tmpDir, skillPath) : tmpDir;
 
     if (!fs.existsSync(clonedSkillDir)) {
-      throw new Error(
-        `Path "${skillPath}" not found in ${owner}/${repo}`
-      );
+      throw new Error(`Path "${skillPath}" not found in ${owner}/${repo}`);
     }
 
     // If the path points to a directory with SKILL.md, install it directly
@@ -390,9 +390,7 @@ function resolveSkillsToRef(resolvedFrom, skill) {
 
   const skillDir = path.join(resolvedFrom, 'skills', skill);
   if (!fs.existsSync(skillDir)) {
-    throw new Error(
-      `Skill "${skill}" not found in ${resolvedFrom}/skills/`
-    );
+    throw new Error(`Skill "${skill}" not found in ${resolvedFrom}/skills/`);
   }
   const skillFile = path.join(skillDir, 'SKILL.md');
   if (!fs.existsSync(skillFile)) {
@@ -459,7 +457,9 @@ export async function installSkillRef({ from, to, skill, force = false }) {
     if (sourceRef.isRef) {
       fs.mkdirSync(destSkillDir, { recursive: true });
       fs.writeFileSync(
-        path.join(destSkillDir, 'SKILL.md'), sourceRef.content, 'utf8'
+        path.join(destSkillDir, 'SKILL.md'),
+        sourceRef.content,
+        'utf8'
       );
       results.push({ name, path: destSkillDir });
       continue;
@@ -469,9 +469,7 @@ export async function installSkillRef({ from, to, skill, force = false }) {
     const sourceRoot = path.resolve(resolvedFrom, '..');
     const agentsDirName = path.basename(resolvedFrom);
     const rootPath = path.relative(destSkillDir, sourceRoot);
-    const sourceDir = path.join(
-      agentsDirName, 'skills', name
-    );
+    const sourceDir = path.join(agentsDirName, 'skills', name);
 
     // Render using the skill-ref template
     await scaffold({

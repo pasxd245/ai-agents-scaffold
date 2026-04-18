@@ -25,11 +25,11 @@ Install a skill into `.agents/skills/`.
 
 **Source formats:**
 
-| Format | Example |
-| --- | --- |
-| Local path | `./my-skill`, `../shared/code-review`, `/absolute/path` |
-| GitHub shorthand | `owner/repo/path/to/skill` |
-| GitHub URL | `https://github.com/owner/repo/tree/main/path/to/skill` |
+| Format           | Example                                                 |
+| ---------------- | ------------------------------------------------------- |
+| Local path       | `./my-skill`, `../shared/code-review`, `/absolute/path` |
+| GitHub shorthand | `owner/repo/path/to/skill`                              |
+| GitHub URL       | `https://github.com/owner/repo/tree/main/path/to/skill` |
 
 **From a local directory:**
 
@@ -101,10 +101,10 @@ Exits with code 1 if any skill is invalid.
 
 These flags apply to all `skill` subcommands:
 
-| Flag | Short | Default | Description |
-| --- | --- | --- | --- |
-| `--agents-dir <dir>` | `-d` | `.agents` | Path to the `AGENT` directory (ex: .agents, or .claude, or .github, e.t.c) |
-| `--force` | `-f` | | Overwrite existing skill (for `skill add`) |
+| Flag                 | Short | Default   | Description                                                                |
+| -------------------- | ----- | --------- | -------------------------------------------------------------------------- |
+| `--agents-dir <dir>` | `-d`  | `.agents` | Path to the `AGENT` directory (ex: .agents, or .claude, or .github, e.t.c) |
+| `--force`            | `-f`  |           | Overwrite existing skill (for `skill add`)                                 |
 
 ## Skill format reference
 

@@ -9,27 +9,27 @@
 
 ### Code Quality
 
-- [ ] All new/modified code follows existing project conventions
-- [ ] No linting errors or warnings introduced
-- [ ] No TODO/FIXME left without a tracking reference
+- [x] All new/modified code follows existing project conventions
+- [x] No linting errors or warnings introduced
+- [x] No TODO/FIXME left without a tracking reference
 
 ### Testing
 
-- [ ] All existing tests pass (`pnpm test`)
-- [ ] New functionality has corresponding test cases
-- [ ] Edge cases identified in the plan are covered by tests
+- [x] All existing tests pass (`pnpm test`)
+- [x] New functionality has corresponding test cases
+- [x] Edge cases identified in the plan are covered by tests
 
 ### Documentation
 
-- [ ] HELP text updated if CLI interface changed
-- [ ] `docs/` updated if public API changed
-- [ ] `.agents/context/` updated if architecture changed
+- [x] HELP text updated if CLI interface changed
+- [x] `docs/` updated if public API changed
+- [x] `.agents/context/` updated if architecture changed
 
 ### Integration
 
-- [ ] Feature works end-to-end via CLI (manual verification)
-- [ ] No regressions in existing commands
-- [ ] `src/index.js` exports updated if new public functions added
+- [x] Feature works end-to-end via CLI (manual verification)
+- [x] No regressions in existing commands
+- [x] `src/index.js` exports updated if new public functions added
 
 ---
 
@@ -37,25 +37,25 @@
 
 ### Template
 
-- [ ] `templates/skill-ref/` exists with valid structure (values.yaml, template/, optional partials/)
-- [ ] Template renders correctly via `scaffold()` with skill overrides
-- [ ] Output SKILL.md contains correct frontmatter (`name`, `metadata.type: skill-ref`, `rootPath`)
-- [ ] `${skill.path}` path interpolation produces correct output directory
+- [x] `templates/skill-ref/` exists with valid structure (values.yaml, template/, optional partials/)
+- [x] Template renders correctly via `scaffold()` with skill overrides
+- [x] Output SKILL.md contains correct frontmatter (`name`, `metadata.type: skill-ref`, `rootPath`)
+- [x] `${skill.path}` path interpolation produces correct output directory
 
 ### Command
 
-- [ ] `a2scaffold skill ref --skill <name> --to <dst>` creates a single skill ref
-- [ ] `a2scaffold skill ref --skill all --to <dst>` creates refs for all skills
-- [ ] `--from` defaults to `.agents` when omitted
-- [ ] `--force` overwrites existing skill-refs
-- [ ] Error when `--from === --to` (prevent self-referencing)
-- [ ] Error when dest has a real skill (non-ref), even with `--force`
-- [ ] Error without `--force` when dest has existing skill-ref
-- [ ] Error on non-existent source skill
-- [ ] Skill-ref source files are copied verbatim (passthrough)
+- [x] `a2scaffold skill ref --skill <name> --to <dst>` creates a single skill ref
+- [x] `a2scaffold skill ref --skill all --to <dst>` creates refs for all skills
+- [x] `--from` defaults to `.agents` when omitted
+- [x] `--force` overwrites existing skill-refs
+- [x] Error when `--from === --to` (prevent self-referencing)
+- [x] Error when dest has a real skill (non-ref), even with `--force`
+- [x] Error without `--force` when dest has existing skill-ref
+- [x] Error on non-existent source skill
+- [x] Skill-ref source files are copied verbatim (passthrough)
 
 ### Path Computation
 
-- [ ] `rootPath` is a correct relative path from dest skill dir to source project root
-- [ ] `sourcePath` correctly references the original SKILL.md from the project root
-- [ ] Paths work across different directory depths
+- [x] `rootPath` is a correct relative path from dest skill dir to source project root
+- [x] `sourceDir` correctly references the source skill directory from the project root
+- [x] Paths work across different directory depths

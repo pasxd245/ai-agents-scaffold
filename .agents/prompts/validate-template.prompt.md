@@ -51,17 +51,20 @@ checks and report any issues found.
 ## Template Validation: <name>
 
 ### Structure: PASS / FAIL
+
 - [x] values.yaml exists
 - [x] template/ directory exists
 - [x] partials/ directory is valid when present
 
 ### Variables: PASS / WARN
+
 - Defined: [list]
 - Used: [list]
 - Undefined: [list or "none"]
 - Unused: [list or "none"]
 
 ### Safety: PASS / WARN
+
 - [x] No unescaped Handlebars in literals
 - [x] No secrets in values
 - [x] Base .agents/ structure included

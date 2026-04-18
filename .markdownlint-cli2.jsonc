@@ -1,0 +1,24 @@
+{
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD033": false,
+    "MD041": false,
+    "MD024": { "siblings_only": true },
+    "MD029": { "style": "ordered" },
+    "MD036": false,
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    "node_modules/**",
+    "CHANGELOG.md",
+    "templates/**",
+    ".claude/**",
+    ".codex/**",
+    ".gemini/**",
+    ".github/skills/**",
+    ".agents/plan/cycles/**",
+    ".agents/prompts/**",
+    "tests/fixtures/**",
+  ],
+}

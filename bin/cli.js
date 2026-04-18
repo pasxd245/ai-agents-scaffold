@@ -8,7 +8,12 @@ import { fileURLToPath } from 'node:url';
 import { scaffold } from '../src/scaffold.js';
 import { listTemplates, resolveTemplatePath } from '../src/templates.js';
 import { checkExistingFiles } from '../src/safety.js';
-import { validateSkill, listSkills, installSkill, installSkillRef } from '../src/skills.js';
+import {
+  validateSkill,
+  listSkills,
+  installSkill,
+  installSkillRef,
+} from '../src/skills.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(
@@ -92,7 +97,14 @@ function listOutputFiles(templateDir, extname = '.hbs') {
 }
 
 const VALUE_FLAGS = new Set([
-  'u', 'use', 'o', 'output', 'n', 'name', 'd', 'agents-dir',
+  'u',
+  'use',
+  'o',
+  'output',
+  'n',
+  'name',
+  'd',
+  'agents-dir',
 ]);
 
 /**
@@ -112,7 +124,10 @@ function isValueFlag(token) {
 function findFirstPositional(argv) {
   let skip = false;
   for (let i = 0; i < argv.length; i++) {
-    if (skip) { skip = false; continue; }
+    if (skip) {
+      skip = false;
+      continue;
+    }
     if (argv[i] === '--') return -1;
     if (argv[i].startsWith('-')) {
       skip = isValueFlag(argv[i]);
@@ -135,7 +150,10 @@ function detectCommand(argv) {
     return { command: 'skill', args: argv.slice(idx + 1) };
   }
   if (argv[idx] === 'init') {
-    return { command: 'scaffold', args: [...argv.slice(0, idx), ...argv.slice(idx + 1)] };
+    return {
+      command: 'scaffold',
+      args: [...argv.slice(0, idx), ...argv.slice(idx + 1)],
+    };
   }
   return { command: 'scaffold', args: argv };
 }
@@ -411,7 +429,8 @@ async function run() {
   }
 }
 
-run().catch((err) => { // NOSONAR
+run().catch((err) => {
+  // NOSONAR
   console.error(`Error: ${err.message}`);
   process.exit(1);
 });

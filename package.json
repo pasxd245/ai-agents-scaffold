@@ -16,7 +16,27 @@
     "templates/"
   ],
   "scripts": {
-    "test": "node --test tests/*.test.js"
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . && markdownlint-cli2",
+    "lint:js": "eslint .",
+    "lint:md": "markdownlint-cli2",
+    "test": "node --test tests/*.test.js",
+    "check": "pnpm lint && pnpm format:check && pnpm test",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "eslint --fix"
+    ],
+    "*.md": [
+      "prettier --write",
+      "markdownlint-cli2 --fix"
+    ],
+    "*.{json,jsonc,yaml,yml}": [
+      "prettier --write"
+    ]
   },
   "keywords": [
     "ai",
@@ -47,5 +67,15 @@
   "dependencies": {
     "@nci-gis/js-tmpl": "0.0.1",
     "js-yaml": "^4.1.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.2.1",
+    "eslint-plugin-n": "^17.24.0",
+    "globals": "^17.5.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "markdownlint-cli2": "^0.22.0",
+    "prettier": "^3.8.3"
   }
 }

@@ -101,11 +101,9 @@ describe('CLI skill commands', () => {
 
   it('skill list shows installed skill', () => {
     const source = path.join(__dirname, 'fixtures', 'valid-skill');
-    execFileSync(
-      'node',
-      [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents],
-      { encoding: 'utf8' }
-    );
+    execFileSync('node', [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents], {
+      encoding: 'utf8',
+    });
 
     const out = execFileSync(
       'node',
@@ -117,11 +115,9 @@ describe('CLI skill commands', () => {
 
   it('skill validate passes for valid skill', () => {
     const source = path.join(__dirname, 'fixtures', 'valid-skill');
-    execFileSync(
-      'node',
-      [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents],
-      { encoding: 'utf8' }
-    );
+    execFileSync('node', [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents], {
+      encoding: 'utf8',
+    });
 
     const out = execFileSync(
       'node',
@@ -134,11 +130,9 @@ describe('CLI skill commands', () => {
   it('skill add fails without source', () => {
     assert.throws(
       () =>
-        execFileSync(
-          'node',
-          [CLI_PATH, 'skill', 'add', '-d', tmpAgents],
-          { encoding: 'utf8' }
-        ),
+        execFileSync('node', [CLI_PATH, 'skill', 'add', '-d', tmpAgents], {
+          encoding: 'utf8',
+        }),
       /skill add requires a source/
     );
   });

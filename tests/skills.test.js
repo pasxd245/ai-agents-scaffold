@@ -36,9 +36,7 @@ describe('validateSkill', () => {
   });
 
   it('rejects when frontmatter is missing', () => {
-    const result = validateSkill(
-      path.join(FIXTURES, 'no-frontmatter-skill')
-    );
+    const result = validateSkill(path.join(FIXTURES, 'no-frontmatter-skill'));
     assert.equal(result.valid, false);
     assert.ok(result.errors.some((e) => e.includes('no YAML frontmatter')));
   });
@@ -46,12 +44,8 @@ describe('validateSkill', () => {
   it('rejects invalid name (uppercase, empty description)', () => {
     const result = validateSkill(path.join(FIXTURES, 'invalid-skill'));
     assert.equal(result.valid, false);
-    assert.ok(
-      result.errors.some((e) => e.includes('lowercase alphanumeric'))
-    );
-    assert.ok(
-      result.errors.some((e) => e.includes('description'))
-    );
+    assert.ok(result.errors.some((e) => e.includes('lowercase alphanumeric')));
+    assert.ok(result.errors.some((e) => e.includes('description')));
   });
 
   it('rejects name that does not match directory name', () => {
@@ -85,9 +79,7 @@ describe('validateSkill', () => {
     try {
       const result = validateSkill(tmpDir);
       assert.equal(result.valid, false);
-      assert.ok(
-        result.errors.some((e) => e.includes('consecutive hyphens'))
-      );
+      assert.ok(result.errors.some((e) => e.includes('consecutive hyphens')));
     } finally {
       fs.rmSync(tmpDir, { recursive: true });
     }
@@ -227,10 +219,7 @@ describe('installSkill (local)', () => {
     const source = path.join(FIXTURES, 'valid-skill');
     installSkill(source, tmpTarget);
 
-    assert.throws(
-      () => installSkill(source, tmpTarget),
-      /already exists/
-    );
+    assert.throws(() => installSkill(source, tmpTarget), /already exists/);
   });
 
   it('overwrites with force option', () => {
@@ -369,7 +358,8 @@ describe('installSkillRef', () => {
     assert.equal(results[0].name, 'test-skill');
 
     const output = fs.readFileSync(
-      path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md'), 'utf8'
+      path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md'),
+      'utf8'
     );
     assert.ok(output.includes('name: test-skill'));
     assert.ok(output.includes('type: skill-ref'));
@@ -413,14 +403,16 @@ describe('installSkillRef', () => {
 
     assert.equal(results.length, 1);
     const output = fs.readFileSync(
-      path.join(tmpTo, 'skills', 'ref-skill', 'SKILL.md'), 'utf8'
+      path.join(tmpTo, 'skills', 'ref-skill', 'SKILL.md'),
+      'utf8'
     );
     assert.equal(output, refContent);
   });
 
   it('errors when from === to', async () => {
     await assert.rejects(
-      () => installSkillRef({ from: tmpFrom, to: tmpFrom, skill: 'test-skill' }),
+      () =>
+        installSkillRef({ from: tmpFrom, to: tmpFrom, skill: 'test-skill' }),
       /must differ/
     );
   });
@@ -435,7 +427,13 @@ describe('installSkillRef', () => {
     );
 
     await assert.rejects(
-      () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill', force: true }),
+      () =>
+        installSkillRef({
+          from: tmpFrom,
+          to: tmpTo,
+          skill: 'test-skill',
+          force: true,
+        }),
       /Cannot overwrite real skill/
     );
   });
@@ -476,7 +474,8 @@ describe('installSkillRef', () => {
     await installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' });
 
     const output = fs.readFileSync(
-      path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md'), 'utf8'
+      path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md'),
+      'utf8'
     );
     const match = output.match(/^---\r?\n([\s\S]*?)\r?\n---/);
     const frontmatter = yaml.load(match[1]);

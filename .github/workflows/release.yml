@@ -4,12 +4,12 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 permissions:
-  id-token: write    # Required for OIDC-based npm provenance publishing
-  contents: write    # Required to create GitHub releases
-  pull-requests: write  # Required to open the changelog PR
+  id-token: write # Required for OIDC-based npm provenance publishing
+  contents: write # Required to create GitHub releases
+  pull-requests: write # Required to open the changelog PR
 
 jobs:
   release:
@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Full history needed by git-cliff to generate accurate changelogs
+          fetch-depth: 0 # Full history needed by git-cliff to generate accurate changelogs
 
       - name: Verify tag is on main
         # Prevents releasing from a feature branch or orphaned commit
@@ -34,9 +34,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
           cache: pnpm
-          registry-url: "https://registry.npmjs.org"  # Configures .npmrc for npm publish
+          registry-url: 'https://registry.npmjs.org' # Configures .npmrc for npm publish
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -50,7 +50,7 @@ jobs:
       - name: Install git-cliff
         uses: taiki-e/install-action@v2
         with:
-          tool: git-cliff@2.6.1  # Pin version for reproducible changelog generation
+          tool: git-cliff@2.6.1 # Pin version for reproducible changelog generation
 
       - name: Version safety check
         # Ensures the git tag (e.g. v1.2.3) matches package.json version (1.2.3)
@@ -84,7 +84,7 @@ jobs:
         with:
           body_path: RELEASE_NOTES.md
           tag_name: ${{ github.ref_name }}
-          prerelease: ${{ contains(github.ref_name, '-') }}  # Pre-release if tag contains a hyphen
+          prerelease: ${{ contains(github.ref_name, '-') }} # Pre-release if tag contains a hyphen
 
       - name: Generate CHANGELOG.md
         # Regenerates the full changelog across all tags
@@ -96,9 +96,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: chore/changelog-${{ github.ref_name }}
-          commit-message: "chore(release): update changelog for ${{ github.ref_name }}"
-          title: "chore(release): update changelog for ${{ github.ref_name }}"
-          body: "Automated changelog update for release ${{ github.ref_name }}."
+          commit-message: 'chore(release): update changelog for ${{ github.ref_name }}'
+          title: 'chore(release): update changelog for ${{ github.ref_name }}'
+          body: 'Automated changelog update for release ${{ github.ref_name }}.'
           base: main
           add-paths: |
             CHANGELOG.md

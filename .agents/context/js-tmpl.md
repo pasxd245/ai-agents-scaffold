@@ -13,9 +13,9 @@ This project uses js-tmpl's programmatic API, not its CLI.
 import { renderDirectory } from '@nci-gis/js-tmpl';
 
 await renderDirectory({
-  templateDir,   // Absolute path to template/ dir
-  partialsDir,   // Optional absolute path to partials/ dir
-  outDir,        // Absolute path to output directory
+  templateDir, // Absolute path to template/ dir
+  partialsDir, // Optional absolute path to partials/ dir
+  outDir, // Absolute path to output directory
   extname: '.hbs',
   view: { ...values, env: process.env },
 });

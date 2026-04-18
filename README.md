@@ -68,16 +68,16 @@ a2scaffold --force
 
 ### Options
 
-| Flag | Short | Default | Description |
-| --- | --- | --- | --- |
-| `--use` | `-u` | `base` | Template to use |
-| `--output` | `-o` | `.` | Output directory |
-| `--name` | `-n` | dir name | Project name |
-| `--list` | `-l` | | List available templates |
-| `--force` | `-f` | | Overwrite existing files |
-| `--dry-run` | | | Preview without writing |
-| `--help` | `-h` | | Show help |
-| `--version` | `-v` | | Show version |
+| Flag        | Short | Default  | Description              |
+| ----------- | ----- | -------- | ------------------------ |
+| `--use`     | `-u`  | `base`   | Template to use          |
+| `--output`  | `-o`  | `.`      | Output directory         |
+| `--name`    | `-n`  | dir name | Project name             |
+| `--list`    | `-l`  |          | List available templates |
+| `--force`   | `-f`  |          | Overwrite existing files |
+| `--dry-run` |       |          | Preview without writing  |
+| `--help`    | `-h`  |          | Show help                |
+| `--version` | `-v`  |          | Show version             |
 
 ## Programmatic API
 

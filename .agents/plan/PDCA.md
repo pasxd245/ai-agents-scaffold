@@ -94,11 +94,13 @@ below.
 ## Act
 
 **Learnings**:
+
 - ...
 
 **Promotions**:
+
 - [ ] → context/ : [topic]
-- [ ] → skills/  : [topic]
+- [ ] → skills/ : [topic]
 ```
 
 ---

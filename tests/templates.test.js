@@ -37,7 +37,10 @@ describe('resolveTemplatePath', () => {
 
     try {
       fs.mkdirSync(path.join(tempDir, 'template'));
-      fs.writeFileSync(path.join(tempDir, 'values.yaml'), 'project:\n  name: test\n');
+      fs.writeFileSync(
+        path.join(tempDir, 'values.yaml'),
+        'project:\n  name: test\n'
+      );
 
       const paths = resolveTemplatePath(path.basename(tempDir));
       assert.equal(paths.templateDir, path.join(tempDir, 'template'));

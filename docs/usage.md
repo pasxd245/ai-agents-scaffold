@@ -27,25 +27,25 @@ npx a2scaffold
 
 a2scaffold has two command groups:
 
-| Command | Description |
-| --- | --- |
-| `a2scaffold [options]` | Scaffold AI agent config files (default) |
+| Command                     | Description                                         |
+| --------------------------- | --------------------------------------------------- |
+| `a2scaffold [options]`      | Scaffold AI agent config files (default)            |
 | `a2scaffold skill <action>` | Manage agent skills — [see Skills Guide](skills.md) |
 
 Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
 
 ## Scaffold options
 
-| Flag | Short | Default | Description |
-| --- | --- | --- | --- |
-| `--use <name>` | `-u` | `base` | Template to use |
-| `--output <dir>` | `-o` | `.` | Output directory |
-| `--name <name>` | `-n` | directory name | Project name used in generated files |
-| `--list` | `-l` | | List available templates and exit |
-| `--force` | `-f` | | Overwrite existing files without prompting |
-| `--dry-run` | | | Preview what would be generated without writing |
-| `--help` | `-h` | | Show help text |
-| `--version` | `-v` | | Show version number |
+| Flag             | Short | Default        | Description                                     |
+| ---------------- | ----- | -------------- | ----------------------------------------------- |
+| `--use <name>`   | `-u`  | `base`         | Template to use                                 |
+| `--output <dir>` | `-o`  | `.`            | Output directory                                |
+| `--name <name>`  | `-n`  | directory name | Project name used in generated files            |
+| `--list`         | `-l`  |                | List available templates and exit               |
+| `--force`        | `-f`  |                | Overwrite existing files without prompting      |
+| `--dry-run`      |       |                | Preview what would be generated without writing |
+| `--help`         | `-h`  |                | Show help text                                  |
+| `--version`      | `-v`  |                | Show version number                             |
 
 ## Common workflows
 
@@ -173,7 +173,7 @@ a2scaffold includes a `skill` subcommand for installing and validating [Agent Sk
 
 ## Exit codes
 
-| Code | Meaning |
-| --- | --- |
-| `0` | Success |
-| `1` | Error (file conflicts, invalid template, invalid skill, missing arguments, etc.) |
+| Code | Meaning                                                                          |
+| ---- | -------------------------------------------------------------------------------- |
+| `0`  | Success                                                                          |
+| `1`  | Error (file conflicts, invalid template, invalid skill, missing arguments, etc.) |

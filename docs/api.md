@@ -12,6 +12,9 @@ import {
   listSkills,
   installSkill,
   parseSkillSource,
+  isSkillRef,
+  discoverSkills,
+  installSkillRef,
 } from 'a2scaffold';
 ```
 
@@ -42,8 +45,8 @@ const result = await scaffold({
   overrides: { project: { name: 'my-project' } },
 });
 
-console.log(result.outputDir);  // "/absolute/path/to/my-project"
-console.log(result.template);   // "base"
+console.log(result.outputDir); // "/absolute/path/to/my-project"
+console.log(result.template); // "base"
 ```
 
 #### How overrides work
@@ -52,7 +55,7 @@ Each template includes a `values.yaml` with default values. For the `base` templ
 
 ```yaml
 project:
-  name: "my-project"
+  name: 'my-project'
 ```
 
 The `overrides` object is deep-merged over these defaults. Objects are merged recursively; arrays and primitives are replaced entirely.
@@ -121,9 +124,9 @@ Resolve filesystem paths for a given template. Useful for inspecting template co
 import { resolveTemplatePath } from 'a2scaffold';
 
 const paths = resolveTemplatePath('base');
-console.log(paths.templateDir);  // ".../templates/base/template"
-console.log(paths.valuesFile);   // ".../templates/base/values.yaml"
-console.log(paths.partialsDir);  // ".../templates/base/partials" or undefined
+console.log(paths.templateDir); // ".../templates/base/template"
+console.log(paths.valuesFile); // ".../templates/base/values.yaml"
+console.log(paths.partialsDir); // ".../templates/base/partials" or undefined
 ```
 
 ---
@@ -201,8 +204,8 @@ const result = validateSkill('./my-skills/code-review');
 if (!result.valid) {
   console.error('Validation errors:', result.errors);
 } else {
-  console.log(result.skill.name);        // "code-review"
-  console.log(result.skill.description);  // "Reviews code..."
+  console.log(result.skill.name); // "code-review"
+  console.log(result.skill.description); // "Reviews code..."
 }
 ```
 
@@ -301,12 +304,126 @@ import { installSkill } from 'a2scaffold';
 
 // Install from local path
 const result = installSkill('./my-skill', './.agents/skills');
-console.log(result.name);  // "my-skill"
-console.log(result.path);  // "/absolute/path/.agents/skills/my-skill"
+console.log(result.name); // "my-skill"
+console.log(result.path); // "/absolute/path/.agents/skills/my-skill"
 
 // Install from GitHub
 installSkill('anthropics/skills/code-review', './.agents/skills');
 
 // Overwrite existing
 installSkill('./updated-skill', './.agents/skills', { force: true });
+```
+
+---
+
+### `isSkillRef(skillDir)`
+
+Check whether a skill directory contains a skill-ref (lightweight pointer) rather than a full skill definition.
+
+**Parameters:**
+
+| Name       | Type     | Required | Description                                     |
+| ---------- | -------- | -------- | ----------------------------------------------- |
+| `skillDir` | `string` | Yes      | Path to a skill directory containing `SKILL.md` |
+
+**Returns:** `{ isRef: boolean, content: string|null }`
+
+| Property  | Description                                                        |
+| --------- | ------------------------------------------------------------------ |
+| `isRef`   | `true` if `SKILL.md` has `metadata.type: skill-ref` in frontmatter |
+| `content` | Raw file content when it is a skill-ref, otherwise `null`          |
+
+**Example:**
+
+```javascript
+import { isSkillRef } from 'a2scaffold';
+
+const result = isSkillRef('./.claude/skills/create-template');
+if (result.isRef) {
+  console.log('This is a skill reference');
+} else {
+  console.log('This is a full skill definition');
+}
+```
+
+---
+
+### `discoverSkills(agentsDir)`
+
+Discover all skills in an agents directory. Unlike `listSkills`, this returns the skill directory path (`skillDir`) instead of `description` and `path`, and is used internally by `installSkillRef` to resolve `--skill all`.
+
+**Parameters:**
+
+| Name        | Type     | Required | Description                                   |
+| ----------- | -------- | -------- | --------------------------------------------- |
+| `agentsDir` | `string` | Yes      | Path to an agents directory (e.g. `.agents/`) |
+
+**Returns:** `Array<{ name: string, skillDir: string }>` — sorted by name. Empty array if no skills directory exists.
+
+**Example:**
+
+```javascript
+import { discoverSkills } from 'a2scaffold';
+
+const skills = discoverSkills('./.agents');
+for (const { name, skillDir } of skills) {
+  console.log(`${name} → ${skillDir}`);
+}
+```
+
+---
+
+### `installSkillRef(options)`
+
+Create skill references (lightweight pointer files) in a destination agents directory, pointing back to skills in a source agents directory. Each generated `SKILL.md` contains `metadata.type: skill-ref` and a `rootPath` for locating the source skill.
+
+**Parameters:**
+
+| Name            | Type      | Required | Default | Description                                               |
+| --------------- | --------- | -------- | ------- | --------------------------------------------------------- |
+| `options.from`  | `string`  | Yes      |         | Source agents dir (e.g. `".agents"`)                      |
+| `options.to`    | `string`  | Yes      |         | Destination agents dir (e.g. `".claude"`)                 |
+| `options.skill` | `string`  | Yes      |         | Skill name or `"all"` to reference every discovered skill |
+| `options.force` | `boolean` | No       | `false` | Overwrite existing skill-refs                             |
+
+**Returns:** `Promise<Array<{ name: string, path: string }>>`
+
+| Property | Description                                      |
+| -------- | ------------------------------------------------ |
+| `name`   | The skill name                                   |
+| `path`   | Absolute path to the created skill-ref directory |
+
+**Behavior:**
+
+- If the source skill is itself a skill-ref, its content is copied verbatim (passthrough)
+- `rootPath` is computed as a relative path from the destination skill directory to the source project root
+
+**Throws:**
+
+- `Error` if source and destination dirs are the same (self-reference)
+- `Error` if destination has a real skill (non-ref) — cannot be overwritten even with `force`
+- `Error` if destination has an existing skill-ref and `force` is not `true`
+- `Error` if the named skill does not exist in the source directory
+- `Error` if `--skill all` finds no skills in the source directory
+
+**Example:**
+
+```javascript
+import { installSkillRef } from 'a2scaffold';
+
+// Create a ref for one skill
+const results = await installSkillRef({
+  from: '.agents',
+  to: '.claude',
+  skill: 'create-template',
+});
+console.log(results[0].path); // "/abs/path/.claude/skills/create-template"
+
+// Create refs for all skills, overwriting existing refs
+await installSkillRef({
+  from: '.agents',
+  to: '.claude',
+  skill: 'all',
+  force: true,
+});
 ```

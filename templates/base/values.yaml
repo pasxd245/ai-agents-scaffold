@@ -2,4 +2,4 @@
 # Override with --name flag
 
 project:
-  name: "my-project"
+  name: 'my-project'

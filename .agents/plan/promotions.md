@@ -39,8 +39,14 @@
 **Rationale**: Documented the `.prompt.md` extension and YAML frontmatter convention after establishing it across all three prompt files.
 **Promoted by**: Vien Pham
 
-## 2026-04-06: Optional Partials for js-tmpl 0.0.1 → context/skills/
+## 2026-04-06: Optional Partials for js-tmpl 0.0.1 → context/
 
 **Source**: Published `@nci-gis/js-tmpl@0.0.1` package behavior review
 **Rationale**: Corrected authoritative guidance that still claimed `partials/` was mandatory. The published package skips partial registration when `partialsDir` is omitted, so runtime validation and template guidance were updated to make `partials/` optional.
+**Promoted by**: Human-confirmed agent update
+
+## 2026-04-06: Skill-Ref Pattern → context/skill-refs.md
+
+**Source**: Round_04 Act phase — skill ref implementation
+**Rationale**: Documented the skill-ref pattern (lightweight SKILL.md pointers with `metadata.type: skill-ref`), including directory layout, path computation, passthrough behavior, and conflict rules.
 **Promoted by**: Human-confirmed agent update
