@@ -21,8 +21,9 @@
     "lint": "eslint . && markdownlint-cli2",
     "lint:js": "eslint .",
     "lint:md": "markdownlint-cli2",
+    "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.js",
-    "check": "pnpm lint && pnpm format:check && pnpm test",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -70,12 +71,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.6.0",
     "eslint": "^10.2.1",
     "eslint-plugin-n": "^17.24.0",
     "globals": "^17.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "markdownlint-cli2": "^0.22.0",
-    "prettier": "^3.8.3"
+    "prettier": "^3.8.3",
+    "typescript": "^5.9.3"
   }
 }

@@ -4,13 +4,19 @@ import path from 'node:path';
 /**
  * Walk template directory and predict output file paths.
  * Returns list of paths relative to outDir that would be generated.
+ *
+ * @param {string} templateDir
+ * @param {string} [extname]
+ * @returns {string[]}
  */
 function predictOutputPaths(templateDir, extname = '.hbs') {
+  /** @type {string[]} */
   const results = [];
+  /** @type {string[]} */
   const queue = [''];
 
   while (queue.length) {
-    const rel = queue.shift();
+    const rel = /** @type {string} */ (queue.shift());
     const abs = path.join(templateDir, rel);
     const stat = fs.statSync(abs);
 

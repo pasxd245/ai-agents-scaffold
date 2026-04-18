@@ -11,16 +11,24 @@ const MAX_DESC_LEN = 1024;
 const MAX_COMPAT_LEN = 500;
 
 /**
+ * @typedef {Record<string, any>} Frontmatter
+ * @typedef {{ frontmatter: Frontmatter, body: string }} ParsedSkill
+ */
+
+/**
  * Parse YAML frontmatter from a SKILL.md file.
  * Returns { frontmatter, body } or null if no frontmatter found.
+ *
+ * @param {string} content
+ * @returns {ParsedSkill | null}
  */
 function parseFrontmatter(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return null;
 
-  const frontmatter = yaml.load(match[1]);
+  const frontmatter = /** @type {Frontmatter} */ (yaml.load(match[1]) || {});
   const body = content.slice(match[0].length).trim();
-  return { frontmatter: frontmatter || {}, body };
+  return { frontmatter, body };
 }
 
 /**
@@ -145,7 +153,7 @@ export function listSkills(agentsDir) {
  *   - GitHub URL: https://github.com/owner/repo/tree/ref/path
  *
  * @param {string} source - The skill source string
- * @returns {{ type: string, localPath?: string, owner?: string, repo?: string, skillPath?: string, ref?: string }}
+ * @returns {{ type: 'local', localPath: string } | { type: 'github', owner: string, repo: string, skillPath: string, ref: string }}
  */
 export function parseSkillSource(source) {
   // Local path
@@ -209,9 +217,16 @@ export function installSkill(source, targetDir, options = {}) {
     return installFromGitHub(parsed, targetDir, options);
   }
 
-  throw new Error(`Unsupported source type: ${parsed.type}`);
+  throw new Error(
+    `Unsupported source type: ${/** @type {{type:string}} */ (parsed).type}`
+  );
 }
 
+/**
+ * @param {string} sourcePath
+ * @param {string} targetDir
+ * @param {{ force?: boolean }} options
+ */
 function installFromLocal(sourcePath, targetDir, options) {
   if (!fs.existsSync(sourcePath)) {
     throw new Error(`Source path does not exist: ${sourcePath}`);
@@ -245,6 +260,11 @@ function installFromLocal(sourcePath, targetDir, options) {
   return { name: skillName, path: destPath };
 }
 
+/**
+ * @param {{ owner: string, repo: string, skillPath?: string, ref?: string }} parsed
+ * @param {string} targetDir
+ * @param {{ force?: boolean }} options
+ */
 function installFromGitHub(parsed, targetDir, options) {
   const { owner, repo, skillPath, ref } = parsed;
   const repoUrl = `https://github.com/${owner}/${repo}.git`;
@@ -315,7 +335,7 @@ function installFromGitHub(parsed, targetDir, options) {
  * Check whether a skill directory contains a skill-ref (pointer) file.
  *
  * @param {string} skillDir - Path to a skill directory containing SKILL.md
- * @returns {{ isRef: boolean, content: string|null }}
+ * @returns {{ isRef: true, content: string } | { isRef: false, content: null }}
  */
 export function isSkillRef(skillDir) {
   const skillFile = path.join(skillDir, 'SKILL.md');
@@ -332,7 +352,7 @@ export function isSkillRef(skillDir) {
   }
 
   const isRef = parsed.frontmatter.metadata?.type === 'skill-ref';
-  return { isRef, content: isRef ? content : null };
+  return isRef ? { isRef: true, content } : { isRef: false, content: null };
 }
 
 /**
@@ -378,6 +398,9 @@ export function discoverSkills(agentsDir) {
 
 /**
  * Resolve the list of skills to reference based on the skill option.
+ *
+ * @param {string} resolvedFrom
+ * @param {string} skill
  */
 function resolveSkillsToRef(resolvedFrom, skill) {
   if (skill === 'all') {
@@ -404,6 +427,10 @@ function resolveSkillsToRef(resolvedFrom, skill) {
 /**
  * Check destination for conflicts before writing a skill ref.
  * Throws if a real skill exists or if a ref exists without --force.
+ *
+ * @param {string} destSkillDir
+ * @param {string} name
+ * @param {boolean} force
  */
 function checkDestConflict(destSkillDir, name, force) {
   const destSkillFile = path.join(destSkillDir, 'SKILL.md');
