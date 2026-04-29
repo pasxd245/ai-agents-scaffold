@@ -3,3 +3,8 @@
 
 project:
   name: 'my-project'
+agents:
+  claude: true
+  copilot: true
+  gemini: false
+  codex: false
