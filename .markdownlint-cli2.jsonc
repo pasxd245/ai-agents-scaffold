@@ -20,5 +20,6 @@
     ".agents/plan/cycles/**",
     ".agents/prompts/**",
     "tests/fixtures/**",
+    "tmp/**",
   ],
 }
