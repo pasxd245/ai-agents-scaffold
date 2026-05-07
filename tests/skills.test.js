@@ -597,6 +597,57 @@ describe('installSkillRef', () => {
     assert.equal(frontmatter.metadata.rootPath, expected);
   });
 
+  it('creates a ref for a nested skill (path-style name)', async () => {
+    // Add a nested skill: tmpFrom/skills/group/nested-skill/SKILL.md
+    const nestedDir = path.join(tmpFrom, 'skills', 'group', 'nested-skill');
+    fs.mkdirSync(nestedDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(nestedDir, 'SKILL.md'),
+      '---\nname: nested-skill\ndescription: Nested.\n---\n'
+    );
+
+    const results = await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'group/nested-skill',
+    });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].name, 'group/nested-skill');
+
+    const refFile = path.join(
+      tmpTo,
+      'skills',
+      'group',
+      'nested-skill',
+      'SKILL.md'
+    );
+    assert.ok(fs.existsSync(refFile));
+    const output = fs.readFileSync(refFile, 'utf8');
+    // Frontmatter name uses the leaf segment so validation matches dir basename
+    assert.ok(output.includes('name: nested-skill'));
+    assert.ok(output.includes('type: skill-ref'));
+  });
+
+  it('discovers nested skills with --skill all', async () => {
+    // Add a nested skill alongside the existing flat one
+    const nestedDir = path.join(tmpFrom, 'skills', 'group', 'nested-skill');
+    fs.mkdirSync(nestedDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(nestedDir, 'SKILL.md'),
+      '---\nname: nested-skill\ndescription: Nested.\n---\n'
+    );
+
+    const results = await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'all',
+    });
+
+    const names = results.map((r) => r.name).sort((a, b) => a.localeCompare(b));
+    assert.deepEqual(names, ['group/nested-skill', 'test-skill']);
+  });
+
   it('errors when no skills found with --skill all', async () => {
     const emptyFrom = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-empty-'));
     fs.mkdirSync(path.join(emptyFrom, 'skills'), { recursive: true });

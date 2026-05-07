@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { parseFrontmatter } from '../utils/frontmatter.js';
+import { SKILL_FILE, SKILL_REF } from '../constants.js';
 
 export const MAX_REF_DEPTH = 5;
 
@@ -16,14 +17,14 @@ export const MAX_REF_DEPTH = 5;
  * @returns {{ skillPath: string } | null}
  */
 function readRefPointer(skillDir) {
-  const skillFile = path.join(skillDir, 'SKILL.md');
+  const skillFile = path.join(skillDir, SKILL_FILE);
   if (!fs.existsSync(skillFile)) return null;
 
   const content = fs.readFileSync(skillFile, 'utf8');
   const parsed = parseFrontmatter(content);
   if (!parsed) return null;
 
-  if (parsed.frontmatter.metadata?.type !== 'skill-ref') return null;
+  if (parsed.frontmatter.metadata?.type !== SKILL_REF) return null;
 
   const skillPath = parsed.frontmatter.metadata.skillPath;
   if (typeof skillPath !== 'string') return null;

@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { parseFrontmatter } from '../utils/frontmatter.js';
 import { walkRefChain } from './ref-chain.js';
+import { SKILL_FILE, SKILL_REF } from '../constants.js';
 
 const NAME_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 const MAX_NAME_LEN = 64;
@@ -73,7 +74,7 @@ function validateFrontmatterFields(frontmatter, dirName) {
  * @returns {{ valid: boolean, errors: string[], skill: object|null }}
  */
 export function validateSkill(skillDir) {
-  const skillFile = path.join(skillDir, 'SKILL.md');
+  const skillFile = path.join(skillDir, SKILL_FILE);
 
   if (!fs.existsSync(skillFile)) {
     return { valid: false, errors: ['SKILL.md not found'], skill: null };
@@ -95,7 +96,7 @@ export function validateSkill(skillDir) {
   const errors = validateFrontmatterFields(frontmatter, dirName);
 
   // If it's a skill-ref, also validate the chain terminates at a valid raw skill
-  if (frontmatter.metadata?.type === 'skill-ref') {
+  if (frontmatter.metadata?.type === SKILL_REF) {
     const walk = walkRefChain(skillDir);
     if (!walk.ok) {
       errors.push(walk.error);

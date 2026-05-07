@@ -4,6 +4,11 @@ import { parseArgs } from 'node:util';
 
 import { scaffold, checkExistingFiles } from '../../scaffold/index.js';
 import { listTemplates, resolveTemplatePath } from '../../templates/index.js';
+import {
+  DEFAULT_TEMPLATE,
+  SCAFFOLD_TYPE,
+  TEMPLATE_EXT,
+} from '../../constants.js';
 import { HELP, pkg } from '../help.js';
 
 /**
@@ -13,7 +18,7 @@ import { HELP, pkg } from '../help.js';
  * @param {string} [extname]
  * @returns {string[]}
  */
-function listOutputFiles(templateDir, extname = '.hbs') {
+function listOutputFiles(templateDir, extname = TEMPLATE_EXT) {
   /** @type {string[]} */
   const results = [];
   /** @type {string[]} */
@@ -42,7 +47,7 @@ export async function runScaffold(argv) {
   const { values } = parseArgs({
     args: argv,
     options: {
-      use: { type: 'string', short: 'u', default: 'base' },
+      use: { type: 'string', short: 'u', default: DEFAULT_TEMPLATE },
       output: { type: 'string', short: 'o', default: '.' },
       name: { type: 'string', short: 'n' },
       list: { type: 'boolean', short: 'l', default: false },
@@ -73,7 +78,8 @@ export async function runScaffold(argv) {
     return;
   }
 
-  const templateName = /** @type {string} */ (values.use);
+  const useName = /** @type {string} */ (values.use);
+  const templateName = `${SCAFFOLD_TYPE}/${useName}`;
   const outputDir = path.resolve(/** @type {string} */ (values.output));
   const projectName = values.name || path.basename(outputDir);
 
@@ -83,7 +89,7 @@ export async function runScaffold(argv) {
   // Dry-run mode
   if (values['dry-run']) {
     const files = listOutputFiles(templatePaths.templateDir);
-    console.log(`Dry run — template "${templateName}" would generate:\n`);
+    console.log(`Dry run — template "${useName}" would generate:\n`);
     console.log(`  Output directory: ${outputDir}`);
     console.log(`  Project name: ${projectName}\n`);
     console.log('  Files:');
@@ -119,7 +125,7 @@ export async function runScaffold(argv) {
     overrides: { project: { name: projectName } },
   });
 
-  console.log(`\nScaffolded "${templateName}" template successfully!\n`);
+  console.log(`\nScaffolded "${useName}" template successfully!\n`);
   console.log(`  Output: ${outputDir}`);
   console.log(`  Project name: ${projectName}`);
   console.log('\nNext steps:');

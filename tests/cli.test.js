@@ -61,7 +61,7 @@ describe('CLI', () => {
           [CLI_PATH, '--use', 'nonexistent', '-o', '/tmp/bad-test'],
           { encoding: 'utf8' }
         ),
-      /Template "nonexistent" not found/
+      /Template "scaffold\/nonexistent" not found/
     );
   });
 });

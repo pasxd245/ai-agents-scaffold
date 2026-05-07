@@ -30,6 +30,7 @@ a2scaffold has two command groups:
 | Command                     | Description                                         |
 | --------------------------- | --------------------------------------------------- |
 | `a2scaffold [options]`      | Scaffold AI agent config files (default)            |
+| `a2scaffold init [options]` | Same as the default scaffold command                |
 | `a2scaffold skill <action>` | Manage agent skills — [see Skills Guide](skills.md) |
 
 Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
@@ -80,17 +81,27 @@ Dry run — template "base" would generate:
   Project name: my-project
 
   Files:
+    - $if{agents.codex}/AGENTS.md
+    - $if{agents.gemini}/GEMINI.md
+    - .agents/.gitignore
     - .agents/AGENTS.md
+    - $if{agents.claude}/.claude/CLAUDE.md
+    - $if{agents.codex}/.codex/.gitkeep
+    - $if{agents.copilot}/.github/copilot-instructions.md
+    - $if{agents.gemini}/.gemini/.gitkeep
     - .agents/context/.gitkeep
     - .agents/memory/.gitkeep
     - .agents/plan/PDCA.md
-    - .agents/plan/cycles/.gitkeep
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
+    - .agents/prompts/reflect-agents.prompt.md
     - .agents/skills/.gitkeep
-    - .claude/CLAUDE.md
-    - .github/copilot-instructions.md
+    - .agents/plan/cycles/.gitkeep
 ```
+
+Dry-run output is based on raw template paths, so conditional template
+directories such as `$if{agents.claude}` may appear in the preview even
+though they are evaluated during rendering.
 
 ### List available templates
 
@@ -139,6 +150,7 @@ The `base` template generates:
 
 ```text
 .agents/
+  .gitignore             # Keeps placeholder files trackable
   AGENTS.md              # Pair programming guide for AI agents
   context/               # Canonical knowledge (human-curated)
     .gitkeep
@@ -151,6 +163,7 @@ The `base` template generates:
       .gitkeep
   prompts/               # Scanning & generation prompts
     .gitkeep
+    reflect-agents.prompt.md
   skills/                # Reusable agent procedures
     .gitkeep
 .claude/
@@ -169,7 +182,9 @@ Before writing, the CLI checks whether any output files already exist in the tar
 
 ## Skills management
 
-a2scaffold includes a `skill` subcommand for installing and validating [Agent Skills](https://agentskills.io/specification). See the [Skills Guide](skills.md) for full documentation.
+a2scaffold includes a `skill` subcommand for installing, listing,
+validating, and referencing [Agent Skills](https://agentskills.io/specification).
+See the [Skills Guide](skills.md) for full documentation.
 
 ## Exit codes
 

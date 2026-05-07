@@ -3,9 +3,13 @@ import path from 'node:path';
 
 import { scaffold } from '../scaffold/index.js';
 import { discoverSkills, isSkillRef } from './list.js';
+import { SKILL_FILE, SKILL_REF, SKILLS_DIRNAME } from '../constants.js';
 
 /**
  * Resolve the list of skills to reference based on the skill option.
+ *
+ * `name` is the relative path under `<from>/skills/` and may be nested
+ * (e.g. `planning/master-plan`). Used as the destination subpath.
  *
  * @param {string} resolvedFrom
  * @param {string} skill
@@ -19,17 +23,28 @@ function resolveSkillsToRef(resolvedFrom, skill) {
     return skills;
   }
 
-  const skillDir = path.join(resolvedFrom, 'skills', skill);
+  const skillDir = path.join(resolvedFrom, SKILLS_DIRNAME, skill);
   if (!fs.existsSync(skillDir)) {
     throw new Error(`Skill "${skill}" not found in ${resolvedFrom}/skills/`);
   }
-  const skillFile = path.join(skillDir, 'SKILL.md');
+  const skillFile = path.join(skillDir, SKILL_FILE);
   if (!fs.existsSync(skillFile)) {
     throw new Error(
       `Skill "${skill}" has no SKILL.md in ${resolvedFrom}/skills/`
     );
   }
   return [{ name: skill, skillDir }];
+}
+
+/**
+ * Leaf name of a possibly-nested skill name. Used for the ref's
+ * frontmatter `name:` field, which the validator constrains to match
+ * the directory basename.
+ *
+ * @param {string} name
+ */
+function leafName(name) {
+  return name.split('/').at(-1) ?? name;
 }
 
 /**
@@ -41,7 +56,7 @@ function resolveSkillsToRef(resolvedFrom, skill) {
  * @param {boolean} force
  */
 function checkDestConflict(destSkillDir, name, force) {
-  const destSkillFile = path.join(destSkillDir, 'SKILL.md');
+  const destSkillFile = path.join(destSkillDir, SKILL_FILE);
 
   if (!fs.existsSync(destSkillFile)) return;
 
@@ -84,7 +99,7 @@ export async function installSkillRef({ from, to, skill, force = false }) {
   const results = [];
 
   for (const { name, skillDir } of skillsToRef) {
-    const destSkillDir = path.join(resolvedTo, 'skills', name);
+    const destSkillDir = path.join(resolvedTo, SKILLS_DIRNAME, name);
 
     checkDestConflict(destSkillDir, name, force);
 
@@ -93,7 +108,7 @@ export async function installSkillRef({ from, to, skill, force = false }) {
     if (sourceRef.isRef) {
       fs.mkdirSync(destSkillDir, { recursive: true });
       fs.writeFileSync(
-        path.join(destSkillDir, 'SKILL.md'),
+        path.join(destSkillDir, SKILL_FILE),
         sourceRef.content,
         'utf8'
       );
@@ -105,15 +120,15 @@ export async function installSkillRef({ from, to, skill, force = false }) {
     const sourceRoot = path.resolve(resolvedFrom, '..');
     const agentsDirName = path.basename(resolvedFrom);
     const rootPath = path.relative(destSkillDir, sourceRoot);
-    const sourceDir = path.join(agentsDirName, 'skills', name);
+    const sourceDir = path.join(agentsDirName, SKILLS_DIRNAME, name);
 
     await scaffold({
-      templateName: 'skill-ref',
+      templateName: SKILL_REF,
       outputDir: resolvedTo,
       overrides: {
         skill: {
-          name,
-          path: path.join('skills', name),
+          name: leafName(name),
+          path: path.join(SKILLS_DIRNAME, name),
           rootPath,
           sourceDir,
         },

@@ -21,26 +21,36 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  A[a2scaffold skill add source] --> B[parseSkillSource]
-  B --> C{type}
-  C -->|local| D[installFromLocal]
-  C -->|github| E[git sparse-checkout]
-  E --> D
-  D --> F[validateSkill on source]
-  F --> G{valid?}
-  G -->|no| H[Error: source invalid]
-  G -->|yes| I{dest exists?}
-  I -->|yes, no --force| J[Error: already exists]
-  I -->|no, or --force| K[cpSync → .agents/skills/name]
+  A[a2scaffold skill add source] --> B[resolveSkillSource]
+  B --> C{source form}
+  C -->|explicit local path| D[parseSkillSource]
+  C -->|full GitHub URL| D
+  C -->|--from registry| E[registryToSource]
+  C -->|bare or nested name| F[templates/skills lookup]
+  D --> G{type}
+  E --> H[git sparse-checkout]
+  F --> I[installFromLocal]
+  G -->|local| I
+  G -->|github| H
+  H --> I
+  I --> J[validateSkill on source]
+  J --> K{valid?}
+  K -->|no| L[Error: source invalid]
+  K -->|yes| M{dest exists?}
+  M -->|yes, no --force| N[Error: already exists]
+  M -->|no, or --force| O[cpSync → agentsDir/skills/name]
 ```
 
-**Sources:** local path, `owner/repo/path`, or full GitHub URL.
+**Sources:** explicit local path, full GitHub tree URL, registry-backed name
+with `--from`, or built-in bare/nested name from `templates/skills/`.
+Bare `owner/repo/path` GitHub shorthand is parsed by `parseSkillSource()`
+but is intentionally not accepted by CLI `skill add` without a registry.
 
 ## `skill list` — list installed skills
 
-Reads `<agentsDir>/skills/*/SKILL.md`, parses frontmatter, prints name +
-description. Sorted alphabetically. Skips dirs without `SKILL.md` or
-unparseable frontmatter.
+Recursively reads `<agentsDir>/skills/**/SKILL.md`, parses frontmatter,
+prints name + description, and sorts alphabetically. Skips dirs without
+`SKILL.md` or unparseable frontmatter.
 
 ## `skill validate` — validate against spec
 

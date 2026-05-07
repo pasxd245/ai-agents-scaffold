@@ -13,10 +13,12 @@ This generates the base AI agent setup in your current directory:
 
 ```text
 .agents/
+  .gitignore      # Keeps placeholder files trackable
   AGENTS.md       # Pair programming guide for AI agents
   context/        # Canonical knowledge (human-curated)
   memory/         # Agent-generated learnings
   prompts/        # Scanning & generation prompts
+    reflect-agents.prompt.md  # Agent reflection prompt
   skills/         # Reusable procedures
   plan/
     PDCA.md       # PDCA methodology
@@ -46,6 +48,9 @@ Requires Node.js >= 20.
 ```bash
 # Scaffold with defaults (template: base, output: current dir)
 a2scaffold
+
+# Same as the default scaffold command
+a2scaffold init
 
 # Specify project name
 a2scaffold --name my-project
@@ -89,7 +94,7 @@ const templates = listTemplates();
 
 // Scaffold to a directory
 await scaffold({
-  templateName: 'base',
+  templateName: 'scaffold/base',
   outputDir: './my-project',
   overrides: { project: { name: 'my-project' } },
 });
@@ -98,7 +103,7 @@ await scaffold({
 ## Documentation
 
 - [CLI Usage Guide](docs/usage.md) — scaffolding options, workflows, and examples
-- [Skills Guide](docs/skills.md) — install, list, and validate agent skills
+- [Skills Guide](docs/skills.md) — install, list, validate, and reference agent skills
 - [API Reference](docs/api.md) — programmatic API for custom tooling
 
 ## Contributing Templates
