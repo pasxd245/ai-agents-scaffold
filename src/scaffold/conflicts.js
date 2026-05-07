@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { TEMPLATE_EXT } from '../constants.js';
+
 /**
  * Walk template directory and predict output file paths.
  * Returns list of paths relative to outDir that would be generated.
@@ -9,7 +11,7 @@ import path from 'node:path';
  * @param {string} [extname]
  * @returns {string[]}
  */
-function predictOutputPaths(templateDir, extname = '.hbs') {
+function predictOutputPaths(templateDir, extname = TEMPLATE_EXT) {
   /** @type {string[]} */
   const results = [];
   /** @type {string[]} */
@@ -43,7 +45,11 @@ function predictOutputPaths(templateDir, extname = '.hbs') {
  * @param {string} [extname] - Template file extension (default `.hbs`)
  * @returns {string[]} List of existing file paths (relative to outDir)
  */
-export function checkExistingFiles(templateDir, outDir, extname = '.hbs') {
+export function checkExistingFiles(
+  templateDir,
+  outDir,
+  extname = TEMPLATE_EXT
+) {
   const outputPaths = predictOutputPaths(templateDir, extname);
 
   return outputPaths.filter((rel) => {

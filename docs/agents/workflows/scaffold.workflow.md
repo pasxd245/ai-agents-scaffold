@@ -11,22 +11,25 @@ flowchart TD
   B -->|--list| C[List templates & exit]
   B -->|--help / --version| D[Print & exit]
   B -->|default| E[resolveTemplatePath]
-  E --> F[Load values.yaml + overrides]
-  F --> G[checkExistingFiles]
-  G --> H{Conflicts?}
-  H -->|yes, no --force| I[Abort with error]
-  H -->|no, or --force| J{--dry-run?}
-  J -->|yes| K[Print planned files & exit]
-  J -->|no| L[scaffold: render .hbs via Handlebars]
-  L --> M[Write to outputDir]
-  M --> N[Print summary]
+  E --> F{--dry-run?}
+  F -->|yes| G[Print raw template output paths & exit]
+  F -->|no| H[checkExistingFiles]
+  H --> I{Conflicts?}
+  I -->|yes, no --force| J[Abort with error]
+  I -->|no, or --force| K[scaffold]
+  K --> L[resolveConfig loads optional values]
+  L --> M[Merge overrides + env]
+  M --> N[render .hbs via Handlebars]
+  N --> O[Write to outputDir]
+  O --> P[Print summary]
 ```
 
 ## Inputs
 
 | Input          | Source                | Default             |
 | -------------- | --------------------- | ------------------- |
-| `templateName` | `--use` flag          | `base`              |
+| `--use`        | CLI flag              | `base`              |
+| `templateName` | CLI-derived/API value | `scaffold/base`     |
 | `outputDir`    | `--output` flag       | `.` (cwd)           |
 | `project.name` | `--name` flag         | basename(outputDir) |
 | `overrides`    | programmatic API only | `{}`                |
@@ -34,13 +37,16 @@ flowchart TD
 ## Steps
 
 1. **Parse args** — CLI flags or programmatic options.
-2. **Resolve template** — `resolveTemplatePath(name)` locates
-   `templates/<name>/{template,values.yaml,partials?}`.
-3. **Merge values** — deep-merge `overrides` over `values.yaml` defaults;
-   expose `process.env` as `env`.
+2. **Resolve template** — the CLI prepends `scaffold/` to `--use`, then
+   `resolveTemplatePath(name)` locates `templates/<name>/template/` plus
+   optional `values.yaml`, `values/`, and `partials/`.
+3. **Dry run** — if `--dry-run`, print raw output paths from `.hbs`
+   templates and exit without rendering or writing.
 4. **Conflict check** — `checkExistingFiles(templateDir, outDir)` returns
    the list of existing output files. Abort unless `--force`.
-5. **Dry run** — if `--dry-run`, print planned files and exit (no writes).
+5. **Load and merge values** — `resolveConfig` loads optional template
+   values and partials; `scaffold()` deep-merges `overrides` and exposes
+   `process.env` as `env`.
 6. **Render** — for each `.hbs` file, run Handlebars with merged values
    and registered partials; strip `.hbs` extension.
 7. **Write** — create parent directories as needed, write rendered content.
@@ -54,9 +60,10 @@ flowchart TD
 
 ## Extension points
 
-- **New template**: add `templates/<name>/` with `template/` and
-  `values.yaml`. Picked up automatically by `listTemplates()`.
-- **Shared partials**: place in `templates/<name>/partials/*.hbs`.
+- **New scaffold template**: add `templates/scaffold/<name>/` with a
+  `template/` directory. `values.yaml`, `values/`, and `partials/` are
+  optional. Picked up automatically by `listTemplates()`.
+- **Shared partials**: place in `templates/scaffold/<name>/partials/*.hbs`.
 - **Programmatic use**: import `scaffold()` from the API —
   see [docs/api.md](../../api.md#scaffoldoptions).
 

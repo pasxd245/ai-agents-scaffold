@@ -34,7 +34,7 @@ Enumerate what must stay true across every phase:
 
 - Public CLI surface unchanged (unless that's the goal).
 - `pnpm test` passes after each commit.
-- Public exports in [src/index.js](src/index.js) remain stable.
+- Public exports in `src/index.js` remain stable.
 - Any invariants the user called out explicitly.
 
 These become the acceptance gates for each phase.
@@ -91,7 +91,7 @@ For each phase:
 2. Run the gate (`pnpm test` at minimum).
 3. Commit with message `<scope>(phase N): <title>` matching the
    repo's conventional-commit style — see
-   [recent git log](../../../) for the current convention.
+   [git commit conventions](../../../commitlint.config.js) for the current convention.
 4. Report completion and move to the next phase.
 
 If a gate fails, **stop** and report. Do not skip phases or amend

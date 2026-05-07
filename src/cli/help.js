@@ -16,6 +16,7 @@ a2scaffold v${pkg.version}
 
 Usage:
   a2scaffold [options]              Scaffold files (default command)
+  a2scaffold init [options]         Same as default scaffold command
   a2scaffold skill <action>         Manage agent skills
 
 Scaffold Options:
@@ -29,33 +30,49 @@ Scaffold Options:
   -v, --version           Show version
 
 Skill Commands:
-  skill add <source>      Install a skill from local path or GitHub
-  skill list              List installed skills
-  skill validate [name]   Validate installed skills
-  skill ref [options]     Create skill references (lightweight pointers)
+  skill add <source> [options]              Install a skill into .agents/skills
+  skill list [options]                      List installed skills
+  skill validate [name] [options]           Validate one skill, or all skills
+  skill ref --skill <name|all> --to <dir>   Create lightweight skill references
 
-Skill Sources:
-  ./path/to/skill         Local directory
-  owner/repo/path         GitHub shorthand
-  https://github.com/...  Full GitHub URL
+skill add — install a skill
+  Source forms:
+    <name>                  Built-in skill name
+    group/<name>            Nested name (mirrors install path)
+    ./path/to/skill         Local directory
+    https://github.com/...  GitHub tree URL to one skill directory
+  Options:
+    -d, --agents-dir <dir>  Target agents directory (default: ".agents")
+        --from <registry>   Fetch from a named registry in .a2scaffoldrc.json
+    -f, --force             Overwrite an existing skill of the same name
 
-Skill Options:
-  -d, --agents-dir <dir>  Path to .agents/ directory (default: ".agents")
-  -f, --force             Overwrite existing skill
+skill list — show installed skills
+  Options:
+    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
 
-Skill Ref Options:
-      --skill <name|all>  Skill name or "all" to ref every skill (required)
-      --from <dir>        Source agents dir (default: ".agents")
-      --to <dir>          Destination agents dir (required)
-  -f, --force             Overwrite existing skill refs
+skill validate [name] — validate skill frontmatter
+  Args:
+    name                    Optional skill directory name; omit to validate all
+  Options:
+    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
+
+skill ref — create lightweight pointers to skills in another agents dir
+  Options:
+        --skill <name|all>  Skill name, or "all" to ref every skill (required)
+        --from <dir>        Source agents directory (default: ".agents")
+        --to <dir>          Destination agents directory (required)
+    -f, --force             Overwrite existing skill refs at the destination
 
 Examples:
   npx a2scaffold
+  npx a2scaffold init
   npx a2scaffold --use base --name my-project
+  npx a2scaffold --use shared/research-setup
+  npx a2scaffold skill add my-skill
+  npx a2scaffold skill add planning/master-plan
   npx a2scaffold skill add ./my-skill
-  npx a2scaffold skill add anthropics/skills/code-review
+  npx a2scaffold skill add code-review --from main
   npx a2scaffold skill list
   npx a2scaffold skill validate
-  npx a2scaffold skill ref --skill clean-code --to .claude
-  npx a2scaffold skill ref --skill all --from ../shared/.agents --to .agents
+  npx a2scaffold skill ref --skill all --from .agents --to .github
 `.trim();

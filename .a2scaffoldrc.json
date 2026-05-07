@@ -1,0 +1,10 @@
+{
+  "tmpDir": ".agents/tmp",
+  "research": {
+    "crawler": {
+      "maxDepth": 1,
+      "maxPages": 20,
+      "sameDomain": true
+    }
+  }
+}

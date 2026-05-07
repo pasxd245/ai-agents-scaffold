@@ -1,9 +1,7 @@
-import fs from 'node:fs';
 import path from 'node:path';
-import yaml from 'js-yaml';
-import { renderDirectory } from '@nci-gis/js-tmpl';
-/** @typedef {import('@nci-gis/js-tmpl').RenderDirectoryConfig} RenderDirectoryConfig */
+import { renderDirectory, resolveConfig } from '@nci-gis/js-tmpl';
 import { resolveTemplatePath } from '../templates/index.js';
+import { TEMPLATE_EXT } from '../constants.js';
 
 export { checkExistingFiles } from './conflicts.js';
 
@@ -38,37 +36,38 @@ function deepMerge(target, source) {
 /**
  * Scaffold a template to the output directory.
  *
+ * Delegates values loading to js-tmpl's `resolveConfig` so that `values.yaml`,
+ * `values/` (value partials), and `partials/` are all optional. Overrides
+ * are deep-merged on top of the resolved view.
+ *
  * @param {object} options
- * @param {string} options.templateName - Template name (e.g. "base")
+ * @param {string} options.templateName - Template path (e.g. "scaffold/base")
  * @param {string} options.outputDir - Target directory to write files
- * @param {object} [options.overrides] - Values to merge over defaults
+ * @param {object} [options.overrides] - Values to merge over template defaults
  * @returns {Promise<{ outputDir: string, template: string }>}
  */
 export async function scaffold({ templateName, outputDir, overrides = {} }) {
-  const { templateDir, valuesFile, partialsDir } =
-    resolveTemplatePath(templateName);
+  const paths = resolveTemplatePath(templateName);
+  const outDir = path.resolve(outputDir);
 
-  // Load default values from template's values.yaml
-  const raw = fs.readFileSync(valuesFile, 'utf8');
-  const defaultValues = yaml.load(raw) || {};
+  // Use the template root as `cwd` for resolveConfig so it doesn't pick up
+  // a `js-tmpl.config.*` from the user's project. All paths we pass are
+  // absolute, so cwd only affects project-config discovery.
+  const cfg = resolveConfig(
+    {
+      templateDir: paths.templateDir,
+      outDir,
+      extname: TEMPLATE_EXT,
+      ...(paths.valuesFile ? { valuesFile: paths.valuesFile } : {}),
+      ...(paths.valuesDir ? { valuesDir: paths.valuesDir } : {}),
+      ...(paths.partialsDir ? { partialsDir: paths.partialsDir } : {}),
+    },
+    paths.templateRoot
+  );
 
-  // Merge with CLI overrides
-  const mergedValues = deepMerge(defaultValues, overrides);
+  cfg.view = deepMerge(cfg.view, { ...overrides, env: process.env });
 
-  // Build config object directly for renderDirectory
-  /** @type {RenderDirectoryConfig} */
-  const config = {
-    templateDir,
-    outDir: path.resolve(outputDir),
-    extname: '.hbs',
-    view: { ...mergedValues, env: process.env },
-  };
+  await renderDirectory(cfg);
 
-  if (partialsDir) {
-    config.partialsDir = partialsDir;
-  }
-
-  await renderDirectory(config);
-
-  return { outputDir: config.outDir, template: templateName };
+  return { outputDir: cfg.outDir, template: templateName };
 }

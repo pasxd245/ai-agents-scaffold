@@ -20,11 +20,11 @@ export async function runSkill(args) {
     return;
   }
 
-  const { agentsDir, force, positionals } = parseSkillArgs(args.slice(1));
+  const { agentsDir, force, from, positionals } = parseSkillArgs(args.slice(1));
 
   switch (subcommand) {
     case 'add':
-      runSkillAdd(positionals[0], agentsDir, force);
+      runSkillAdd(positionals[0], agentsDir, force, from);
       return;
     case 'list':
       runSkillList(agentsDir);

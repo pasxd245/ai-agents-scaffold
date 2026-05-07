@@ -26,11 +26,11 @@ Render a template to the output directory.
 
 **Parameters:**
 
-| Name                   | Type     | Required | Description                                 |
-| ---------------------- | -------- | -------- | ------------------------------------------- |
-| `options.templateName` | `string` | Yes      | Template name (e.g. `"base"`)               |
-| `options.outputDir`    | `string` | Yes      | Target directory to write files             |
-| `options.overrides`    | `object` | No       | Values to deep-merge over template defaults |
+| Name                   | Type     | Required | Description                                      |
+| ---------------------- | -------- | -------- | ------------------------------------------------ |
+| `options.templateName` | `string` | Yes      | Template path (e.g. `"scaffold/base"`)           |
+| `options.outputDir`    | `string` | Yes      | Target directory to write files                  |
+| `options.overrides`    | `object` | No       | Values to deep-merge over resolved template view |
 
 **Returns:** `Promise<{ outputDir: string, template: string }>`
 
@@ -40,18 +40,19 @@ Render a template to the output directory.
 import { scaffold } from 'a2scaffold';
 
 const result = await scaffold({
-  templateName: 'base',
+  templateName: 'scaffold/base',
   outputDir: './my-project',
   overrides: { project: { name: 'my-project' } },
 });
 
 console.log(result.outputDir); // "/absolute/path/to/my-project"
-console.log(result.template); // "base"
+console.log(result.template); // "scaffold/base"
 ```
 
 #### How overrides work
 
-Each template includes a `values.yaml` with default values. For the `base` template:
+Templates may include a `values.yaml` file and/or a `values/` directory
+with default values. For the `base` scaffold template:
 
 ```yaml
 project:
@@ -66,7 +67,7 @@ The `overrides` object is deep-merged over these defaults. Objects are merged re
 // Result:   { project: { name: "acme-api" } }
 
 await scaffold({
-  templateName: 'base',
+  templateName: 'scaffold/base',
   outputDir: './acme-api',
   overrides: { project: { name: 'acme-api' } },
 });
@@ -101,32 +102,35 @@ Resolve filesystem paths for a given template. Useful for inspecting template co
 
 **Parameters:**
 
-| Name   | Type     | Required | Description                   |
-| ------ | -------- | -------- | ----------------------------- |
-| `name` | `string` | Yes      | Template name (e.g. `"base"`) |
+| Name   | Type     | Required | Description                            |
+| ------ | -------- | -------- | -------------------------------------- |
+| `name` | `string` | Yes      | Template path (e.g. `"scaffold/base"`) |
 
-**Returns:** `{ templateDir: string, valuesFile: string, partialsDir?: string }`
+**Returns:** `{ templateRoot: string, templateDir: string, valuesFile?: string, valuesDir?: string, partialsDir?: string }`
 
-| Property      | Description                                                             |
-| ------------- | ----------------------------------------------------------------------- |
-| `templateDir` | Path to the `template/` directory containing `.hbs` files               |
-| `valuesFile`  | Path to the `values.yaml` defaults file                                 |
-| `partialsDir` | Path to the `partials/` directory for Handlebars partials, when present |
+| Property       | Description                                                             |
+| -------------- | ----------------------------------------------------------------------- |
+| `templateRoot` | Path to the template root directory                                     |
+| `templateDir`  | Path to the `template/` directory containing `.hbs` files               |
+| `valuesFile`   | Path to the `values.yaml` defaults file, when present                   |
+| `valuesDir`    | Path to the `values/` directory, when present                           |
+| `partialsDir`  | Path to the `partials/` directory for Handlebars partials, when present |
 
 **Throws:**
 
 - `Error` if the template name is not found (message includes available templates)
-- `Error` if `template/` or `values.yaml` is missing
+- `Error` if `template/` is missing
 
 **Example:**
 
 ```javascript
 import { resolveTemplatePath } from 'a2scaffold';
 
-const paths = resolveTemplatePath('base');
-console.log(paths.templateDir); // ".../templates/base/template"
-console.log(paths.valuesFile); // ".../templates/base/values.yaml"
-console.log(paths.partialsDir); // ".../templates/base/partials" or undefined
+const paths = resolveTemplatePath('scaffold/base');
+console.log(paths.templateRoot); // ".../templates/scaffold/base"
+console.log(paths.templateDir); // ".../templates/scaffold/base/template"
+console.log(paths.valuesFile); // ".../templates/scaffold/base/values.yaml" or undefined
+console.log(paths.partialsDir); // ".../templates/scaffold/base/partials" or undefined
 ```
 
 ---
@@ -150,7 +154,7 @@ Check which output files already exist in the target directory. Use this to dete
 ```javascript
 import { resolveTemplatePath, checkExistingFiles, scaffold } from 'a2scaffold';
 
-const { templateDir } = resolveTemplatePath('base');
+const { templateDir } = resolveTemplatePath('scaffold/base');
 const conflicts = checkExistingFiles(templateDir, './my-project');
 
 if (conflicts.length > 0) {
@@ -159,7 +163,7 @@ if (conflicts.length > 0) {
 }
 
 await scaffold({
-  templateName: 'base',
+  templateName: 'scaffold/base',
   outputDir: './my-project',
 });
 ```
@@ -238,7 +242,7 @@ for (const skill of skills) {
 
 ### `parseSkillSource(source)`
 
-Parse a skill source string into a structured object. Use this to inspect a source before passing it to `installSkill`.
+Parse a skill source string into a structured object. This is a low-level parser; `installSkill()` adds higher-level built-in-pool and registry resolution on top.
 
 **Parameters:**
 
@@ -257,6 +261,11 @@ Parse a skill source string into a structured object. Use this to inspect a sour
 | GitHub URL       | `https://github.com/owner/repo/tree/main/skill` | `"github"` |
 
 **Throws:** `Error` if the source string cannot be parsed.
+
+`parseSkillSource()` can parse bare GitHub shorthand such as
+`owner/repo/path`, but `installSkill()` does not treat bare sources as
+GitHub shorthands directly. Use a full GitHub tree URL or a registry for
+`installSkill()`.
 
 **Example:**
 
@@ -278,11 +287,22 @@ Install a skill from a source into a target directory.
 
 **Parameters:**
 
-| Name            | Type      | Required | Default | Description                                         |
-| --------------- | --------- | -------- | ------- | --------------------------------------------------- |
-| `source`        | `string`  | Yes      |         | Skill source (local path, GitHub shorthand, or URL) |
-| `targetDir`     | `string`  | Yes      |         | Target directory (e.g. `.agents/skills/`)           |
-| `options.force` | `boolean` | No       | `false` | Overwrite existing skill                            |
+| Name            | Type      | Required | Default | Description                                 |
+| --------------- | --------- | -------- | ------- | ------------------------------------------- |
+| `source`        | `string`  | Yes      |         | Skill source                                |
+| `targetDir`     | `string`  | Yes      |         | Target directory (e.g. `.agents/skills/`)   |
+| `options.force` | `boolean` | No       | `false` | Overwrite existing skill                    |
+| `options.from`  | `string`  | No       |         | Registry name from `options.rc.registries`  |
+| `options.rc`    | `object`  | No       | `{}`    | Parsed `.a2scaffoldrc.json` registry config |
+
+**Supported install sources:**
+
+| Source form            | Example                                                 | Behavior                                      |
+| ---------------------- | ------------------------------------------------------- | --------------------------------------------- |
+| Explicit local path    | `./my-skill`, `/absolute/path`                          | Copies that directory                         |
+| Full GitHub tree URL   | `https://github.com/owner/repo/tree/main/path/to/skill` | Sparse-checks out that skill directory        |
+| Built-in name          | `my-skill`, `planning/master-plan`                      | Resolves under `templates/skills/`            |
+| Registry name + `from` | `pdf` with `{ from: 'anthropics' }`                     | Resolves through `options.rc.registries.from` |
 
 **Returns:** `{ name: string, path: string }`
 
@@ -296,6 +316,7 @@ Install a skill from a source into a target directory.
 - `Error` if the source does not exist or is not a valid skill
 - `Error` if the skill already exists and `force` is not `true`
 - `Error` for GitHub sources: if `git` is not available or the path is not found
+- `Error` if `options.from` names an unknown registry
 
 **Example:**
 
@@ -307,8 +328,22 @@ const result = installSkill('./my-skill', './.agents/skills');
 console.log(result.name); // "my-skill"
 console.log(result.path); // "/absolute/path/.agents/skills/my-skill"
 
-// Install from GitHub
-installSkill('anthropics/skills/code-review', './.agents/skills');
+// Install from a full GitHub URL
+installSkill('https://github.com/anthropics/skills/tree/main/skills/pdf', './.agents/skills');
+
+// Install from a registry-backed name
+installSkill('pdf', './.agents/skills', {
+  from: 'anthropics',
+  rc: {
+    registries: {
+      anthropics: {
+        url: 'github:anthropics/skills',
+        path: 'skills',
+        ref: 'main',
+      },
+    },
+  },
+});
 
 // Overwrite existing
 installSkill('./updated-skill', './.agents/skills', { force: true });

@@ -7,5 +7,21 @@ declare module '@nci-gis/js-tmpl' {
     partialsDir?: string;
   }
 
+  export interface ResolveConfigInput {
+    templateDir: string;
+    outDir: string;
+    extname?: string;
+    valuesFile?: string;
+    valuesDir?: string;
+    partialsDir?: string;
+    configFile?: string;
+    envKeys?: string[];
+    envPrefix?: string;
+  }
+
   export function renderDirectory(config: RenderDirectoryConfig): Promise<void>;
+  export function resolveConfig(
+    cli: ResolveConfigInput,
+    cwd?: string
+  ): RenderDirectoryConfig;
 }

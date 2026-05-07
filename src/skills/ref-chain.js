@@ -2,51 +2,34 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { parseFrontmatter } from '../utils/frontmatter.js';
+import { SKILL_FILE, SKILL_REF } from '../constants.js';
 
 export const MAX_REF_DEPTH = 5;
-const ROOT_PATH_PREFIX = '@rootPath/';
-
-/**
- * Extract the `sourceDir` (the path after `@rootPath/`) from a skill-ref
- * body. Returns null if no such line is present.
- *
- * @param {string} body
- * @returns {string | null}
- */
-function extractSourceDir(body) {
-  for (const line of body.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith(ROOT_PATH_PREFIX)) {
-      return trimmed.slice(ROOT_PATH_PREFIX.length);
-    }
-  }
-  return null;
-}
 
 /**
  * Read a skill directory's SKILL.md and return the parsed ref pointer,
  * or null if the skill is not a ref / cannot be parsed as one.
  *
+ * The pointer is read from `metadata.skillPath` in the frontmatter — a
+ * path relative to the ref directory that resolves to the source skill.
+ *
  * @param {string} skillDir
- * @returns {{ rootPath: string, sourceDir: string } | null}
+ * @returns {{ skillPath: string } | null}
  */
 function readRefPointer(skillDir) {
-  const skillFile = path.join(skillDir, 'SKILL.md');
+  const skillFile = path.join(skillDir, SKILL_FILE);
   if (!fs.existsSync(skillFile)) return null;
 
   const content = fs.readFileSync(skillFile, 'utf8');
   const parsed = parseFrontmatter(content);
   if (!parsed) return null;
 
-  if (parsed.frontmatter.metadata?.type !== 'skill-ref') return null;
+  if (parsed.frontmatter.metadata?.type !== SKILL_REF) return null;
 
-  const rootPath = parsed.frontmatter.metadata.rootPath;
-  if (typeof rootPath !== 'string') return null;
+  const skillPath = parsed.frontmatter.metadata.skillPath;
+  if (typeof skillPath !== 'string') return null;
 
-  const sourceDir = extractSourceDir(parsed.body);
-  if (!sourceDir) return null;
-
-  return { rootPath, sourceDir };
+  return { skillPath };
 }
 
 /**
@@ -72,7 +55,7 @@ export function walkRefChain(startDir) {
       return { ok: true, terminalDir: current, chain };
     }
 
-    const targetDir = path.resolve(current, ref.rootPath, ref.sourceDir);
+    const targetDir = path.resolve(current, ref.skillPath);
 
     if (!fs.existsSync(targetDir)) {
       return {

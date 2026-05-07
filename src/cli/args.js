@@ -1,6 +1,8 @@
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 
+import { DEFAULT_AGENTS_DIR } from '../constants.js';
+
 const VALUE_FLAGS = new Set([
   'u',
   'use',
@@ -77,8 +79,9 @@ export function parseSkillArgs(args) {
   const { values, positionals } = parseArgs({
     args,
     options: {
-      'agents-dir': { type: 'string', short: 'd', default: '.agents' },
+      'agents-dir': { type: 'string', short: 'd', default: DEFAULT_AGENTS_DIR },
       force: { type: 'boolean', short: 'f', default: false },
+      from: { type: 'string' },
     },
     allowPositionals: true,
     strict: true,
@@ -86,6 +89,7 @@ export function parseSkillArgs(args) {
   return {
     agentsDir: path.resolve(/** @type {string} */ (values['agents-dir'])),
     force: Boolean(values.force),
+    from: /** @type {string | undefined} */ (values.from),
     positionals,
   };
 }
@@ -96,7 +100,7 @@ export function parseSkillRefArgs(args) {
     args,
     options: {
       skill: { type: 'string' },
-      from: { type: 'string', default: '.agents' },
+      from: { type: 'string', default: DEFAULT_AGENTS_DIR },
       to: { type: 'string' },
       force: { type: 'boolean', short: 'f', default: false },
     },

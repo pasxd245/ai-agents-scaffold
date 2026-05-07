@@ -30,6 +30,7 @@ a2scaffold has two command groups:
 | Command                     | Description                                         |
 | --------------------------- | --------------------------------------------------- |
 | `a2scaffold [options]`      | Scaffold AI agent config files (default)            |
+| `a2scaffold init [options]` | Same as the default scaffold command                |
 | `a2scaffold skill <action>` | Manage agent skills — [see Skills Guide](skills.md) |
 
 Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
@@ -80,17 +81,27 @@ Dry run — template "base" would generate:
   Project name: my-project
 
   Files:
+    - $if{agents.codex}/AGENTS.md
+    - $if{agents.gemini}/GEMINI.md
+    - .agents/.gitignore
     - .agents/AGENTS.md
+    - $if{agents.claude}/.claude/CLAUDE.md
+    - $if{agents.codex}/.codex/.gitkeep
+    - $if{agents.copilot}/.github/copilot-instructions.md
+    - $if{agents.gemini}/.gemini/.gitkeep
     - .agents/context/.gitkeep
     - .agents/memory/.gitkeep
     - .agents/plan/PDCA.md
-    - .agents/plan/cycles/.gitkeep
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
+    - .agents/prompts/reflect-agents.prompt.md
     - .agents/skills/.gitkeep
-    - .claude/CLAUDE.md
-    - .github/copilot-instructions.md
+    - .agents/plan/cycles/.gitkeep
 ```
+
+Dry-run output is based on raw template paths, so conditional template
+directories such as `$if{agents.claude}` may appear in the preview even
+though they are evaluated during rendering.
 
 ### List available templates
 
@@ -133,12 +144,54 @@ a2scaffold --use base
 
 When more templates are added (e.g. `python-crew`, `langchain-rag`), use this flag to select one.
 
+## Customizing template values
+
+Each template ships with default values (`templates/scaffold/<name>/values.yaml` plus optional `values/` partials). To override them per-project without forking the template, drop a values file in your project root:
+
+```text
+<project>/.a2scaffold/values.yaml   # or values.yml, or values.json — pick one
+```
+
+Example `.a2scaffold/values.yaml`:
+
+```yaml
+project:
+  name: acme-api
+agents:
+  claude: true
+  codex: false
+  gemini: false
+  copilot: false
+```
+
+**Precedence (lowest to highest):**
+
+1. Template defaults (`values.yaml` + `values/`)
+2. Project values (`<project>/.a2scaffold/values.{yaml,yml,json}`)
+3. CLI flags (currently `--name` only)
+
+The project values file is deep-merged over the template defaults — keys you don't set keep their template values. The shape mirrors the template's own `values.yaml`; check it for the available keys (e.g. `project.name`, `agents.*`).
+
+If the file is malformed or both `values.yaml` and `values.json` exist in `.a2scaffold/`, the CLI exits with an error.
+
+## Configuration (`.a2scaffoldrc`)
+
+Registry definitions for `skill add --from <registry>` are read from `.a2scaffoldrc` at two levels:
+
+| Level   | Location                                                                                           |
+| ------- | -------------------------------------------------------------------------------------------------- |
+| User    | `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` (only)                                               |
+| Project | `<project>/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `<project>/.a2scaffoldrc.{json,yaml,yml}` |
+
+Project entries override user entries. At each level, only one form is allowed — if both the directory and flat forms exist, the CLI exits with a conflict error. See the [Skills Guide](skills.md#from-a-named-registry-a2scaffoldrcjson) for registry schema and examples.
+
 ## Generated output structure
 
 The `base` template generates:
 
 ```text
 .agents/
+  .gitignore             # Keeps placeholder files trackable
   AGENTS.md              # Pair programming guide for AI agents
   context/               # Canonical knowledge (human-curated)
     .gitkeep
@@ -151,6 +204,7 @@ The `base` template generates:
       .gitkeep
   prompts/               # Scanning & generation prompts
     .gitkeep
+    reflect-agents.prompt.md
   skills/                # Reusable agent procedures
     .gitkeep
 .claude/
@@ -169,7 +223,9 @@ Before writing, the CLI checks whether any output files already exist in the tar
 
 ## Skills management
 
-a2scaffold includes a `skill` subcommand for installing and validating [Agent Skills](https://agentskills.io/specification). See the [Skills Guide](skills.md) for full documentation.
+a2scaffold includes a `skill` subcommand for installing, listing,
+validating, and referencing [Agent Skills](https://agentskills.io/specification).
+See the [Skills Guide](skills.md) for full documentation.
 
 ## Exit codes
 
