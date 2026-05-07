@@ -19,6 +19,7 @@
     ".github/skills/**",
     ".agents/plan/cycles/**",
     ".agents/prompts/**",
+    ".agents/tmp/**",
     "tests/fixtures/**",
     "tmp/**",
   ],
