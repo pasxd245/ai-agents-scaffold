@@ -73,8 +73,8 @@ flowchart TD
 **Skill-ref chain validation** (implemented in [src/skills/ref-chain.js](../../../src/skills/ref-chain.js)):
 
 When a skill has `metadata.type: skill-ref`, `validateSkill` also walks the
-ref chain — resolving each hop via `metadata.rootPath` + the `@rootPath/<path>`
-line in the body — and reports:
+ref chain — resolving each hop via `metadata.skillPath` (a path relative
+to the ref directory) — and reports:
 
 - `broken ref: target does not exist at "<path>"` — dead pointer
 - `ref cycle detected: A → B → A` — visited-set detection
