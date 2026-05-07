@@ -144,6 +144,47 @@ a2scaffold --use base
 
 When more templates are added (e.g. `python-crew`, `langchain-rag`), use this flag to select one.
 
+## Customizing template values
+
+Each template ships with default values (`templates/scaffold/<name>/values.yaml` plus optional `values/` partials). To override them per-project without forking the template, drop a values file in your project root:
+
+```text
+<project>/.a2scaffold/values.yaml   # or values.yml, or values.json — pick one
+```
+
+Example `.a2scaffold/values.yaml`:
+
+```yaml
+project:
+  name: acme-api
+agents:
+  claude: true
+  codex: false
+  gemini: false
+  copilot: false
+```
+
+**Precedence (lowest to highest):**
+
+1. Template defaults (`values.yaml` + `values/`)
+2. Project values (`<project>/.a2scaffold/values.{yaml,yml,json}`)
+3. CLI flags (currently `--name` only)
+
+The project values file is deep-merged over the template defaults — keys you don't set keep their template values. The shape mirrors the template's own `values.yaml`; check it for the available keys (e.g. `project.name`, `agents.*`).
+
+If the file is malformed or both `values.yaml` and `values.json` exist in `.a2scaffold/`, the CLI exits with an error.
+
+## Configuration (`.a2scaffoldrc`)
+
+Registry definitions for `skill add --from <registry>` are read from `.a2scaffoldrc` at two levels:
+
+| Level   | Location                                                                                           |
+| ------- | -------------------------------------------------------------------------------------------------- |
+| User    | `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` (only)                                               |
+| Project | `<project>/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `<project>/.a2scaffoldrc.{json,yaml,yml}` |
+
+Project entries override user entries. At each level, only one form is allowed — if both the directory and flat forms exist, the CLI exits with a conflict error. See the [Skills Guide](skills.md#from-a-named-registry-a2scaffoldrcjson) for registry schema and examples.
+
 ## Generated output structure
 
 The `base` template generates:

@@ -67,9 +67,24 @@ a2scaffold skill add https://github.com/anthropics/skills/tree/main/skills/pdf
 
 Requires `git` to be installed. Uses sparse checkout to download only the specified skill directory, not the entire repository.
 
-**From a named registry (`.a2scaffoldrc.json`):**
+**From a named registry (`.a2scaffoldrc`):**
 
-Define registries in a `.a2scaffoldrc.json` at the project root, then reference them by name:
+Define registries in a `.a2scaffoldrc` config file, then reference them by name. The loader checks (in order):
+
+- `<project>/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `<project>/.a2scaffoldrc.{json,yaml,yml}` (project — pick one)
+- `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `~/.a2scaffoldrc.{json,yaml,yml}` (user home — pick one)
+
+Project entries override user entries by registry name. Example `.a2scaffold/.a2scaffoldrc.yaml`:
+
+```yaml
+registries:
+  anthropics:
+    url: github:anthropics/skills
+    path: skills
+    ref: main
+```
+
+Or as JSON:
 
 ```json
 {

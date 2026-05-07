@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 
 import { scaffold, checkExistingFiles } from '../../scaffold/index.js';
 import { listTemplates, resolveTemplatePath } from '../../templates/index.js';
+import { loadProjectValues } from '../../config/values.js';
 import {
   DEFAULT_TEMPLATE,
   SCAFFOLD_TYPE,
@@ -81,7 +82,15 @@ export async function runScaffold(argv) {
   const useName = /** @type {string} */ (values.use);
   const templateName = `${SCAFFOLD_TYPE}/${useName}`;
   const outputDir = path.resolve(/** @type {string} */ (values.output));
-  const projectName = values.name || path.basename(outputDir);
+
+  // Project-local values (.a2scaffold/values.{json,yaml,yml}) layer over
+  // template defaults; explicit CLI flags layer over project values.
+  const projectValues = loadProjectValues(process.cwd());
+  const fileProjectName = /** @type {{ project?: { name?: string } }} */ (
+    projectValues
+  ).project?.name;
+  const projectName =
+    values.name || fileProjectName || path.basename(outputDir);
 
   // Validate template exists
   const templatePaths = resolveTemplatePath(templateName);
@@ -119,10 +128,17 @@ export async function runScaffold(argv) {
     );
   }
 
+  /** @type {Record<string, any>} */
+  const overrides = structuredClone(projectValues);
+  if (!overrides.project || typeof overrides.project !== 'object') {
+    overrides.project = {};
+  }
+  overrides.project.name = projectName;
+
   await scaffold({
     templateName,
     outputDir,
-    overrides: { project: { name: projectName } },
+    overrides,
   });
 
   console.log(`\nScaffolded "${useName}" template successfully!\n`);

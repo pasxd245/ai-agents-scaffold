@@ -23,4 +23,10 @@ export const VALUES_DIRNAME = 'values';
 export const PARTIALS_DIRNAME = 'partials';
 
 // Configuration
+export const A2SCAFFOLD_DIRNAME = '.a2scaffold';
+export const RC_BASENAME = '.a2scaffoldrc';
+export const VALUES_BASENAME = 'values';
+export const CONFIG_EXTS = ['.json', '.yaml', '.yml'];
+
+// Legacy: kept for any external callers; new code should use RC_BASENAME + CONFIG_EXTS.
 export const RC_FILENAME = '.a2scaffoldrc.json';
