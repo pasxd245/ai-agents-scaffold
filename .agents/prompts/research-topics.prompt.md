@@ -1,6 +1,6 @@
 ---
 name: Research and save findings
-description: Research a topic or URL using available search, browsing, and optional crawl4ai crawling, then write a cited summary to a user-provided output path. Ask for the topic or path when omitted.
+description: Research a topic or URL using the research skill, then write a cited summary to a user-provided output path. Ask for the topic or path when omitted.
 argument-hint: Research target plus optional output path, e.g. "crawl4ai auth docs -> .agents/memory/crawl4ai-auth.md"
 agent: agent
 ---
@@ -10,9 +10,9 @@ agent: agent
 Use this prompt when the user asks to research, gather more information,
 investigate a topic, crawl URLs, or save findings to a file.
 
-This is an auto-loaded prompt workflow. It is not a full skill unless the
-repo later needs bundled scripts, reusable extraction schemas, or packaged
-browser/crawler setup.
+This is an auto-loaded prompt workflow for resolving the request, respecting
+write authority, and saving the output. Use the `research` skill for source
+strategy, evidence handling, crawler/tool choice, synthesis, and quality bar.
 
 ---
 
@@ -56,71 +56,21 @@ rule that blocks direct editing.
 
 ---
 
-## 3. Choose research tools
+## 3. Apply the research skill
 
-Prefer primary sources:
+Use the `research` skill to choose sources, collect evidence, evaluate
+reliability, synthesize findings, and decide whether current web
+search/browsing is required.
 
-- Official docs, source repositories, release notes, standards, specs, or
-  vendor pages.
-- Use secondary sources only for context, examples, or independent
-  corroboration.
-
-Use current web search/browsing when:
-
-- The user asks for latest/current/recent information.
-- The facts may have changed.
-- The target is a specific URL, repo, docs page, package, issue, or PR.
-- Precise citations or direct source links are needed.
-
-Use `crawl4ai` only when it is useful:
-
-- JavaScript-heavy pages, docs sites, pages where clean Markdown extraction
-  helps, or multi-page crawling.
-- Do not install it silently. First check whether Python and `crawl4ai` are
-  available. If missing and crawling is important, ask for permission to run
-  installation/setup.
-
-Current crawl4ai basics:
-
-```bash
-python3 --version
-python3 -c "import importlib.util; print(importlib.util.find_spec('crawl4ai'))"
-pip install -U crawl4ai
-crawl4ai-setup
-crawl4ai-doctor
-```
-
-Minimal crawl pattern:
-
-```python
-import asyncio
-from crawl4ai import AsyncWebCrawler
-
-async def main():
-    async with AsyncWebCrawler() as crawler:
-        result = await crawler.arun("https://example.com")
-        print(result.markdown)
-
-asyncio.run(main())
-```
-
-For configured crawls, use `BrowserConfig` and `CrawlerRunConfig`. Prefer
-Markdown output for research notes and structured extraction only when the
-user needs specific fields.
-
-Fallbacks when crawl4ai is unavailable:
-
-- Built-in web/search tools.
-- `curl` or similar CLI fetches when network access is allowed.
-- Existing local docs and repo files.
-- Ask the user for source material if network access is unavailable.
+If crawling appears useful, follow the crawl4ai reference in the `research`
+skill. Do not install crawler tooling silently.
 
 ---
 
 ## 4. Research procedure
 
 1. Restate the target, output path, and depth.
-2. Gather sources, prioritizing primary sources.
+2. Follow the `research` skill's source strategy and evidence workflow.
 3. Record source metadata: title, URL, publisher/project, retrieved date,
    and why it is relevant.
 4. Cross-check important claims across at least two sources when possible.
