@@ -3,6 +3,45 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.1.0] - 2026-05-07
+
+### Features
+
+- *(templates)* Add Gemini instructions and fix AGENTS.md path
+- *(skills)* Add skill ref command for lightweight skill references
+- Make partials optional, add skill-ref files, and extract shared partials
+- *(skills)* Phase 7 — skill-ref chain validation
+- *(skills)* Add master-plan and repo-explainer skills
+- *(tmpl)* Gate agent files by $if{agents.*} flags
+- *(skills)* Add research skill with crawl4ai crawler
+- *(scaffold)* Namespace templates and add skill registry support
+- *(config)* Add project values file and tidy rc layout
+
+### Bug Fixes
+
+- *(docs)* Correct relative path to .agents/AGENTS.md in AGENTS.md
+
+### Refactoring
+
+- *(cli)* Phase 2 — rename bin/cli.js → bin/a2scaffold
+- *(cli)* Phase 3 — split src/cli/ into per-command files
+- *(skills)* Phase 4 — split src/skills.js into per-concern files
+- *(layout)* Phase 5 — final folder-barrel layout
+- *(tmpl)* Parameterize kb_path and relocate Gemini instructions
+- *(skills)* Use metadata.skillPath as canonical ref pointer
+
+### Documentation
+
+- Phase 6 — uplift paths after layout refactor
+
+### Miscellaneous
+
+- Phase 1 — tooling baseline + docs scaffolding
+- Phase 1.5 — type-check baseline (JSDoc + checkJs)
+- *(tsconfig)* Include node types
+- Enforce Conventional Commits via commitlint
+- *(.agents)* Compact PDCA cycles and refresh prompts
+
 ## [0.0.2] - 2026-03-18
 
 ### Bug Fixes
