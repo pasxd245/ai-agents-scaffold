@@ -1,0 +1,14 @@
+node_modules/
+pnpm-lock.yaml
+CHANGELOG.md
+templates/**/*.hbs
+templates/**/*.md
+.agents/plan/cycles/
+.claude/
+.codex/
+.gemini/
+.github/skills/
+dist/
+build/
+coverage/
+*.tgz

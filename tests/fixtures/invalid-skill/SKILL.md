@@ -1,6 +1,6 @@
 ---
 name: INVALID_SKILL
-description: ""
+description: ''
 ---
 
 Bad skill.

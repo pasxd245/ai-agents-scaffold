@@ -33,12 +33,14 @@ The actual `.github/workflows/release.yml` differs from what Round_03 documented
 ## Recommendation
 
 **Do**:
+
 - Use OIDC for npm provenance publishing — no token management overhead
 - Pin git-cliff version in `taiki-e/install-action` for reproducible changelogs
 - Deliver `CHANGELOG.md` via PR to maintain human review step before merging to main
 - Always run a version safety check before publishing
 
 **Don't**:
+
 - Use bot commits directly to main for automated changelog updates (bypasses review)
 - Store `NPM_TOKEN` when OIDC provenance is available
 

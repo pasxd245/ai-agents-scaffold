@@ -28,17 +28,16 @@ templates/
    ```yaml
    # Python CrewAI template values
    project:
-     name: "my-crew"
-     python_version: "3.11"
+     name: 'my-crew'
+     python_version: '3.11'
    crew:
      agents:
-       - name: "researcher"
-         role: "Research Agent"
+       - name: 'researcher'
+         role: 'Research Agent'
    ```
 
 3. **Create `template/`** directory with your `.hbs` files.
    The directory structure mirrors the desired output:
-
    - File names: append `.hbs` extension (e.g., `config.yaml.hbs`)
    - Empty placeholder files: use `.gitkeep.hbs` with empty content
    - Dynamic paths: use `${variable}` syntax in directory/file names
@@ -50,7 +49,7 @@ templates/
 5. **Test locally:**
 
    ```bash
-   node bin/cli.js --use <your-template> --output /tmp/test-output
+   node bin/a2scaffold --use <your-template> --output /tmp/test-output
    ```
 
 6. **Submit a PR.**

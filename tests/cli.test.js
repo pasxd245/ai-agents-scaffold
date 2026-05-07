@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CLI_PATH = path.join(__dirname, '..', 'bin', 'cli.js');
+const CLI_PATH = path.join(__dirname, '..', 'bin', 'a2scaffold');
 
 describe('CLI', () => {
   it('--help shows usage information', () => {
@@ -61,7 +61,7 @@ describe('CLI', () => {
           [CLI_PATH, '--use', 'nonexistent', '-o', '/tmp/bad-test'],
           { encoding: 'utf8' }
         ),
-      /Template "nonexistent" not found/
+      /Template "scaffold\/nonexistent" not found/
     );
   });
 });
@@ -101,11 +101,9 @@ describe('CLI skill commands', () => {
 
   it('skill list shows installed skill', () => {
     const source = path.join(__dirname, 'fixtures', 'valid-skill');
-    execFileSync(
-      'node',
-      [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents],
-      { encoding: 'utf8' }
-    );
+    execFileSync('node', [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents], {
+      encoding: 'utf8',
+    });
 
     const out = execFileSync(
       'node',
@@ -117,11 +115,9 @@ describe('CLI skill commands', () => {
 
   it('skill validate passes for valid skill', () => {
     const source = path.join(__dirname, 'fixtures', 'valid-skill');
-    execFileSync(
-      'node',
-      [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents],
-      { encoding: 'utf8' }
-    );
+    execFileSync('node', [CLI_PATH, 'skill', 'add', source, '-d', tmpAgents], {
+      encoding: 'utf8',
+    });
 
     const out = execFileSync(
       'node',
@@ -134,11 +130,9 @@ describe('CLI skill commands', () => {
   it('skill add fails without source', () => {
     assert.throws(
       () =>
-        execFileSync(
-          'node',
-          [CLI_PATH, 'skill', 'add', '-d', tmpAgents],
-          { encoding: 'utf8' }
-        ),
+        execFileSync('node', [CLI_PATH, 'skill', 'add', '-d', tmpAgents], {
+          encoding: 'utf8',
+        }),
       /skill add requires a source/
     );
   });

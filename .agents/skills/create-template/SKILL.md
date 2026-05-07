@@ -3,7 +3,7 @@ name: create-template
 description: Step-by-step procedure for adding a new template to a2scaffold. Use when a contributor wants to add a new template or you need to scaffold a new template directory structure.
 metadata:
   author: a2scaffold
-  version: "1.0"
+  version: '1.0'
 ---
 
 ## Trigger
@@ -19,11 +19,13 @@ This skill activates whenever:
 
 ```bash
 mkdir -p templates/<template-name>/template
-mkdir -p templates/<template-name>/partials
-touch templates/<template-name>/partials/.gitkeep
 ```
 
 Use **kebab-case** for `<template-name>`: `python-crew`, `langchain-rag`, etc.
+
+Create `templates/<template-name>/partials/` only if the template uses
+Handlebars partials. When you need it, add `.gitkeep` so git tracks the
+directory.
 
 ### 2. Create values.yaml
 
@@ -32,7 +34,7 @@ Define all variables the template will use:
 ```yaml
 # templates/<template-name>/values.yaml
 project:
-  name: "my-project"
+  name: 'my-project'
 # Add template-specific variables here
 ```
 
@@ -47,6 +49,7 @@ Under `templates/<template-name>/template/`, create the output structure:
 - Empty placeholders: use `.gitkeep.hbs` with empty content
 - Dynamic paths: use `${var}` syntax in directory/file names
 - Content: use Handlebars `\{{var}}`, `\{{#if}}`, `\{{#each}}`
+- Create `partials/` only when the template uses `{{> partial}}`
 
 ### 4. Handle Handlebars edge cases
 

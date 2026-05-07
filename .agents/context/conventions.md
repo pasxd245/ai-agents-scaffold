@@ -23,7 +23,7 @@
 - Every template must contain:
   - `values.yaml` — default values (required)
   - `template/` — .hbs files (required)
-  - `partials/` — Handlebars partials dir (required, can be empty with `.gitkeep`)
+  - `partials/` — Handlebars partials dir (optional; add it when using partials)
 - `.hbs` extension is stripped in output
 - Dynamic paths use `${var}` syntax in file/directory names
 - Template content uses Handlebars `{{var}}` syntax

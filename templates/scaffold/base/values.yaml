@@ -1,0 +1,19 @@
+# Base template default values
+# Override with --name flag
+
+project:
+  name: 'my-project'
+
+# To enable/disable agents, set to true/false
+# Note: JavaScript falsy values (false, 0, '', null, undefined) will be treated as false
+agents:
+  claude: true
+  copilot: true
+  gemini: false
+  codex: false
+
+# Agent-specific configurations
+claude:
+  kb_path: '../.agents/AGENTS.md'
+copilot:
+  kb_path: '../.agents/AGENTS.md'
