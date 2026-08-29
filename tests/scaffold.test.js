@@ -42,8 +42,79 @@ describe('scaffold base template', () => {
     }
   });
 
-  it('generates .claude/CLAUDE.md', () => {
-    assert.ok(fs.existsSync(path.join(tmpDir, '.claude', 'CLAUDE.md')));
+  it('generates the root AGENTS.md stub', () => {
+    assert.ok(fs.existsSync(path.join(tmpDir, 'AGENTS.md')));
+  });
+
+  it('points every importing stub straight at .agents/AGENTS.md', () => {
+    for (const stub of ['CLAUDE.md', 'AGENTS.md']) {
+      const body = fs.readFileSync(path.join(tmpDir, stub), 'utf8');
+      const imports = [...body.matchAll(/^@(\S+)$/gm)].map((m) => m[1]);
+      assert.deepEqual(imports, ['.agents/AGENTS.md'], `${stub} import target`);
+      assert.ok(fs.existsSync(path.join(tmpDir, imports[0])));
+    }
+  });
+
+  it('keeps the stubs independent of one another', () => {
+    // No stub may import another stub: each reaches the KB in one hop.
+    const claudeMd = fs.readFileSync(path.join(tmpDir, 'CLAUDE.md'), 'utf8');
+    assert.doesNotMatch(claudeMd, /^@AGENTS\.md$/m);
+  });
+
+  it('restates (does not @-import) for harnesses without import support', () => {
+    const copilotMd = fs.readFileSync(
+      path.join(tmpDir, '.github', 'copilot-instructions.md'),
+      'utf8'
+    );
+    assert.match(copilotMd, /\[AGENTS\.md\]\(\.\.\/\.agents\/AGENTS\.md\)/);
+    assert.doesNotMatch(copilotMd, /^@/m);
+  });
+
+  it('generates .agents/governance.md as the on-demand reference', () => {
+    assert.ok(fs.existsSync(path.join(tmpDir, '.agents', 'governance.md')));
+  });
+
+  it('keeps every auto-loaded instruction file under the 200-line budget', () => {
+    // Imports load at launch and count in full against the context window.
+    const autoLoaded = [
+      'CLAUDE.md',
+      'AGENTS.md',
+      '.github/copilot-instructions.md',
+      '.agents/AGENTS.md',
+    ];
+    for (const rel of autoLoaded) {
+      const lines = fs
+        .readFileSync(path.join(tmpDir, rel), 'utf8')
+        .split('\n').length;
+      assert.ok(
+        lines < 200,
+        `${rel} is ${lines} lines, over the 200-line budget`
+      );
+    }
+  });
+
+  it('emits permission rules that back the authority table', () => {
+    const raw = fs.readFileSync(
+      path.join(tmpDir, '.claude', 'settings.json'),
+      'utf8'
+    );
+    const settings = JSON.parse(raw);
+    const ask = settings.permissions.ask;
+    for (const dir of ['context', 'prompts', 'skills', 'plan']) {
+      assert.ok(
+        ask.includes(`Edit(/.agents/${dir}/**)`),
+        `missing ask rule for .agents/${dir}/`
+      );
+    }
+    // Claude Code only consults Edit() rules for file paths; Write() rules are
+    // accepted and silently ignored.
+    assert.ok(!ask.some((r) => r.startsWith('Write(')));
+  });
+
+  it('generates .agents/context/philosophy.md', () => {
+    assert.ok(
+      fs.existsSync(path.join(tmpDir, '.agents', 'context', 'philosophy.md'))
+    );
   });
 
   it('generates .github/copilot-instructions.md', () => {

@@ -1,0 +1,62 @@
+# Philosophy — {{project.name}}
+
+> Canonical. The principles that decide close calls when the rules do not
+> cover the case. Summarised in the root instruction files; this is the
+> authoritative version.
+>
+> **Replace the placeholders below with your project's real principles.**
+> A principle earns its place here only after it has settled an actual
+> disagreement — not because it sounds good.
+
+---
+
+## 1. Ask before assuming
+
+The human partner knows the project intent better than the agent does. When
+a change could alter public behaviour, a contract, or a convention, confirm
+before writing code.
+
+**In practice**: surface the ambiguity, state the assumption you would make,
+and continue with everything the ambiguity does not block.
+
+## 2. Small steps, frequent checks
+
+Incremental edits with test runs beat large rewrites. Every step should be
+independently reviewable and independently revertible.
+
+**In practice**: no "WIP" merges to the main branch. Each change lands green.
+
+## 3. Stability over speed
+
+Knowledge is promoted only after it is validated. A pattern seen once is an
+observation; a pattern seen repeatedly is a convention.
+
+**In practice**: findings go to `.agents/memory/` first. Promotion to
+`.agents/context/` requires human review and a log entry in
+`.agents/plan/promotions.md`.
+
+## 4. Explicit over implicit
+
+No hidden fallbacks, no silent network access, no magic defaults. If the
+tool is about to do something the reader did not ask for, it should ask.
+
+**In practice**: fail with a message that names the fix, rather than
+guessing what was meant.
+
+## 5. Preserve what works
+
+Existing contracts, dependencies, and conventions stay intact unless the
+human decides otherwise. Prefer built-ins over new dependencies.
+
+**In practice**: adding a dependency is a decision to raise, not a detail to
+slip into a diff.
+
+---
+
+## How to change this file
+
+`.agents/context/` is human-owned and authoritative. Agents must not edit it
+directly — see the authority rules in [AGENTS.md](../AGENTS.md).
+
+To propose a change: write the finding to `.agents/memory/`, flag it for
+review, and let the human promote it.

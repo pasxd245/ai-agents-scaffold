@@ -81,15 +81,18 @@ Dry run — template "base" would generate:
   Project name: my-project
 
   Files:
-    - $if{agents.codex}/AGENTS.md
+    - $if{agents.agentsmd}/AGENTS.md
+    - $if{agents.claude}/CLAUDE.md
     - $if{agents.gemini}/GEMINI.md
     - .agents/.gitignore
     - .agents/AGENTS.md
-    - $if{agents.claude}/.claude/CLAUDE.md
+    - .agents/governance.md
     - $if{agents.codex}/.codex/.gitkeep
     - $if{agents.copilot}/.github/copilot-instructions.md
     - $if{agents.gemini}/.gemini/.gitkeep
+    - $if{guardrails.claude}/.claude/settings.json
     - .agents/context/.gitkeep
+    - .agents/context/philosophy.md
     - .agents/memory/.gitkeep
     - .agents/plan/PDCA.md
     - .agents/plan/promotions.md
@@ -125,7 +128,7 @@ If the output directory already contains files that would be generated, the CLI 
 The following files already exist and would be overwritten:
 
   - .agents/AGENTS.md
-  - .claude/CLAUDE.md
+  - CLAUDE.md
 
 Use --force to overwrite existing files.
 ```
@@ -192,9 +195,11 @@ The `base` template generates:
 ```text
 .agents/
   .gitignore             # Keeps placeholder files trackable
-  AGENTS.md              # Pair programming guide for AI agents
+  AGENTS.md              # The heart — every stub points here
+  governance.md          # Long-form governance detail (read on demand)
   context/               # Canonical knowledge (human-curated)
     .gitkeep
+    philosophy.md        # Principles that decide close calls
   memory/                # Agent-generated learnings
     .gitkeep
   plan/
@@ -208,9 +213,11 @@ The `base` template generates:
   skills/                # Reusable agent procedures
     .gitkeep
 .claude/
-  CLAUDE.md              # Claude Code project instructions
+  settings.json          # Permission rules backing the authority table
+AGENTS.md                # Stub for Codex & the AGENTS.md convention
+CLAUDE.md                # Stub for Claude Code (@.agents/AGENTS.md)
 .github/
-  copilot-instructions.md  # GitHub Copilot project instructions
+  copilot-instructions.md  # Stub for Copilot — restates it (cannot import)
 ```
 
 ## File conflict handling

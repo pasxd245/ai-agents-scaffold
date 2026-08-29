@@ -1,8 +1,7 @@
-# AGENTS.md — a2scaffold
+# CLAUDE.md — a2scaffold
 
-> Read by Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf, Aider and other
-> tools that follow the [AGENTS.md](https://agents.md) convention. It is a
-> stub: the project knowledge lives in `.agents/`, referenced below.
+> Claude Code reads this file, not `AGENTS.md`. It is a stub: the project
+> knowledge lives in `.agents/`, imported below.
 
 ## Shared knowledge base
 
@@ -37,7 +36,9 @@ and worked examples — lives in
 
 ## Your instructions here
 
-Rules for tools that read this file go below. Anything that applies to every
-harness belongs in `.agents/`, not here.
+Claude-specific rules go below — plan-mode preferences, tool notes,
+path-scoped guidance. Anything that applies to every harness belongs in
+`.agents/`, not here. Keep this file under 200 lines: imports load at launch
+and count in full against the context window.
 
 -->

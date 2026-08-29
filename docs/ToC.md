@@ -7,11 +7,11 @@
 
 ## For users of `a2scaffold`
 
-| Doc                    | What you'll find                                           |
-| ---------------------- | ---------------------------------------------------------- |
-| [usage.md](usage.md)   | CLI reference — flags, commands, quick start               |
-| [skills.md](skills.md) | Skills management — `skill add`, `list`, `validate`, `ref` |
-| [api.md](api.md)       | Programmatic API — `scaffold()`, `installSkill()`, etc.    |
+| Doc                    | What you'll find                                                    |
+| ---------------------- | ------------------------------------------------------------------- |
+| [usage.md](usage.md)   | CLI reference — flags, commands, quick start                        |
+| [skills.md](skills.md) | Skills management — `skill add`, `list`, `validate`, `audit`, `ref` |
+| [api.md](api.md)       | Programmatic API — `scaffold()`, `installSkill()`, etc.             |
 
 ## For contributors & AI agents
 
@@ -29,6 +29,9 @@ These live outside `docs/` but are linked here for discovery. See
 | Doc                                                                   | What you'll find                                        |
 | --------------------------------------------------------------------- | ------------------------------------------------------- |
 | [.agents/AGENTS.md](../.agents/AGENTS.md)                             | Pair-programming guide, directory authority, load order |
+| [.agents/governance.md](../.agents/governance.md)                     | Long-form governance detail (read on demand)            |
+| [.claude/settings.json](../.claude/settings.json)                     | Permission rules enforcing the authority table          |
+| [.agents/context/philosophy.md](../.agents/context/philosophy.md)     | Principles that decide close calls (canonical)          |
 | [.agents/context/architecture.md](../.agents/context/architecture.md) | Canonical architecture overview                         |
 | [.agents/context/conventions.md](../.agents/context/conventions.md)   | Coding & naming conventions                             |
 | [.agents/context/js-tmpl.md](../.agents/context/js-tmpl.md)           | Handlebars template conventions                         |
@@ -41,6 +44,9 @@ These live outside `docs/` but are linked here for discovery. See
 
 | Path                                   | Role                                       |
 | -------------------------------------- | ------------------------------------------ |
+| [../AGENTS.md](../AGENTS.md)           | Stub — Codex & the AGENTS.md convention    |
+| [../CLAUDE.md](../CLAUDE.md)           | Stub — Claude Code                         |
+| [../GEMINI.md](../GEMINI.md)           | Stub — Gemini CLI                          |
 | [../src/index.js](../src/index.js)     | Public API barrel (re-exports)             |
 | [../src/scaffold/](../src/scaffold/)   | `scaffold()` + conflict detection          |
 | [../src/skills/](../src/skills/)       | Skills management, validation, refs        |
