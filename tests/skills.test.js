@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   validateSkill,
+  scoreConformance,
   listSkills,
   parseSkillSource,
   installSkill,
@@ -660,5 +661,112 @@ describe('installSkillRef', () => {
     } finally {
       fs.rmSync(emptyFrom, { recursive: true, force: true });
     }
+  });
+});
+
+// ── scoreConformance ────────────────────────────────────────────────
+
+describe('scoreConformance', () => {
+  const GOOD_DESC =
+    'Creates a new scaffold template from an existing directory tree. Use this ' +
+    'when the user asks to add a template, promote a directory into templates/, ' +
+    'or turn an example project into something reusable.';
+
+  it('gives a well-formed skill full marks', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: GOOD_DESC },
+      '## Procedure\n\n1. Do the thing.'
+    );
+    assert.equal(r.score, 100);
+    assert.deepEqual(r.warnings, []);
+  });
+
+  it('penalises a short description in proportion to the shortfall', () => {
+    const near = scoreConformance(
+      {
+        name: 'demo',
+        description: `${GOOD_DESC} extra`.split(' ').slice(0, 29).join(' '),
+      },
+      'body'
+    );
+    const far = scoreConformance(
+      { name: 'demo', description: 'Use this when formatting.' },
+      'body'
+    );
+    assert.ok(
+      far.score < near.score,
+      'a much shorter description must score lower'
+    );
+    assert.ok(near.score > 90, 'one word short should barely move the score');
+  });
+
+  it('flags a description that never says when to use the skill', () => {
+    const r = scoreConformance(
+      {
+        name: 'demo',
+        description:
+          'A comprehensive utility that formats and rewrites project source files ' +
+          'across many languages and configurations with assorted options provided.',
+      },
+      'body'
+    );
+    assert.ok(r.warnings.some((w) => w.code === 'description-no-trigger'));
+  });
+
+  it('flags an oversized body and an empty one', () => {
+    const big = scoreConformance(
+      { name: 'demo', description: GOOD_DESC },
+      'x'.repeat(4 * 5001)
+    );
+    assert.ok(big.warnings.some((w) => w.code === 'body-over-budget'));
+
+    const empty = scoreConformance(
+      { name: 'demo', description: GOOD_DESC },
+      '   '
+    );
+    assert.ok(empty.warnings.some((w) => w.code === 'body-empty'));
+  });
+
+  it('flags unrecognised frontmatter keys', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: GOOD_DESC, 'when-to-use': 'typo' },
+      'body'
+    );
+    assert.ok(
+      r.warnings.some(
+        (w) =>
+          w.code === 'unknown-frontmatter-key' &&
+          w.message.includes('when-to-use')
+      )
+    );
+  });
+
+  it('skips body and description checks for skill-refs', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: 'A reference to a skill.' },
+      '',
+      { isRef: true }
+    );
+    assert.deepEqual(r.warnings, []);
+    assert.equal(r.score, 100);
+  });
+
+  it('warns when description + when_to_use exceed the listing cap', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: GOOD_DESC, when_to_use: 'y'.repeat(1537) },
+      'body'
+    );
+    assert.ok(r.warnings.some((w) => w.code === 'listing-cap-exceeded'));
+  });
+});
+
+// ── validateSkill exposes conformance ───────────────────────────────
+
+describe('validateSkill (conformance)', () => {
+  it('reports warnings and a score without affecting validity', () => {
+    const result = validateSkill(path.join(FIXTURES, 'valid-skill'));
+    assert.equal(result.valid, true);
+    assert.ok(Array.isArray(result.warnings));
+    assert.equal(typeof result.score, 'number');
   });
 });

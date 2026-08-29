@@ -150,6 +150,28 @@ Checks each skill's `SKILL.md` for:
 
 Exits with code 1 if any skill is invalid. Output for each skill is shown as `✔ <name> [skill|skill-ref] — valid` or `✘ <name> [type] — invalid` followed by error details.
 
+#### Conformance score
+
+Alongside hard spec errors, validation reports a **0–100 conformance score**
+with any warnings behind it. A warning means the skill is well-formed but will
+work badly — most often a description too vague for the model to match a task
+against:
+
+```text
+  ✔ create-template [skill] — valid, 99/100
+    ! description is 29 words; 30+ helps the model match tasks to it reliably
+  ✔ research [skill] — valid, 94/100
+    ! description says what the skill does but not when to use it
+```
+
+Warnings checked: description length and whether it states _when_ to use the
+skill, the 1,536-character listing cap on `description` + `when_to_use`, an
+oversized or empty body (~5,000-token guidance), and unrecognised frontmatter
+keys — which catches typos like `when-to-use` for `when_to_use`.
+
+**Warnings never affect the exit code.** Only spec errors do. A vague skill is
+still a valid one; the author just needs to know.
+
 ### `a2scaffold skill ref --skill <name|all> --to <dir>`
 
 Create lightweight **skill-ref** pointers in a destination agents directory that resolve back to skills installed in a source agents directory. Skill refs let multiple agent directories (`.claude`, `.github`, `.gemini`, …) share a single canonical skill source without duplicating files.

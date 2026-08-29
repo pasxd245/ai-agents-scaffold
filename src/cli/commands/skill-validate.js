@@ -41,13 +41,16 @@ export function runSkillValidate(targetName, agentsDir) {
   }
 
   let allValid = true;
+  let warned = 0;
+
   for (const dir of dirs) {
     const name = path.basename(dir);
     const type = detectSkillType(dir);
     const typeLabel = type === SKILL_REF ? 'skill-ref' : type;
     const result = validateSkill(dir);
+
     if (result.valid) {
-      console.log(`  ✔ ${name} [${typeLabel}] — valid`);
+      console.log(`  ✔ ${name} [${typeLabel}] — valid, ${result.score}/100`);
     } else {
       allValid = false;
       console.error(`  ✘ ${name} [${typeLabel}] — invalid`);
@@ -55,8 +58,21 @@ export function runSkillValidate(targetName, agentsDir) {
         console.error(`    - ${err}`);
       }
     }
+
+    for (const w of result.warnings) {
+      warned++;
+      console.error(`    ! ${w.message}`);
+    }
   }
 
+  if (warned > 0) {
+    console.error(
+      `\n${warned} conformance warning${warned === 1 ? '' : 's'}. ` +
+        'These do not block installation.'
+    );
+  }
+
+  // Exit code tracks spec validity only. Conformance warnings are advice.
   if (!allValid) {
     process.exit(1);
   }

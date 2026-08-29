@@ -139,7 +139,7 @@ await scaffold({
 ## Documentation
 
 - [CLI Usage Guide](docs/usage.md) — scaffolding options, workflows, and examples
-- [Skills Guide](docs/skills.md) — install, list, validate, audit, and reference agent skills
+- [Skills Guide](docs/skills.md) — install, list, validate, and reference agent skills
 - [API Reference](docs/api.md) — programmatic API for custom tooling
 
 ## Philosophy
