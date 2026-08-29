@@ -7,11 +7,11 @@
 
 ## For users of `a2scaffold`
 
-| Doc                    | What you'll find                                           |
-| ---------------------- | ---------------------------------------------------------- |
-| [usage.md](usage.md)   | CLI reference — flags, commands, quick start               |
-| [skills.md](skills.md) | Skills management — `skill add`, `list`, `validate`, `ref` |
-| [api.md](api.md)       | Programmatic API — `scaffold()`, `installSkill()`, etc.    |
+| Doc                    | What you'll find                                                    |
+| ---------------------- | ------------------------------------------------------------------- |
+| [usage.md](usage.md)   | CLI reference — flags, commands, quick start                        |
+| [skills.md](skills.md) | Skills management — `skill add`, `list`, `validate`, `audit`, `ref` |
+| [api.md](api.md)       | Programmatic API — `scaffold()`, `installSkill()`, etc.             |
 
 ## For contributors & AI agents
 

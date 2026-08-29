@@ -172,6 +172,47 @@ keys — which catches typos like `when-to-use` for `when_to_use`.
 **Warnings never affect the exit code.** Only spec errors do. A vague skill is
 still a valid one; the author just needs to know.
 
+### `a2scaffold skill audit [name]`
+
+Screen installed skills for supply-chain risks before you trust them.
+
+```bash
+# Audit all installed skills
+a2scaffold skill audit
+
+# Audit one
+a2scaffold skill audit research
+```
+
+A skill runs with the **full permissions of the agent that loads it** — it
+reaches your API keys, SSH credentials and shell. Published skills have a poor
+safety record: Snyk's 2026 ToxicSkills audit of 3,984 skills found ~37%
+carrying at least one security flaw and 76 with live malicious payloads.
+
+The audit flags four categories:
+
+| Category      | What it looks for                                                   |
+| ------------- | ------------------------------------------------------------------- |
+| `injection`   | Instruction-override phrasing; zero-width or bidi characters        |
+| `credentials` | References to `~/.ssh`, `.env`, keychains, wallets, browser cookies |
+| `execution`   | `eval`, `subprocess`, piping to a shell, base64 decoding            |
+| `network`     | `curl`, `wget`, `fetch`, non-allowlisted URLs                       |
+| `opaque`      | Binary or oversized files that cannot be screened                   |
+
+```text
+  • research — 1 finding(s)
+    [medium] scripts/crawl4ai_recursive.py:16 — reaches the network
+```
+
+These are **heuristics, not proof**. A crawler skill legitimately reaches the
+network. The audit's job is to tell you where to look, and it exits 0 either
+way.
+
+Skills fetched over the network are screened automatically: `skill add` with
+`--from <registry>` or a GitHub URL **aborts** on a high-severity finding.
+Pass `--force` to install anyway once you have reviewed the source. Local
+installs are not screened — you already have the files.
+
 ### `a2scaffold skill ref --skill <name|all> --to <dir>`
 
 Create lightweight **skill-ref** pointers in a destination agents directory that resolve back to skills installed in a source agents directory. Skill refs let multiple agent directories (`.claude`, `.github`, `.gemini`, …) share a single canonical skill source without duplicating files.

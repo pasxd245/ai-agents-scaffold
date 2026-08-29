@@ -20,4 +20,13 @@ export function runSkillAdd(source, agentsDir, force, from) {
   const rc = loadRc();
   const result = installSkill(source, skillsDir, { force, from, rc });
   console.log(`Installed skill "${result.name}" to ${result.path}`);
+
+  // Remote installs are screened; surface anything the audit noticed so a
+  // medium-severity finding isn't silently accepted.
+  if (result.findings?.length) {
+    console.error(
+      `\n${result.findings.length} audit finding(s) — run ` +
+        `\`a2scaffold skill audit ${result.name}\` for detail.`
+    );
+  }
 }

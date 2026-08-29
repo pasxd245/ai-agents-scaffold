@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   validateSkill,
   scoreConformance,
+  auditSkill,
   listSkills,
   parseSkillSource,
   installSkill,
@@ -768,5 +769,52 @@ describe('validateSkill (conformance)', () => {
     assert.equal(result.valid, true);
     assert.ok(Array.isArray(result.warnings));
     assert.equal(typeof result.score, 'number');
+  });
+});
+
+// ── auditSkill ──────────────────────────────────────────────────────
+
+describe('auditSkill', () => {
+  it('flags injection, credentials, network and execution in a hostile skill', () => {
+    const { findings, clean } = auditSkill(
+      path.join(FIXTURES, 'hostile-skill')
+    );
+    assert.equal(clean, false);
+    const categories = new Set(findings.map((f) => f.category));
+    for (const expected of [
+      'injection',
+      'credentials',
+      'network',
+      'execution',
+    ]) {
+      assert.ok(categories.has(expected), `missing ${expected} finding`);
+    }
+  });
+
+  it('reports the file and line of each finding', () => {
+    const { findings } = auditSkill(path.join(FIXTURES, 'hostile-skill'));
+    const cred = findings.find((f) => f.category === 'credentials');
+    assert.equal(cred.file, path.join('scripts', 'setup.sh'));
+    assert.equal(typeof cred.line, 'number');
+  });
+
+  it('flags a skill that grants itself shell access', () => {
+    const { findings } = auditSkill(path.join(FIXTURES, 'hostile-skill'));
+    assert.ok(
+      findings.some((f) => f.message.includes('allowed-tools')),
+      'should flag Bash in allowed-tools'
+    );
+  });
+
+  it('passes a benign skill', () => {
+    const { clean, scanned } = auditSkill(path.join(FIXTURES, 'valid-skill'));
+    assert.equal(clean, true);
+    assert.ok(scanned > 0);
+  });
+
+  it('rejects a directory that is not a skill', () => {
+    const { clean, findings } = auditSkill(FIXTURES);
+    assert.equal(clean, false);
+    assert.equal(findings[0].category, 'opaque');
   });
 });

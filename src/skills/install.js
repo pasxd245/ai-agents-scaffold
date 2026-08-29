@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { validateSkill } from './validate.js';
+import { auditSkill } from './audit.js';
 import { resolveSkillSource } from './resolve.js';
 import { sparseCloneGitHub } from '../utils/download.js';
 import { SKILL_FILE } from '../constants.js';
@@ -19,10 +20,14 @@ import { SKILL_FILE } from '../constants.js';
  * Install destination preserves the *requested* path for bare names so
  * `skill add planning/master-plan` lands at `<target>/planning/master-plan/`.
  *
+ * Skills fetched over the network are screened before they land (see
+ * {@link auditSkill}); a high-severity finding aborts the install unless
+ * `force` is set. Local installs are not screened — you already have the files.
+ *
  * @param {string} source
  * @param {string} targetDir - Path to .agents/skills/ directory
  * @param {{ from?: string, rc?: A2ScaffoldRc, force?: boolean }} [options]
- * @returns {{ name: string, path: string }}
+ * @returns {{ name: string, path: string, findings?: import('./audit.js').AuditFinding[] }}
  */
 export function installSkill(source, targetDir, options = {}) {
   const rc = options.rc ?? {};
@@ -94,6 +99,34 @@ function installFromLocal(sourcePath, targetDir, options) {
 }
 
 /**
+ * Abort when a downloaded skill trips a high-severity audit finding.
+ *
+ * Skills run with the agent's full permissions, so an unreviewed one from a
+ * registry is a supply-chain risk. `--force` is the explicit override.
+ *
+ * @param {string} skillDir
+ * @param {{ force?: boolean }} options
+ * @returns {import('./audit.js').AuditFinding[]}
+ */
+function screenRemoteSkill(skillDir, options) {
+  const { findings } = auditSkill(skillDir);
+  const high = findings.filter((f) => f.severity === 'high');
+
+  if (high.length > 0 && !options.force) {
+    const detail = high
+      .map((f) => `  - [${f.file}${f.line ? `:${f.line}` : ''}] ${f.message}`)
+      .join('\n');
+    throw new Error(
+      `Refusing to install: ${high.length} high-severity audit finding(s).\n${detail}\n\n` +
+        'Skills run with your agent\u2019s full permissions. Review the source, then ' +
+        're-run with --force if you trust it.'
+    );
+  }
+
+  return findings;
+}
+
+/**
  * @param {{ owner: string, repo: string, skillPath?: string, ref?: string }} parsed
  * @param {string} targetDir
  * @param {{ force?: boolean, destName?: string | null }} options
@@ -124,7 +157,9 @@ function installFromGitHub(parsed, targetDir, options) {
         );
       }
 
-      return installFromLocal(clonedSkillDir, targetDir, options);
+      const findings = screenRemoteSkill(clonedSkillDir, options);
+      const result = installFromLocal(clonedSkillDir, targetDir, options);
+      return { ...result, findings };
     }
   );
 }

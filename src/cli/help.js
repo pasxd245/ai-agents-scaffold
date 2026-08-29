@@ -33,6 +33,7 @@ Skill Commands:
   skill add <source> [options]              Install a skill into .agents/skills
   skill list [options]                      List installed skills
   skill validate [name] [options]           Validate one skill, or all skills
+  skill audit [name] [options]              Screen skills for supply-chain risks
   skill ref --skill <name|all> --to <dir>   Create lightweight skill references
 
 skill add — install a skill
