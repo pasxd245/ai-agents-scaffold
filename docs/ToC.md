@@ -15,11 +15,12 @@
 
 ## For contributors & AI agents
 
-| Doc                                                                            | What you'll find                                                              |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| [agents/workflows/scaffold.workflow.md](agents/workflows/scaffold.workflow.md) | End-to-end scaffold flow (diagram + steps)                                    |
-| [agents/workflows/skill.workflow.md](agents/workflows/skill.workflow.md)       | End-to-end skill flow for all subcommands                                     |
-| [agents/plan/](agents/plan/)                                                   | Co-planning docs (human + AI brainstorm). Format: `<yyyyMMdd>-<name>.plan.md` |
+| Doc                                                                                                          | What you'll find                                                              |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| [agents/workflows/scaffold.workflow.md](agents/workflows/scaffold.workflow.md)                               | End-to-end scaffold flow (diagram + steps)                                    |
+| [agents/workflows/skill.workflow.md](agents/workflows/skill.workflow.md)                                     | End-to-end skill flow for all subcommands                                     |
+| [agents/plan/](agents/plan/)                                                                                 | Co-planning docs (human + AI brainstorm). Format: `<yyyyMMdd>-<name>.plan.md` |
+| [agents/plan/20260829-agent-practice-baseline.plan.md](agents/plan/20260829-agent-practice-baseline.plan.md) | Field baseline (2026-08-29) — re-measure against it, don't edit it            |
 
 ## Agent-operational knowledge (`.agents/`)
 

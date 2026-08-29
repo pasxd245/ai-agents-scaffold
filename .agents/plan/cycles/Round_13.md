@@ -11,8 +11,10 @@ close the gaps a survey of current practice found between what `a2scaffold`
 ships and what the field has settled on. Everything here is groundwork for
 v0.2.0.
 
-Research backing: [`docs/agents/plan/`](../../../docs/agents/plan/) — field
-report published as an artifact, 24 primary and secondary sources. Key inputs:
+Research backing:
+[20260829-agent-practice-baseline.plan.md](../../../docs/agents/plan/20260829-agent-practice-baseline.plan.md)
+— 24 primary and secondary sources, captured as a **baseline to re-measure
+against** in ~6 months rather than a one-off report. Key inputs:
 the AGENTS.md spec (Agentic AI Foundation / Linux Foundation), Claude Code's
 memory and permissions documentation, Anthropic's context-engineering guidance,
 OWASP Top 10 for Agentic Applications 2026, and Snyk's ToxicSkills audit.
@@ -99,6 +101,9 @@ a governance change and needs a human decision before any code.
 
 **Learnings**:
 
+- A survey is only worth the cost if it can be re-run and diffed. The findings
+  were captured as a dated baseline with volatility ratings and a re-run
+  protocol, not as prose — see §4 of the baseline doc.
 - Instruction files are context, not configuration. Anything that must hold
   belongs in a hook or a permission rule. This is now stated in the KB.
 - Everything auto-loaded is charged to every session. Detail that only matters
@@ -145,6 +150,12 @@ landable.
    verified by hand plus a dry-run diff.
 7. **`--values-file` / `--values-dir` flags** — the only way to test a non-default
    `values.yaml` today is to edit it in place, which this round did repeatedly.
+
+### Standing
+
+11. **Re-run the practice survey** — due 2027-02-28, or earlier on a trigger
+    listed in §4.1 of the baseline. Compare, score our volatility predictions,
+    then write a *new* dated baseline; the 2026-08-29 one stays untouched.
 
 ### Release mechanics
 
