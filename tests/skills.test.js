@@ -2,6 +2,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -860,5 +861,35 @@ describe('auditSkill (false-positive calibration)', () => {
     // urllib.parse is pure string handling; urllib.request is not.
     const { findings } = skill();
     assert.ok(!findings.some((f) => f.category === 'network'));
+  });
+});
+
+// ── installSkill — artefact exclusion ───────────────────────────────
+
+describe('installSkill (excludes build artefacts)', () => {
+  it('does not copy caches, compiled files or node_modules', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-junk-'));
+    try {
+      installSkill(path.join(FIXTURES, 'junk-skill'), tmp);
+      const dest = path.join(tmp, 'junk-skill');
+
+      // The skill itself arrives intact.
+      assert.ok(fs.existsSync(path.join(dest, 'SKILL.md')));
+      assert.ok(fs.existsSync(path.join(dest, 'scripts', 'fmt.py')));
+
+      // Its working detritus does not.
+      for (const junk of [
+        'node_modules',
+        path.join('scripts', '__pycache__'),
+        path.join('scripts', 'fmt.pyc'),
+      ]) {
+        assert.ok(
+          !fs.existsSync(path.join(dest, junk)),
+          `${junk} should not be installed`
+        );
+      }
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });

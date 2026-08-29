@@ -172,6 +172,12 @@ keys — which catches typos like `when-to-use` for `when_to_use`.
 **Warnings never affect the exit code.** Only spec errors do. A vague skill is
 still a valid one; the author just needs to know.
 
+Build artefacts are not installed. A source skill is a working directory and
+accumulates caches its own repo gitignores, but `cpSync` copies what is on disk
+rather than what is tracked. `.git`, `node_modules`, `__pycache__`,
+`.pytest_cache`, `.venv`, `.DS_Store` and compiled `.pyc`/`.pyo`/`.pyd` files
+are excluded.
+
 ### `a2scaffold skill audit [name]`
 
 Screen installed skills for supply-chain risks before you trust them.

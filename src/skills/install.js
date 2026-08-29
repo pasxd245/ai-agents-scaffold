@@ -10,6 +10,43 @@ import { SKILL_FILE } from '../constants.js';
 /** @typedef {import('../config/rc.js').A2ScaffoldRc} A2ScaffoldRc */
 
 /**
+ * Build and VCS artefacts that must never be copied into an installed skill.
+ *
+ * A source skill is a working directory, so it accumulates caches its own repo
+ * gitignores. `fs.cpSync` copies what is on disk, not what is tracked, so
+ * without this a `__pycache__` follows the skill into every project that
+ * installs it — first noticed when `skill audit` flagged three `.pyc` files in
+ * a skill whose repo ignores them.
+ */
+const EXCLUDED_NAMES = new Set([
+  '.git',
+  '.DS_Store',
+  'Thumbs.db',
+  '__pycache__',
+  '.pytest_cache',
+  '.ruff_cache',
+  '.mypy_cache',
+  'node_modules',
+  '.venv',
+  'venv',
+]);
+
+/** Extensions of compiled artefacts, excluded wherever they appear. */
+const EXCLUDED_EXTENSIONS = new Set(['.pyc', '.pyo', '.pyd']);
+
+/**
+ * Decide whether a path should be copied into the installed skill.
+ *
+ * @param {string} src - Absolute source path offered by `fs.cpSync`
+ * @returns {boolean} true to copy
+ */
+function isInstallable(src) {
+  const name = path.basename(src);
+  if (EXCLUDED_NAMES.has(name)) return false;
+  return !EXCLUDED_EXTENSIONS.has(path.extname(name).toLowerCase());
+}
+
+/**
  * Install a skill into the target skills directory.
  *
  * Resolution order (see `resolveSkillSource`):
@@ -93,7 +130,10 @@ function installFromLocal(sourcePath, targetDir, options) {
     fs.rmSync(destPath, { recursive: true });
   }
 
-  fs.cpSync(sourcePath, destPath, { recursive: true });
+  fs.cpSync(sourcePath, destPath, {
+    recursive: true,
+    filter: isInstallable,
+  });
 
   return { name: skillName, path: destPath };
 }

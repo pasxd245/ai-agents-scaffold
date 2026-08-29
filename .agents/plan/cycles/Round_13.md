@@ -170,10 +170,8 @@ Full findings in `.agents/tmp/20260829-dogfood-my-dynamic-dashboard.md` (local).
 - [x] Audit false positives: scoped `Bash(git log *)` scored as unscoped;
       `except subprocess.CalledProcessError` flagged as execution;
       `urllib.parse` flagged as network. All three regression-tested.
-- [ ] **`installSkill` copies `__pycache__` and other junk.** The audit flagged
-      three `.pyc` files in a skill whose repo gitignores them — `fs.cpSync`
-      takes everything on disk. Installs should exclude `__pycache__`,
-      `node_modules`, `.DS_Store`, `*.pyc`.
+- [x] **`installSkill` copied `__pycache__` and other junk.** `fs.cpSync` takes
+      what is on disk, not what is tracked. Now filtered.
 - [x] Promote `context/memory-placement.md` — generalised from their version,
       shipped with a `memory/_TEMPLATE.md` it depends on.
 - [ ] Managed-region markers in generated stubs. Their `CLAUDE.md` carries the
