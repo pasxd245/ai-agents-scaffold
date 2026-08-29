@@ -30,7 +30,8 @@ These live outside `docs/` but are linked here for discovery. See
 | Doc                                                                   | What you'll find                                        |
 | --------------------------------------------------------------------- | ------------------------------------------------------- |
 | [.agents/AGENTS.md](../.agents/AGENTS.md)                             | Pair-programming guide, directory authority, load order |
-| [.agents/governance.md](../.agents/governance.md)                     | Long-form governance detail (read on demand)            |
+| [.agents/governance.md](../.agents/governance.md)                     | Memory format, promotion, authorised changes            |
+| [.agents/reference/](../.agents/reference/)                           | On-demand topic docs, each with an explicit trigger     |
 | [.claude/settings.json](../.claude/settings.json)                     | Permission rules enforcing the authority table          |
 | [.agents/context/philosophy.md](../.agents/context/philosophy.md)     | Principles that decide close calls (canonical)          |
 | [.agents/context/architecture.md](../.agents/context/architecture.md) | Canonical architecture overview                         |

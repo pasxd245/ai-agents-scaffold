@@ -1,199 +1,88 @@
-# AGENTS.md – Pair Programming Guide for AI Agents
+# AGENTS.md — Agent Knowledge Base
 
-> Practical guide for AI agents collaborating on this repository.
-
----
-
-## Root Instruction Files
-
-**This file is the heart.** Every root file is a stub that points here; the
-project knowledge lives in `.agents/` exactly once. Each harness reads a
-different name, and only some expand inline imports:
-
-| Stub                              | Harness                                                | Points here by                          |
-| --------------------------------- | ------------------------------------------------------ | --------------------------------------- |
-| `CLAUDE.md`                       | Claude Code                                            | `@.agents/AGENTS.md`, expanded inline   |
-| `GEMINI.md`                       | Gemini CLI                                             | `@.agents/AGENTS.md`, expanded inline   |
-| `AGENTS.md`                       | Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf, Aider | the same line, read as a path reference |
-| `.github/copilot-instructions.md` | GitHub Copilot                                         | restated content — it cannot import     |
-
-The stubs are peers. None of them imports another, so no harness depends on a
-file meant for a different one, and every stub reaches this file in one hop.
-
-### Rules
-
-- ❌ Do NOT write project knowledge into a stub. If it matters to more than
-  one harness, it belongs in `.agents/`.
-- ✅ Harness-specific quirks — and only those — go in that stub's
-  `## Your instructions here` slot.
-- ⚖️ **Keep each stub under 200 lines.** Imports load at launch and count in
-  full against the context window; longer instruction files measurably reduce
-  adherence. Anything longer belongs in `.agents/context/` or a skill.
-- 🔁 The stubs are generated from one shared template. When the common wording
-  changes, re-scaffold rather than editing the same paragraph four times.
+> The heart. Every harness stub points here, so this file is loaded into every
+> session and competes with the task for context. **Keep it under 100 lines.**
+> Detail belongs behind a trigger, not here.
 
 ---
 
-## Agent Base Directory (`.agents/`)
+## Load first
 
-The `.agents/` directory is the **shared knowledge base** for all AI agents.
+1. **This file.**
+2. `context/architecture.md` and `context/conventions.md` — how the code is
+   built and the standards it follows.
+3. Anything else in `context/` your task touches (see the map).
 
-It separates stable human-curated knowledge from evolving agent learnings.
+Everything else is **on demand**: read it when its trigger fires, not before.
+That includes `prompts/`, which are invoked deliberately rather than loaded at
+startup.
+
+**Conflict resolution**: `context/` is authoritative over everything else.
+
+---
+
+## Directory map
 
 ```text
 .agents/
-  AGENTS.md       # This file — imported into every session, keep it lean
-  governance.md   # Long-form governance detail, read on demand
-  context/        # Canonical knowledge (human-curated, authoritative)
-    philosophy.md   # Principles that decide close calls
-  memory/         # Agent-generated learnings (draft insights)
-  prompts/        # Scanning & generation prompts (human-curated)
-  skills/         # Reusable procedures (human-approved, Agent Skills spec)
-    <skill-name>/
-      SKILL.md        # Required: frontmatter + instructions
-      scripts/        # Optional: executable code
-      references/     # Optional: additional docs
-      assets/         # Optional: templates, data files
-  plan/
-    PDCA.md           # PDCA methodology and templates
-    promotions.md     # Append-only promotion log
-    cycles/           # Individual PDCA rounds
-      Round_01.md
-      Round_02.md
-      Round_XX.md
+  AGENTS.md      # This file — loaded every session
+  governance.md  # Memory format, promotion, authorised changes
+  reference/     # Topic docs, each with its own trigger
+  context/       # Canonical knowledge (human-curated, authoritative)
+  memory/        # Agent-generated learnings (drafts)
+  prompts/       # Scanning & generation prompts — invoked, not auto-loaded
+  skills/        # Reusable procedures (Agent Skills spec)
+  plan/          # PDCA.md, promotions.md, cycles/
 ```
 
 ---
 
-### Load Order (Mandatory)
+## Authority
 
-At the start of every session, an agent MUST:
+| Path                                                                          | Agents may                        |
+| ----------------------------------------------------------------------------- | --------------------------------- |
+| `AGENTS.md`, `governance.md`, `reference/`, `context/`, `prompts/`, `skills/` | ❌ READ ONLY                      |
+| `memory/`                                                                     | ✅ READ + WRITE                   |
+| `plan/`                                                                       | ⚠️ APPEND-ONLY to `promotions.md` |
 
-1. Read **all files recursively** in `.agents/context/`
-2. Read **relevant files** in `.agents/skills/` (based on task)
-3. **Prompt auto-loading**: All `.agents/prompts/*.prompt.md` files are automatically loaded as runtime instructions by supported agent tooling.
-4. Optionally review recent or task-relevant files in `.agents/memory/`
+Backed by permission rules in `.claude/settings.json` that make Claude Code
+**ask** before any edit under `.agents/`. Instruction files are context an
+agent can ignore; a permission layer is not.
 
-Read [governance.md](governance.md) **on demand** — before writing a memory
-file, proposing a promotion, authoring a skill, or touching `docs/agents/`.
-It is deliberately not auto-loaded.
+**A human may still authorise a change** — warn first, wait for confirmation,
+log it in `plan/promotions.md`. Procedure: [governance.md](governance.md).
 
-**Context budget**: everything auto-loaded is charged to every session and
-competes with the task. Keep this file under 200 lines; put detail that only
-matters sometimes behind an on-demand read.
+**If a discovery contradicts `context/`**: do not edit it. Write the finding to
+`memory/` and flag it for human review.
 
-**Conflict resolution**: If any conflict exists between directories, `context/` is authoritative.
-
----
-
-### Authority Rules
-
-| Path            | Authority                   | Agent Permissions                     |
-| --------------- | --------------------------- | ------------------------------------- |
-| `AGENTS.md`     | Human-maintained, canonical | ❌ READ-ONLY (No edits, no deletions) |
-| `governance.md` | Human-maintained, canonical | ❌ READ-ONLY (No edits, no deletions) |
-| `context/`      | Human-maintained, canonical | ❌ READ-ONLY (No edits, no deletions) |
-| `prompts/`      | Human-curated prompts       | ❌ READ-ONLY (No edits, no deletions) |
-| `skills/`       | Human-approved procedures   | ❌ READ-ONLY (No edits, no deletions) |
-| `memory/`       | Agent learnings, drafts     | ✅ READ + WRITE                       |
-| `plan/`         | Promotion logs, decisions   | ⚠️ APPEND-ONLY to promotions.md       |
-
-**Enforcement.** Instruction files are context, not configuration — an agent
-can read "READ-ONLY" here and still write. So the table is backed by permission
-rules in `.claude/settings.json` that make Claude Code **ask** before any edit
-under `.agents/`. That prompt is the warn-and-confirm handshake below; `ask`
-rather than `deny`, so a human can still authorise the change. Harnesses
-without a permission layer honour the table as prose only.
-
-**If a discovery contradicts `context/`:**
-
-1. Do NOT edit `context/`
-2. Write the finding to `memory/`
-3. Flag for human review in the memory file
-
-**If `memory/` contains information that appears outdated or incorrect:**
-
-1. Agents MUST NOT delete it
-2. Instead, update the file header to include `**Status**: Needs Review`
+**If `memory/` looks outdated**: do not delete it. Add
+`**Status**: Needs Review` to its header.
 
 ---
 
-### Agent Write Policy
+## Write policy
 
-#### Agents MAY
+Agents MAY:
 
-- ✅ Capture reusable insights in `.agents/memory/`
-- ✅ Suggest promotions to `context/` or `skills/` (in memory files)
+- ✅ Capture reusable insights in `memory/`
+- ✅ Suggest promotions to `context/` or `skills/`, inside a memory file
 
-#### Agents MUST NOT
+Agents MUST NOT:
 
 - ❌ Store secrets, credentials, or personal data
-- ❌ Delete or modify existing files in `context/` or `skills/`
-- ❌ Write to `context/` or `skills/` without explicit human instruction
-- ❌ Generate speculative "rules" without concrete evidence
-
-#### Detail lives in the long-form reference
-
-Memory file format, promotion criteria, `SKILL.md` authoring, and the
-`docs/agents/` policy are in [governance.md](governance.md). Read it before
-writing a memory file, proposing a promotion, or authoring a skill.
+- ❌ Write to any read-only path above without explicit human instruction
+- ❌ Generate speculative rules without concrete evidence
 
 ---
 
-### Choosing a Mechanism
+## Where to look for more
 
-Four mechanisms, four jobs. Reaching for the wrong one is the most common way
-agent setups rot:
-
-| Mechanism               | Use it for                                          |
-| ----------------------- | --------------------------------------------------- |
-| Root stubs + `.agents/` | Durable facts and conventions, loaded every session |
-| Skills                  | Repeatable procedures, loaded on demand             |
-| Hooks                   | Guarantees that must hold regardless of judgement   |
-| Sub-agents              | Delegation and context isolation                    |
-
-Instruction files are **context, not enforcement** — an agent can ignore
-them. If a rule must hold, express it as a hook or a permission, not prose.
-
-Delegate to a sub-agent when a task reads ~10+ files or splits into 3+
-independent pieces; below that the hand-off costs more than it saves.
-
----
-
----
-
-#### Exception: Explicit Human Instructions
-
-When a human **explicitly instructs** an agent to modify, create, or delete files under `.agents/`: [`context/`, `skills`, `plan/`],
-the agent MAY proceed BUT MUST:
-
-1. ⚠️ **Warn the human first** that authoritative or governance knowledge will be modified
-2. ✅ **Wait for explicit confirmation**
-3. 📝 **Log the change** in `plan/promotions.md` (or appropriate governance log) with a brief rationale
-
-**Example warning**:
-
-> ⚠️ **Warning**: You’ve asked me to modify authoritative knowledge under `.agents/`.
-> This may affect future agent behavior and project governance.
-> Please confirm you want to proceed. [Yes/No]
-
-This ensures intentional updates are allowed while preventing accidental governance drift.
-
----
-
-## 1. Role & Mindset
-
-You are a **pair programmer**, not a solo developer. Your human partner knows
-the project intent better than you do. Follow these principles:
-
-- **Ask before assuming.** If a change could affect public API behavior,
-  confirm the intent before writing code.
-- **Think out loud.** Explain your reasoning before making changes.
-- **Small steps, frequent checks.** Prefer incremental edits with test runs
-  over large rewrites.
-- **Preserve what works.** Production dependencies are deliberately minimal
-  and the public API is stable. Adding a dependency or breaking a contract is
-  a decision to raise, not a detail to slip into a diff.
-- **Ensure AI Transparency** section (`## Transparency`) in `README.md` always be at the end of file (if present).
-
-See [context/philosophy.md](context/philosophy.md) for the full principles.
+| Read this                                            | When                                                 |
+| ---------------------------------------------------- | ---------------------------------------------------- |
+| [governance.md](governance.md)                       | Writing a memory file, or proposing a promotion      |
+| [reference/root-files.md](reference/root-files.md)   | Editing `CLAUDE.md`, `AGENTS.md` or any harness stub |
+| [reference/mechanisms.md](reference/mechanisms.md)   | Choosing between a rule, skill, hook or sub-agent    |
+| [reference/skills.md](reference/skills.md)           | Authoring or fixing a `SKILL.md`                     |
+| [reference/docs-agents.md](reference/docs-agents.md) | Adding anything under `docs/agents/`                 |
+| [context/philosophy.md](context/philosophy.md)       | A judgement call the rules above do not cover        |
+| [plan/PDCA.md](plan/PDCA.md)                         | Opening or closing a round                           |

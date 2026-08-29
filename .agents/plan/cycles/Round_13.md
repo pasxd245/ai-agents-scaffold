@@ -29,6 +29,7 @@ OWASP Top 10 for Agentic Applications 2026, and Snyk's ToxicSkills audit.
 - [x] Add supply-chain screening for skills
 - [x] Re-aim the README on the governance model
 - [ ] Emit path-scoped rules from `.agents/context/` — **blocked, see Check**
+- [x] Cut `AGENTS.md` to <100 lines and fix what the Load Order mandates
 
 ## Do
 
@@ -55,12 +56,25 @@ Also rejected en route: refusing an `agents.agentsmd` flag on the grounds that
 disabling it would strand the bridges. Wrong — `.agents/AGENTS.md` is generated
 unconditionally, so the stubs simply retarget. The flag exists, defaulting on.
 
-### Context budget
+### Context budget — two passes
 
-The knowledge base was 315 lines and is imported into every session. Split into
-a ~190-line core plus [`governance.md`](../../governance.md) read on demand.
-Auto-loaded files are now capped by a test, which immediately caught its own
-regression when a later edit pushed the core to 202 lines.
+First pass split the 315-line knowledge base into a ~190-line core plus
+[`governance.md`](../../governance.md), capped by a test.
+
+Second pass measured what the Load Order *actually mandated* and found the core
+was only 19% of it: `context/` ("read all recursively") and `prompts/`
+("auto-loaded") added 868 more lines, for ~1,067 total. The prompt claim was
+also wrong — Claude Code does not auto-load `.agents/prompts/`; those files were
+being read because our own doc said MUST.
+
+Result: `AGENTS.md` cut to 88 lines, topic docs moved to
+[`reference/`](../../reference/) each behind an explicit trigger, and the Load
+Order narrowed to this file plus `architecture.md` and `conventions.md`.
+**Mandated cold start: 1,067 → 232 lines.**
+
+The `## Role & Mindset` section was dropped as duplicating `philosophy.md`; its
+one non-duplicated rule (Transparency section last in README) moved to
+`context/conventions.md`.
 
 ### Enforcement
 
@@ -108,6 +122,11 @@ a governance change and needs a human decision before any code.
   belongs in a hook or a permission rule. This is now stated in the KB.
 - Everything auto-loaded is charged to every session. Detail that only matters
   sometimes belongs behind an on-demand read.
+- Measure the whole cold start, not the file in front of you. `AGENTS.md` was
+  the obvious target and the smallest part of the cost; the expensive part was
+  what it told agents to read next.
+- A claim about tooling behaviour ("prompts are auto-loaded") went unverified
+  for months and was false. Claims about harness behaviour need a source.
 - The emitter half of this tool is commodity — `rulesync`, `ai-rules-sync` and
   `agent_sync` all do it. The authority model, promotion path and verification
   cycles are what nothing else does.

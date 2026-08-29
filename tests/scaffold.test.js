@@ -74,22 +74,50 @@ describe('scaffold base template', () => {
     assert.ok(fs.existsSync(path.join(tmpDir, '.agents', 'governance.md')));
   });
 
-  it('keeps every auto-loaded instruction file under the 200-line budget', () => {
+  it('keeps the knowledge base under its 100-line budget', () => {
+    // .agents/AGENTS.md is imported into every session by every stub, so it
+    // is the most expensive file in the scaffold. Detail belongs behind a
+    // trigger in reference/ or governance.md.
+    const lines = fs
+      .readFileSync(path.join(tmpDir, '.agents', 'AGENTS.md'), 'utf8')
+      .split('\n').length;
+    assert.ok(lines < 100, `.agents/AGENTS.md is ${lines} lines, over budget`);
+  });
+
+  it('keeps every harness stub under the 200-line budget', () => {
     // Imports load at launch and count in full against the context window.
-    const autoLoaded = [
+    for (const rel of [
       'CLAUDE.md',
       'AGENTS.md',
       '.github/copilot-instructions.md',
-      '.agents/AGENTS.md',
-    ];
-    for (const rel of autoLoaded) {
+    ]) {
       const lines = fs
         .readFileSync(path.join(tmpDir, rel), 'utf8')
         .split('\n').length;
+      assert.ok(lines < 200, `${rel} is ${lines} lines, over budget`);
+    }
+  });
+
+  it('generates the on-demand reference docs', () => {
+    for (const name of [
+      'root-files.md',
+      'mechanisms.md',
+      'skills.md',
+      'docs-agents.md',
+    ]) {
       assert.ok(
-        lines < 200,
-        `${rel} is ${lines} lines, over the 200-line budget`
+        fs.existsSync(path.join(tmpDir, '.agents', 'reference', name)),
+        `missing .agents/reference/${name}`
       );
+    }
+  });
+
+  it('gives every reference doc an explicit trigger', () => {
+    // A doc that is not auto-loaded is useless unless it says when to read it.
+    const dir = path.join(tmpDir, '.agents', 'reference');
+    for (const name of fs.readdirSync(dir)) {
+      const body = fs.readFileSync(path.join(dir, name), 'utf8');
+      assert.match(body, /\*\*Read this when\*\*/, `${name} has no trigger`);
     }
   });
 
@@ -100,7 +128,7 @@ describe('scaffold base template', () => {
     );
     const settings = JSON.parse(raw);
     const ask = settings.permissions.ask;
-    for (const dir of ['context', 'prompts', 'skills', 'plan']) {
+    for (const dir of ['context', 'prompts', 'reference', 'skills', 'plan']) {
       assert.ok(
         ask.includes(`Edit(/.agents/${dir}/**)`),
         `missing ask rule for .agents/${dir}/`
@@ -156,12 +184,16 @@ describe('scaffold base template', () => {
     assert.ok(!fs.existsSync(path.join(tmpDir, 'README.md')));
   });
 
-  it('AGENTS.md contains expected content', () => {
+  it('AGENTS.md carries the load order, authority and write policy', () => {
+    // Assert the contract, not the wording: these three sections are what a
+    // cold-start agent needs and what the rest of .agents/ hangs off.
     const content = fs.readFileSync(
       path.join(tmpDir, '.agents', 'AGENTS.md'),
       'utf8'
     );
-    assert.ok(content.includes('Pair Programming Guide'));
+    assert.match(content, /^## Load first$/m);
+    assert.match(content, /^## Authority$/m);
+    assert.match(content, /^## Write policy$/m);
     assert.ok(content.includes('.agents/'));
   });
 });

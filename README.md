@@ -30,7 +30,8 @@ This generates the base AI agent setup in your current directory:
 .agents/                       # Shared knowledge base — written once
   .gitignore                   # Keeps placeholder files trackable
   AGENTS.md                    # The heart — every stub points here
-  governance.md                # Long-form detail, read on demand
+  governance.md                # Memory format, promotion, authorised changes
+  reference/                   # Topic docs, each with its own trigger
   context/                     # Canonical knowledge (human-curated)
     philosophy.md              # Principles that decide close calls
   memory/                      # Agent-generated learnings

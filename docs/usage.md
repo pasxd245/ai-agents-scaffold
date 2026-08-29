@@ -98,6 +98,10 @@ Dry run — template "base" would generate:
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
     - .agents/prompts/reflect-agents.prompt.md
+    - .agents/reference/docs-agents.md
+    - .agents/reference/mechanisms.md
+    - .agents/reference/root-files.md
+    - .agents/reference/skills.md
     - .agents/skills/.gitkeep
     - .agents/plan/cycles/.gitkeep
 ```
@@ -196,7 +200,12 @@ The `base` template generates:
 .agents/
   .gitignore             # Keeps placeholder files trackable
   AGENTS.md              # The heart — every stub points here
-  governance.md          # Long-form governance detail (read on demand)
+  governance.md          # Memory format, promotion, authorised changes
+  reference/             # Topic docs, each with its own trigger
+    docs-agents.md
+    mechanisms.md
+    root-files.md
+    skills.md
   context/               # Canonical knowledge (human-curated)
     .gitkeep
     philosophy.md        # Principles that decide close calls

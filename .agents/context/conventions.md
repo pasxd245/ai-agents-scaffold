@@ -45,10 +45,17 @@
 
 - Source modules: `camelCase.js` in `src/`
 - Tests: `<module>.test.js` in `tests/`
-- CLI: `cli.js` in `bin/`
+- CLI launcher: `a2scaffold` in `bin/`; implementation in `src/cli/`
 
 ## Error Handling
 
 - User-facing errors: print clean message, exit with code 1
 - Unexpected errors: print stack trace to stderr
 - Never silently overwrite files — require `--force` flag
+
+## Documentation
+
+- `README.md` — the `## Transparency` section stays **last** in the file
+- Instruction files (`.agents/AGENTS.md`, root harness stubs) stay under their
+  stated line budget; imports load at launch and count in full against the
+  context window

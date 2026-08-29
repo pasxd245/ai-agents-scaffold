@@ -1,13 +1,12 @@
-# Governance — long-form reference
+# Governance — memory, promotion, and authorised changes
 
-> Companion to [AGENTS.md](AGENTS.md), which is imported into every session.
-> This file is **not** auto-loaded — it holds the detail that only matters
-> when you are actually writing a memory file, proposing a promotion, or
-> authoring a skill.
+> Companion to [AGENTS.md](AGENTS.md). Not auto-loaded.
 >
-> **Read this before** writing to `.agents/memory/`, proposing a promotion to
-> `context/` or `skills/`, authoring a `SKILL.md`, or adding anything under
-> `docs/agents/`.
+> **Read this when**: writing a file into `.agents/memory/`, proposing a
+> promotion into canon, or being asked by a human to change something under
+> `.agents/`.
+>
+> Narrower topics live in [reference/](reference/).
 
 ---
 
@@ -77,39 +76,6 @@ What you discovered (concise)
 
 ---
 
-### Skills Format ([Agent Skills spec](https://agentskills.io/specification))
-
-Each skill is a directory under `skills/` containing a `SKILL.md` file
-with YAML frontmatter:
-
-```text
-skills/<skill-name>/
-  SKILL.md          # Required: frontmatter + instructions
-  scripts/          # Optional: executable code
-  references/       # Optional: additional docs
-  assets/           # Optional: templates, data files
-```
-
-`SKILL.md` must include:
-
-```markdown
----
-name: <skill-name>
-description: What this skill does and when to use it.
----
-
-## Trigger
-
-This skill activates whenever...
-
-## Procedure
-
-1. Step one
-2. Step two
-```
-
-The `name` field must match the directory name (kebab-case, lowercase).
-
 **Promotion log format** (in `plan/promotions.md`):
 
 ```markdown
@@ -124,50 +90,19 @@ The `name` field must match the directory name (kebab-case, lowercase).
 
 ---
 
----
+## Exception: explicit human instructions
 
-## External Knowledge Base (`docs/agents/`)
+When a human **explicitly instructs** an agent to modify, create, or delete files under `.agents/`: [`context/`, `skills`, `plan/`],
+the agent MAY proceed BUT MUST:
 
-The `docs/agents/` directory is a **shared KB between humans and AI agents**
-for durable, reference-grade documentation that lives alongside the code.
+1. ⚠️ **Warn the human first** that authoritative or governance knowledge will be modified
+2. ✅ **Wait for explicit confirmation**
+3. 📝 **Log the change** in `plan/promotions.md` (or appropriate governance log) with a brief rationale
 
-Unlike `.agents/` (which is agent-operational — context, memory, skills,
-plans), `docs/agents/` is **human-facing reading material that agents also
-consume** when context is needed beyond `.agents/`.
+**Example warning**:
 
-```text
-docs/agents/
-  workflows/                       # End-to-end workflows this repo supports
-    <name>.workflow.md             # One file per supported workflow
-  plan/                            # Co-planning docs (human + AI brainstorm)
-    <yyyyMMdd>-<name>.plan.md      # Master plans, dated & named
-```
+> ⚠️ **Warning**: You’ve asked me to modify authoritative knowledge under `.agents/`.
+> This may affect future agent behavior and project governance.
+> Please confirm you want to proceed. [Yes/No]
 
-**Planning docs — two locations, different roles:**
-
-| Location               | Role                                                | Lifecycle                       |
-| ---------------------- | --------------------------------------------------- | ------------------------------- |
-| `docs/agents/plan/`    | Co-planning (brainstorm, strategy, open questions)  | Long-lived; revised in place    |
-| `.agents/plan/cycles/` | Per-phase implementation verification (PDCA rounds) | Append-only; one file per round |
-
-When a plan in `docs/agents/plan/` kicks off work, each executed phase
-records a verification cycle in `.agents/plan/cycles/Round_XX.md`.
-
-**Load policy:**
-
-- Agents SHOULD read files in `docs/agents/` that are relevant to the task
-  (e.g. read `docs/agents/workflows/skill.workflow.md` before modifying
-  skill-related code).
-- Not auto-loaded — consult on demand.
-- Authority order: `.agents/context/` > `docs/agents/` > `.agents/memory/`.
-  If a conflict arises, canonical context wins; flag the mismatch in
-  `.agents/memory/`.
-
-**Write policy:**
-
-- Humans own `docs/agents/`. Agents MAY propose new files or edits, but
-  must confirm with the human before writing (same rule as `.agents/context/`).
-- Workflow files describe _what the repo supports_, not internal agent
-  guidance — keep prose readable for human contributors.
-
----
+This ensures intentional updates are allowed while preventing accidental governance drift.
