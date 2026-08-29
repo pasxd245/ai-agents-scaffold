@@ -70,8 +70,14 @@ describe('scaffold base template', () => {
     assert.doesNotMatch(copilotMd, /^@/m);
   });
 
-  it('generates .agents/governance.md as the on-demand reference', () => {
-    assert.ok(fs.existsSync(path.join(tmpDir, '.agents', 'governance.md')));
+  it('keeps .agents/ root free of loose docs', () => {
+    // Only AGENTS.md sits at the root: it is the one file loaded every
+    // session. Everything else lives behind a trigger in reference/.
+    const loose = fs
+      .readdirSync(path.join(tmpDir, '.agents'), { withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.endsWith('.md'))
+      .map((e) => e.name);
+    assert.deepEqual(loose, ['AGENTS.md']);
   });
 
   it('keeps the knowledge base under its 100-line budget', () => {
@@ -104,6 +110,7 @@ describe('scaffold base template', () => {
       'mechanisms.md',
       'skills.md',
       'docs-agents.md',
+      'memory-and-promotion.md',
     ]) {
       assert.ok(
         fs.existsSync(path.join(tmpDir, '.agents', 'reference', name)),

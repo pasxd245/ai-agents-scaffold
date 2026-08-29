@@ -27,20 +27,20 @@
 These live outside `docs/` but are linked here for discovery. See
 [.agents/AGENTS.md](../.agents/AGENTS.md) for the full authority model.
 
-| Doc                                                                   | What you'll find                                        |
-| --------------------------------------------------------------------- | ------------------------------------------------------- |
-| [.agents/AGENTS.md](../.agents/AGENTS.md)                             | Pair-programming guide, directory authority, load order |
-| [.agents/governance.md](../.agents/governance.md)                     | Memory format, promotion, authorised changes            |
-| [.agents/reference/](../.agents/reference/)                           | On-demand topic docs, each with an explicit trigger     |
-| [.claude/settings.json](../.claude/settings.json)                     | Permission rules enforcing the authority table          |
-| [.agents/context/philosophy.md](../.agents/context/philosophy.md)     | Principles that decide close calls (canonical)          |
-| [.agents/context/architecture.md](../.agents/context/architecture.md) | Canonical architecture overview                         |
-| [.agents/context/conventions.md](../.agents/context/conventions.md)   | Coding & naming conventions                             |
-| [.agents/context/js-tmpl.md](../.agents/context/js-tmpl.md)           | Handlebars template conventions                         |
-| [.agents/context/skill-refs.md](../.agents/context/skill-refs.md)     | Skill-ref (pointer) file format & rules                 |
-| [.agents/plan/DoD.md](../.agents/plan/DoD.md)                         | Definition of Done                                      |
-| [.agents/plan/PDCA.md](../.agents/plan/PDCA.md)                       | PDCA methodology & templates                            |
-| [.agents/plan/promotions.md](../.agents/plan/promotions.md)           | Append-only promotion log                               |
+| Doc                                                                                       | What you'll find                                        |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [.agents/AGENTS.md](../.agents/AGENTS.md)                                                 | Pair-programming guide, directory authority, load order |
+| [.agents/reference/memory-and-promotion.md](../.agents/reference/memory-and-promotion.md) | Memory format, promotion, authorised changes            |
+| [.agents/reference/](../.agents/reference/)                                               | On-demand topic docs, each with an explicit trigger     |
+| [.claude/settings.json](../.claude/settings.json)                                         | Permission rules enforcing the authority table          |
+| [.agents/context/philosophy.md](../.agents/context/philosophy.md)                         | Principles that decide close calls (canonical)          |
+| [.agents/context/architecture.md](../.agents/context/architecture.md)                     | Canonical architecture overview                         |
+| [.agents/context/conventions.md](../.agents/context/conventions.md)                       | Coding & naming conventions                             |
+| [.agents/context/js-tmpl.md](../.agents/context/js-tmpl.md)                               | Handlebars template conventions                         |
+| [.agents/context/skill-refs.md](../.agents/context/skill-refs.md)                         | Skill-ref (pointer) file format & rules                 |
+| [.agents/plan/DoD.md](../.agents/plan/DoD.md)                                             | Definition of Done                                      |
+| [.agents/plan/PDCA.md](../.agents/plan/PDCA.md)                                           | PDCA methodology & templates                            |
+| [.agents/plan/promotions.md](../.agents/plan/promotions.md)                               | Append-only promotion log                               |
 
 ## Source entry points (not docs, but useful)
 

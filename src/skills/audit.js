@@ -65,7 +65,9 @@ const PATTERNS = [
   {
     category: 'network',
     severity: 'medium',
-    re: /\b(curl|wget|nc|netcat)\b|\bfetch\s*\(|\brequests\.(get|post)\b|\burllib\b|\bhttps?:\/\/(?!(?:www\.)?(?:github\.com|raw\.githubusercontent\.com|agents\.md|agentskills\.io|json\.schemastore\.org))/,
+    // `urllib.parse` is pure string handling; only request-capable modules
+    // count. Matching bare `urllib` flags every link checker that parses URLs.
+    re: /\b(curl|wget|nc|netcat)\b|\bfetch\s*\(|\brequests\.(get|post)\b|\burllib\.(request|error)\b|\bhttps?:\/\/(?!(?:www\.)?(?:github\.com|raw\.githubusercontent\.com|agents\.md|agentskills\.io|json\.schemastore\.org))/,
     message: 'reaches the network',
   },
   {
@@ -77,7 +79,9 @@ const PATTERNS = [
   {
     category: 'execution',
     severity: 'high',
-    re: /\beval\s*\(|\bexec\s*\(|child_process|subprocess\.|os\.system|Function\s*\(\s*['"`]|\|\s*(?:ba)?sh\b|base64\s+-d|atob\s*\(/,
+    // Match the calls, not the module: `except subprocess.CalledProcessError`
+    // is error handling, and bare `subprocess\.` flagged it high-severity.
+    re: /\beval\s*\(|\bexec\s*\(|child_process|subprocess\.(run|call|check_output|check_call|Popen)\b|os\.system|Function\s*\(\s*['"`]|\|\s*(?:ba)?sh\b|base64\s+-d|atob\s*\(/,
     message: 'executes code dynamically or shells out',
   },
   {
@@ -110,6 +114,36 @@ function listFiles(root) {
     }
   };
   walk(root);
+  return out;
+}
+
+/**
+ * Split an `allowed-tools` value into individual grants.
+ *
+ * The field accepts both comma- and space-separated lists, and a scoped grant
+ * contains spaces of its own (`Bash(git log *)`), so separators only count at
+ * paren depth zero.
+ *
+ * @param {string} value
+ * @returns {string[]}
+ */
+function splitTools(value) {
+  /** @type {string[]} */
+  const out = [];
+  let depth = 0;
+  let cur = '';
+  for (const ch of value) {
+    if (ch === '(') depth++;
+    else if (ch === ')') depth = Math.max(0, depth - 1);
+
+    if (depth === 0 && (ch === ',' || /\s/.test(ch))) {
+      if (cur.trim()) out.push(cur.trim());
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  if (cur.trim()) out.push(cur.trim());
   return out;
 }
 
@@ -201,12 +235,15 @@ export function auditSkill(skillDir) {
   );
   if (parsed?.frontmatter?.['allowed-tools']) {
     const tools = String(parsed.frontmatter['allowed-tools']);
-    if (/\bBash\b/.test(tools)) {
+    // `Bash(git log *)` is least privilege done right and must not score the
+    // same as a bare `Bash`. Only an unscoped grant is worth reporting.
+    const unscoped = splitTools(tools).includes('Bash');
+    if (unscoped) {
       findings.push({
         category: 'execution',
         severity: 'medium',
         file: SKILL_FILE,
-        message: `grants itself shell access via allowed-tools: ${tools}`,
+        message: `grants unscoped shell access via allowed-tools: ${tools}. Prefer a scoped grant such as Bash(git log *)`,
       });
     }
   }

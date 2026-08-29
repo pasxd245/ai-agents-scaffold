@@ -86,7 +86,6 @@ Dry run — template "base" would generate:
     - $if{agents.gemini}/GEMINI.md
     - .agents/.gitignore
     - .agents/AGENTS.md
-    - .agents/governance.md
     - $if{agents.codex}/.codex/.gitkeep
     - $if{agents.copilot}/.github/copilot-instructions.md
     - $if{agents.gemini}/.gemini/.gitkeep
@@ -200,7 +199,6 @@ The `base` template generates:
 .agents/
   .gitignore             # Keeps placeholder files trackable
   AGENTS.md              # The heart — every stub points here
-  governance.md          # Memory format, promotion, authorised changes
   reference/             # Topic docs, each with its own trigger
     docs-agents.md
     mechanisms.md

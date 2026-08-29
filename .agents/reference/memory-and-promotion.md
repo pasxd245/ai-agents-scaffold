@@ -1,12 +1,11 @@
-# Governance — memory, promotion, and authorised changes
+# Memory and promotion
 
-> Companion to [AGENTS.md](AGENTS.md). Not auto-loaded.
->
 > **Read this when**: writing a file into `.agents/memory/`, proposing a
 > promotion into canon, or being asked by a human to change something under
 > `.agents/`.
 >
-> Narrower topics live in [reference/](reference/).
+> Named for its trigger, not for "governance" — a repo is free to keep its own
+> canonical governance policy in `context/` without colliding with this file.
 
 ---
 

@@ -159,6 +159,32 @@ landable.
    restates content, which drifts. Decide whether re-scaffolding is enough or
    whether it needs a `sync` command.
 
+### Found by dogfooding `my-dynamic-dashboard` (2026-08-29)
+
+Full findings in `.agents/tmp/20260829-dogfood-my-dynamic-dashboard.md` (local).
+
+- [x] Load Order named *our* `context/` filenames in a template meant for every
+      repo. Now gated on task relevance instead.
+- [x] `.agents/governance.md` collided with their `context/governance.md`.
+      Renamed to `reference/memory-and-promotion.md`, named for its trigger.
+- [x] Audit false positives: scoped `Bash(git log *)` scored as unscoped;
+      `except subprocess.CalledProcessError` flagged as execution;
+      `urllib.parse` flagged as network. All three regression-tested.
+- [ ] **`installSkill` copies `__pycache__` and other junk.** The audit flagged
+      three `.pyc` files in a skill whose repo gitignores them — `fs.cpSync`
+      takes everything on disk. Installs should exclude `__pycache__`,
+      `node_modules`, `.DS_Store`, `*.pyc`.
+- [ ] Promote `context/memory-placement.md` — they solved the two-memory-systems
+      problem we logged as an open item.
+- [ ] Managed-region markers in generated stubs. Their `CLAUDE.md` carries the
+      generated blockquote *and* a hand-added import; re-scaffolding would
+      clobber their edits.
+- [ ] `decisions/` directory for cross-round commitments — a real gap.
+- [ ] `plan/cycles/` numbering breaks at 100 (`Round_10, Round_100, Round_11`).
+      Specify three digits.
+- [ ] Compaction guidance for `plan/cycles/` — they are at 174 rounds / 57k
+      lines; we needed to compact at 12 and the template says nothing.
+
 ### Ready to build
 
 4. **`a2scaffold sync`** — regenerate stubs from `.agents/` without a full

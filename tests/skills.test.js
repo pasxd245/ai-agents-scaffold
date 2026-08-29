@@ -818,3 +818,47 @@ describe('auditSkill', () => {
     assert.equal(findings[0].category, 'opaque');
   });
 });
+
+// ── auditSkill — calibration against real-world skills ──────────────
+//
+// Every finding below was a false positive found by running the audit over a
+// production .agents/ that was not written with this tool in mind.
+
+describe('auditSkill (false-positive calibration)', () => {
+  const skill = () => auditSkill(path.join(FIXTURES, 'benign-tooling-skill'));
+
+  it('does not flag a scoped Bash grant', () => {
+    // `Bash(git log *)` is least privilege done right and must not score the
+    // same as a bare `Bash`.
+    const { findings } = skill();
+    assert.ok(!findings.some((f) => f.message.includes('allowed-tools')));
+  });
+
+  it('flags an unscoped Bash grant', () => {
+    const { findings } = auditSkill(path.join(FIXTURES, 'hostile-skill'));
+    assert.ok(findings.some((f) => f.message.includes('allowed-tools')));
+  });
+
+  it('does not treat subprocess exception handling as execution', () => {
+    // `except subprocess.CalledProcessError` is error handling.
+    const { findings } = skill();
+    const lines = findings
+      .filter((f) => f.category === 'execution')
+      .map((f) => f.line);
+    assert.ok(!lines.includes(9), 'except clause must not be flagged');
+  });
+
+  it('still flags a real subprocess call', () => {
+    const { findings } = skill();
+    assert.ok(
+      findings.some((f) => f.category === 'execution' && f.line === 7),
+      'subprocess.check_output( is a genuine shell-out'
+    );
+  });
+
+  it('does not treat urllib.parse as network access', () => {
+    // urllib.parse is pure string handling; urllib.request is not.
+    const { findings } = skill();
+    assert.ok(!findings.some((f) => f.category === 'network'));
+  });
+});

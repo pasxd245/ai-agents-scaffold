@@ -11,6 +11,85 @@
 
 ---
 
+## The working model — CoSF
+
+> **Status**: this section is the _why_ behind the tool, not a settled
+> principle. H1 and H2 are the author's own and **untested**; H3 is borrowed
+> and sourced. Marked so a reader can tell which is which.
+
+**CoSF — the Co-spiral Framework.** Human and AI take turns lifting each
+other's thinking, one revolution at a time. The name says the shape: not a
+handoff, not a loop the human sits inside, a spiral both sides climb.
+
+### H1 — the interaction is HI×AI, not HI+AI (untested)
+
+Addition says the pair is worth the sum of its parts. Multiplication says each
+side scales the other — and admits the product can be **smaller than either
+factor**. That is the honest version, and the one worth designing against:
+a scaffold can make an agent worse by feeding it the wrong context, and an
+agent can make a human worse by absorbing the thinking that used to build
+their model of the codebase.
+
+**How this could be falsified**: find a round where the scaffold measurably
+slowed the work, or where the human's grasp of their own repo got thinner as
+the agent's got thicker. If neither ever happens, the multiplicative framing
+is decoration and `+` would have done.
+
+### H2 — the human is the loop (untested)
+
+Human-in-the-loop and human-on-the-loop both make the person a _component_ of
+a machine process: a gate, or a supervisor. Both are the industry's direction
+of travel, toward autonomy with a human somewhere nearby.
+
+CoSF inverts it. The AI is instrumentation inside a **human's** cycle of
+understanding. The loop is the person; the agent is a tool they run.
+
+**The open problem**: the claim implies the human should get better, and
+nothing here measures that. Every artefact this repo produces — `memory/`,
+`context/`, `promotions.md` — accrues to the **repository**. If the author
+walked away, the repo keeps all of it. That is knowledge externalisation,
+which is valuable and is not the same thing. Until there is a mechanism where
+the human is the beneficiary and it shows, H2 is a stance, not a finding.
+
+### H3 — a scaffold is a specialization layer (sourced)
+
+Goldfeder, Wyder, LeCun and Shwartz-Ziv, [_AI Must Embrace Specialization via
+Superhuman Adaptable Intelligence_](https://arxiv.org/abs/2602.23643) (2026),
+argue that generality is an illusion — humans are specialized by evolution,
+not general — and propose **SAI**, intelligence "measured by the speed with
+which it takes an agent to acquire new skills and learn new tasks."
+
+That is a definition of what `.agents/` is for. A frontier model arrives at a
+repository generally capable and specifically ignorant; the scaffold is the
+instrument that closes the gap fast. Three of the paper's claims carry
+directly:
+
+| Paper                                                                | Here                                                       |
+| -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| "Performance gains require assumptions about the problem class"      | `context/` **is** the encoded assumptions                  |
+| "Negative transfer when tasks compete for representational capacity" | Why the cold-start budget matters; context rot is its face |
+| "Breadth through repeated, modular specialization"                   | Progressive disclosure — narrow triggers, loaded on demand |
+
+**Caveat**: the paper is about model architecture and training. Applying it to
+context scaffolding is an analogy. It is load-bearing only because the same
+effects are measurable at the context layer independently.
+
+**What the paper does not say**: it contains no argument about personalization
+or human-AI teams. It supports H3 and says nothing about H1 or H2 — do not
+cite it for them. Its biological references are, by its own admission,
+motivation rather than mechanism; there is no neuroscience argument here to
+lean on.
+
+### What follows from this
+
+- The scaffold's job is **adaptation efficiency**, and that is measurable:
+  how many turns before a cold agent is productive here, scaffolded versus
+  not. Nothing in this repo measures it yet.
+- Context spent is context taken from the task. A budget is not tidiness.
+- BigTech supplies the general model. This supplies the specialization.
+
+---
+
 ## Product
 
 ### 1. A personal tool that might generalise — in that order

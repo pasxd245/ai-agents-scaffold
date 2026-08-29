@@ -9,13 +9,16 @@
 ## Load first
 
 1. **This file.**
-2. `context/architecture.md` and `context/conventions.md` — how the code is
-   built and the standards it follows.
-3. Anything else in `context/` your task touches (see the map).
+2. The files in `context/` that your task touches. Read a `context/` file when
+   the work is in its subject, not because it exists.
+3. Files in `reference/` when their stated trigger fires — each one
+   opens with a **Read this when** line.
 
-Everything else is **on demand**: read it when its trigger fires, not before.
-That includes `prompts/`, which are invoked deliberately rather than loaded at
-startup.
+Everything else is **on demand**, including `prompts/`, which are invoked
+deliberately rather than loaded at startup.
+
+Context spent here is context taken from the task, so load by relevance, not
+by habit. Loading everything is a cost, not thoroughness.
 
 **Conflict resolution**: `context/` is authoritative over everything else.
 
@@ -26,7 +29,6 @@ startup.
 ```text
 .agents/
   AGENTS.md      # This file — loaded every session
-  governance.md  # Memory format, promotion, authorised changes
   reference/     # Topic docs, each with its own trigger
   context/       # Canonical knowledge (human-curated, authoritative)
   memory/        # Agent-generated learnings (drafts)
@@ -41,7 +43,7 @@ startup.
 
 | Path                                                                          | Agents may                        |
 | ----------------------------------------------------------------------------- | --------------------------------- |
-| `AGENTS.md`, `governance.md`, `reference/`, `context/`, `prompts/`, `skills/` | ❌ READ ONLY                      |
+| `AGENTS.md`, `reference/`, `context/`, `prompts/`, `skills/` | ❌ READ ONLY                       |
 | `memory/`                                                                     | ✅ READ + WRITE                   |
 | `plan/`                                                                       | ⚠️ APPEND-ONLY to `promotions.md` |
 
@@ -50,7 +52,8 @@ Backed by permission rules in `.claude/settings.json` that make Claude Code
 agent can ignore; a permission layer is not.
 
 **A human may still authorise a change** — warn first, wait for confirmation,
-log it in `plan/promotions.md`. Procedure: [governance.md](governance.md).
+log it in `plan/promotions.md`. Procedure:
+[reference/memory-and-promotion.md](reference/memory-and-promotion.md).
 
 **If a discovery contradicts `context/`**: do not edit it. Write the finding to
 `memory/` and flag it for human review.
@@ -79,7 +82,7 @@ Agents MUST NOT:
 
 | Read this                                            | When                                                 |
 | ---------------------------------------------------- | ---------------------------------------------------- |
-| [governance.md](governance.md)                       | Writing a memory file, or proposing a promotion      |
+| [reference/memory-and-promotion.md](reference/memory-and-promotion.md) | Writing a memory file, or proposing a promotion |
 | [reference/root-files.md](reference/root-files.md)   | Editing `CLAUDE.md`, `AGENTS.md` or any harness stub |
 | [reference/mechanisms.md](reference/mechanisms.md)   | Choosing between a rule, skill, hook or sub-agent    |
 | [reference/skills.md](reference/skills.md)           | Authoring or fixing a `SKILL.md`                     |
