@@ -146,6 +146,30 @@ describe('scaffold base template', () => {
     assert.ok(!ask.some((r) => r.startsWith('Write(')));
   });
 
+  it('generates the memory-placement rule and a memory template', () => {
+    // Two memory systems exist the moment a harness with its own memory is
+    // used; without this the scaffold leaves the user to discover the clash.
+    assert.ok(
+      fs.existsSync(
+        path.join(tmpDir, '.agents', 'context', 'memory-placement.md')
+      )
+    );
+    assert.ok(
+      fs.existsSync(path.join(tmpDir, '.agents', 'memory', '_TEMPLATE.md'))
+    );
+  });
+
+  it('keeps the memory format in one place', () => {
+    // _TEMPLATE.md is copyable and therefore authoritative; the reference doc
+    // must point at it rather than restate it.
+    const ref = fs.readFileSync(
+      path.join(tmpDir, '.agents', 'reference', 'memory-and-promotion.md'),
+      'utf8'
+    );
+    assert.match(ref, /_TEMPLATE\.md/);
+    assert.doesNotMatch(ref, /^\*\*Confidence\*\*/m);
+  });
+
   it('generates .agents/context/philosophy.md', () => {
     assert.ok(
       fs.existsSync(path.join(tmpDir, '.agents', 'context', 'philosophy.md'))

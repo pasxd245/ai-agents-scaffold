@@ -69,3 +69,16 @@ window, and adherence drops as instruction files grow. Memory format, promotion
 criteria, skill authoring and the `docs/agents/` policy moved to an on-demand
 reference. No content was dropped.
 **Promoted by**: Vien Pham
+
+## 2026-08-29: Memory Placement Rule → context/memory-placement.md
+
+**Source**: Dogfooding `my-dynamic-dashboard` — their `context/memory-placement.md`,
+codified there in Round_05 after three project memories were saved to harness
+memory and had to be migrated.
+**Rationale**: Two memory systems exist the moment a harness with its own memory
+is used, and nothing in the scaffold said which was which. Their version was
+validated by 15 months of use; generalised here (harness-neutral, project
+examples removed) and shipped with the `memory/_TEMPLATE.md` it depends on.
+Closes a v0.2.0 open item that our own research pass had only identified, not
+answered.
+**Promoted by**: Vien Pham

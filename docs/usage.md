@@ -91,14 +91,17 @@ Dry run — template "base" would generate:
     - $if{agents.gemini}/.gemini/.gitkeep
     - $if{guardrails.claude}/.claude/settings.json
     - .agents/context/.gitkeep
+    - .agents/context/memory-placement.md
     - .agents/context/philosophy.md
     - .agents/memory/.gitkeep
+    - .agents/memory/_TEMPLATE.md
     - .agents/plan/PDCA.md
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
     - .agents/prompts/reflect-agents.prompt.md
     - .agents/reference/docs-agents.md
     - .agents/reference/mechanisms.md
+    - .agents/reference/memory-and-promotion.md
     - .agents/reference/root-files.md
     - .agents/reference/skills.md
     - .agents/skills/.gitkeep
@@ -202,13 +205,16 @@ The `base` template generates:
   reference/             # Topic docs, each with its own trigger
     docs-agents.md
     mechanisms.md
+    memory-and-promotion.md
     root-files.md
     skills.md
   context/               # Canonical knowledge (human-curated)
     .gitkeep
+    memory-placement.md  # Which memory system a finding belongs in
     philosophy.md        # Principles that decide close calls
   memory/                # Agent-generated learnings
     .gitkeep
+    _TEMPLATE.md         # Copy this for a new memory entry
   plan/
     PDCA.md              # PDCA methodology guide
     promotions.md        # Promotion log for validated learnings

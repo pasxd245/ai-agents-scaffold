@@ -31,7 +31,8 @@ by habit. Loading everything is a cost, not thoroughness.
   AGENTS.md      # This file — loaded every session
     reference/     # Topic docs, each with its own trigger
   context/       # Canonical knowledge (human-curated, authoritative)
-  memory/        # Agent-generated learnings (drafts)
+    memory-placement.md   # Which memory system a finding belongs in
+  memory/        # Agent-generated learnings (drafts) — see _TEMPLATE.md
   prompts/       # Scanning & generation prompts — invoked, not auto-loaded
   skills/        # Reusable procedures (Agent Skills spec)
   plan/          # PDCA.md, promotions.md, cycles/

@@ -59,7 +59,7 @@ unconditionally, so the stubs simply retarget. The flag exists, defaulting on.
 ### Context budget — two passes
 
 First pass split the 315-line knowledge base into a ~190-line core plus
-[`governance.md`](../../governance.md), capped by a test.
+[`reference/memory-and-promotion.md`](../../reference/memory-and-promotion.md), capped by a test.
 
 Second pass measured what the Load Order *actually mandated* and found the core
 was only 19% of it: `context/` ("read all recursively") and `prompts/`
@@ -174,8 +174,8 @@ Full findings in `.agents/tmp/20260829-dogfood-my-dynamic-dashboard.md` (local).
       three `.pyc` files in a skill whose repo gitignores them — `fs.cpSync`
       takes everything on disk. Installs should exclude `__pycache__`,
       `node_modules`, `.DS_Store`, `*.pyc`.
-- [ ] Promote `context/memory-placement.md` — they solved the two-memory-systems
-      problem we logged as an open item.
+- [x] Promote `context/memory-placement.md` — generalised from their version,
+      shipped with a `memory/_TEMPLATE.md` it depends on.
 - [ ] Managed-region markers in generated stubs. Their `CLAUDE.md` carries the
       generated blockquote *and* a hand-added import; re-scaffolding would
       clobber their edits.

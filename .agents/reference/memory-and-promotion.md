@@ -9,51 +9,20 @@
 
 ---
 
-## Memory File Format (Recommended)
+## Memory file format
 
-**Filename**: `memory/YYYY-MM-DD-short-topic.md` or `memory/agent-name-topic.md`
+**Filename**: `memory/YYYY-MM-DD-short-topic.md`
 
-```markdown
-# [Short Descriptive Title]
+The format lives in [`memory/_TEMPLATE.md`](../memory/_TEMPLATE.md) — copy that
+file rather than reproducing it here. Two copies of a format drift, and the
+copyable one wins.
 
-**Date**: YYYY-MM-DD
-**Agent**: [tool name]
-**Confidence**: High | Medium | Low
-**Status**: New | Needs Review | Promoted | Archived
+Which memory system a finding belongs in at all is decided by
+[`context/memory-placement.md`](../context/memory-placement.md).
 
-## Problem
-
-Brief description of issue or question
-
-## Finding
-
-What you discovered (concise)
-
-## Evidence
-
-- Files: `src/path/to/file.py`
-- Commits, tests, or links
-
-## Recommendation
-
-**Do**: Bullet list of actionable patterns
-**Don't**: Bullet list of anti-patterns
-
-## Promotion Candidate?
-
-[ ] context/ – Stable pattern, broadly applicable
-[ ] skills/ – Reusable procedure/checklist
-[ ] Not yet – Needs more validation
-```
-
-**Status lifecycle:**
-
-- `New` → Agent just created this
-- `Needs Review` → Outdated, conflicting, or requires validation
-- `Promoted` → Moved to context/ or skills/
-- `Archived` → Historical reference only
-
----
+**Status lifecycle**: `New` → `Needs Review` (stale, conflicting, or
+unverified) → `Promoted` (moved into canon and logged) → `Archived`
+(historical only).
 
 ---
 

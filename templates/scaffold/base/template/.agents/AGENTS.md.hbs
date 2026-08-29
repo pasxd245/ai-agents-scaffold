@@ -31,7 +31,8 @@ by habit. Loading everything is a cost, not thoroughness.
   AGENTS.md      # This file — loaded every session
   reference/     # Topic docs, each with its own trigger
   context/       # Canonical knowledge (human-curated, authoritative)
-  memory/        # Agent-generated learnings (drafts)
+    memory-placement.md   # Which memory system a finding belongs in
+  memory/        # Agent-generated learnings (drafts) — see _TEMPLATE.md
   prompts/       # Scanning & generation prompts — invoked, not auto-loaded
   skills/        # Reusable procedures (Agent Skills spec)
   plan/          # PDCA.md, promotions.md, cycles/
@@ -87,5 +88,6 @@ Agents MUST NOT:
 | [reference/mechanisms.md](reference/mechanisms.md)   | Choosing between a rule, skill, hook or sub-agent    |
 | [reference/skills.md](reference/skills.md)           | Authoring or fixing a `SKILL.md`                     |
 | [reference/docs-agents.md](reference/docs-agents.md) | Adding anything under `docs/agents/`                 |
+| [context/memory-placement.md](context/memory-placement.md) | Saving a memory, and unsure which system it goes in |
 | [context/philosophy.md](context/philosophy.md)       | A judgement call the rules above do not cover        |
 | [plan/PDCA.md](plan/PDCA.md)                         | Opening or closing a round                           |
