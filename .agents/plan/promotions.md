@@ -50,3 +50,22 @@
 **Source**: Round_04 Act phase — skill ref implementation
 **Rationale**: Documented the skill-ref pattern (lightweight SKILL.md pointers with `metadata.type: skill-ref`), including directory layout, path computation, passthrough behavior, and conflict rules.
 **Promoted by**: Human-confirmed agent update
+
+## 2026-08-29: Project Philosophy → context/philosophy.md
+
+**Source**: Round_13 — derived from `ecosystem-ideas.draft.md`, the repo
+refactor plan, and existing `context/conventions.md`
+**Rationale**: The principles that decide close calls were scattered across
+planning docs and implicit in code review. Collected into canonical context and
+summarised in every root instruction stub, so agents load them each session.
+**Promoted by**: Vien Pham
+
+## 2026-08-29: Governance long-form split → governance.md
+
+**Source**: Round_13 — context-budget work
+**Rationale**: `.agents/AGENTS.md` is imported into every session and had grown
+to 315 lines; imports load at launch and count in full against the context
+window, and adherence drops as instruction files grow. Memory format, promotion
+criteria, skill authoring and the `docs/agents/` policy moved to an on-demand
+reference. No content was dropped.
+**Promoted by**: Vien Pham
