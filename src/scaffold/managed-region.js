@@ -20,8 +20,12 @@ export const REGION_START = '<!-- a2scaffold:start -->';
 /** Closing marker. */
 export const REGION_END = '<!-- a2scaffold:end -->';
 
-const START_RE = /<!--\s*a2scaffold:start[^>]*-->/;
-const END_RE = /<!--\s*a2scaffold:end[^>]*-->/;
+// A marker must occupy its own line. Documentation that mentions the markers
+// inline — `<!-- a2scaffold:start -->` inside backticks, as this repo's own
+// reference docs do — must not turn that file into a managed one, or a merge
+// would splice it at the wrong boundaries.
+const START_RE = /^[ \t]*<!--\s*a2scaffold:start[^>]*-->[ \t]*$/m;
+const END_RE = /^[ \t]*<!--\s*a2scaffold:end[^>]*-->[ \t]*$/m;
 
 /**
  * Whether a file carries a complete, correctly ordered managed region.

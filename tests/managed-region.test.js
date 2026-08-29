@@ -119,3 +119,25 @@ describe('re-scaffolding an existing project', () => {
     assert.ok(conflicts.includes(path.join('.agents', 'AGENTS.md')));
   });
 });
+
+// ── prose that mentions the markers is not a managed file ───────────
+
+describe('hasManagedRegion (inline mentions)', () => {
+  it('ignores markers inside inline code', () => {
+    // This repo's own reference docs describe the markers in backticks. If
+    // that counted, a re-scaffold would splice the doc at the wrong offsets.
+    const doc = [
+      '# Root files',
+      '',
+      '- Generated content is fenced by `<!-- a2scaffold:start -->` /',
+      '  `<!-- a2scaffold:end -->`. Write your sections outside it.',
+    ].join('\n');
+    assert.equal(hasManagedRegion(doc), false);
+  });
+
+  it('still recognises real markers on their own line', () => {
+    const real =
+      '# T\n\n<!-- a2scaffold:start -->\nbody\n<!-- a2scaffold:end -->\n';
+    assert.equal(hasManagedRegion(real), true);
+  });
+});
