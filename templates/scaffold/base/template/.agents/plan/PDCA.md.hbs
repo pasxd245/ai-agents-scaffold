@@ -53,13 +53,46 @@ Rounds live in `.agents/plan/cycles/` and follow this pattern:
 
 ```text
 cycles/
-  Round_01.md   — First initiative
-  Round_02.md   — Second initiative
-  Round_XX.md   — Subsequent rounds
+  Round_001.md   — First initiative
+  Round_002.md   — Second initiative
+  Round_XXX.md   — Subsequent rounds
 ```
 
-Use zero-padded two-digit numbering. Each file uses the round template
-below.
+Use **zero-padded three-digit** numbering. Two digits breaks at round 100:
+the files then sort `Round_10, Round_100, Round_101, …, Round_11`, and every
+tool that lists them lies about the order. A real project reached 174 rounds
+and hit exactly this.
+
+Three digits buys 999. If a project reaches that, renumbering is a compaction
+problem (below), not a naming one.
+
+Each file uses the round template below.
+
+---
+
+## Compaction
+
+`cycles/` grows without bound — one file per round, and rounds do not stop.
+Left alone it becomes the largest thing in `.agents/`, and none of it is
+loaded at session start, so the cost is not context but navigation: nobody
+can find the round that mattered.
+
+**When to compact**: when the count passes roughly 20, or when you stop being
+able to answer "which round decided X?" without grepping.
+
+**How**:
+
+1. Write `ROUNDS_<first>-<last>_compacted.md` — per round, keep the goal in a
+   line, what shipped, the decisions worth remembering, and the learnings.
+2. Drop the parts that do not survive the round: checklists, file-by-file
+   ledgers, "tests pass" restatements, LOC tables.
+3. Delete the original `Round_NNN.md` files in the same commit, and say in
+   the compacted file's header that `git log -- .agents/plan/cycles/` recovers
+   any of them.
+4. Keep going from the next number. Do not renumber.
+
+Compaction is lossy on purpose. The full record stays in git; what survives
+into the file is what a reader six months out actually needs.
 
 ---
 

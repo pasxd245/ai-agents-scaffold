@@ -66,8 +66,10 @@ Before saving, ask:
   read `.agents/memory/` first.
 - Preference questions — how does this person like work scoped — harness
   memory.
-- **Both go stale.** Verify a recalled memory against current code before
-  acting on it. A memory is what was true when it was written.
+- **Both go stale.** A memory is what was true when it was written. Check
+  `Review-by` first: past that date the finding is unverified, not wrong.
+  Verify it against current code, then move the date or flag it. Nothing
+  expires a memory automatically.
 
 ---
 

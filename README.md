@@ -32,6 +32,7 @@ This generates the base AI agent setup in your current directory:
   AGENTS.md                    # The heart — every stub points here
   reference/                   # Topic docs, each with its own trigger
   context/                     # Canonical knowledge (human-curated)
+    harness-behaviour.md       # How harnesses load and enforce (dated)
     memory-placement.md        # Which memory system a finding belongs in
     philosophy.md              # Principles that decide close calls
   memory/                      # Agent-generated learnings

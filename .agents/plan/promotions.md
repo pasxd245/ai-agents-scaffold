@@ -82,3 +82,15 @@ examples removed) and shipped with the `memory/_TEMPLATE.md` it depends on.
 Closes a v0.2.0 open item that our own research pass had only identified, not
 answered.
 **Promoted by**: Vien Pham
+
+## 2026-08-29: Harness Behaviour Facts → context/harness-behaviour.md
+
+**Source**: Round_13 — facts gathered during the practice survey and, in three
+cases, corrections found only by reading the primary docs.
+**Rationale**: The scaffold's layout, line budgets and permission rules are all
+downstream of how the harnesses actually load and enforce files, and those
+facts were scattered inline across `AGENTS.md`. Collected into dated, sourced
+canon with re-verify triggers — they are someone else's product behaviour and
+will change without notice. Three assumptions had already shaped decisions
+before anyone checked them.
+**Promoted by**: Vien Pham

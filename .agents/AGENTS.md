@@ -31,6 +31,7 @@ by habit. Loading everything is a cost, not thoroughness.
   AGENTS.md      # This file — loaded every session
     reference/     # Topic docs, each with its own trigger
   context/       # Canonical knowledge (human-curated, authoritative)
+    harness-behaviour.md  # How the harnesses load and enforce (dated)
     memory-placement.md   # Which memory system a finding belongs in
   memory/        # Agent-generated learnings (drafts) — see _TEMPLATE.md
   prompts/       # Scanning & generation prompts — invoked, not auto-loaded
@@ -50,7 +51,8 @@ by habit. Loading everything is a cost, not thoroughness.
 
 Backed by permission rules in `.claude/settings.json` that make Claude Code
 **ask** before any edit under `.agents/`. Instruction files are context an
-agent can ignore; a permission layer is not.
+agent can ignore; a permission layer is not — see
+[context/harness-behaviour.md](context/harness-behaviour.md).
 
 **A human may still authorise a change** — warn first, wait for confirmation,
 log it in `plan/promotions.md`. Procedure: [reference/memory-and-promotion.md](reference/memory-and-promotion.md).

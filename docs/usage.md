@@ -84,6 +84,7 @@ Dry run — template "base" would generate:
     - .agents/.gitignore
     - .agents/AGENTS.md
     - .agents/context/.gitkeep
+    - .agents/context/harness-behaviour.md
     - .agents/context/memory-placement.md
     - .agents/context/philosophy.md
     - .agents/memory/_TEMPLATE.md
@@ -208,6 +209,7 @@ The `base` template generates:
     skills.md
   context/               # Canonical knowledge (human-curated)
     .gitkeep
+    harness-behaviour.md # How harnesses load and enforce (dated)
     memory-placement.md  # Which memory system a finding belongs in
     philosophy.md        # Principles that decide close calls
   memory/                # Agent-generated learnings

@@ -170,6 +170,35 @@ describe('scaffold base template', () => {
     assert.doesNotMatch(ref, /^\*\*Confidence\*\*/m);
   });
 
+  it('dates the harness-behaviour facts', () => {
+    // Provider behaviour changes without notice, so the file has to say when
+    // it was last checked or it becomes confidently wrong.
+    const body = fs.readFileSync(
+      path.join(tmpDir, '.agents', 'context', 'harness-behaviour.md'),
+      'utf8'
+    );
+    assert.match(body, /\*\*Last verified\*\*: \d{4}-\d{2}-\d{2}/);
+  });
+
+  it('gives memory entries a staleness field', () => {
+    const tpl = fs.readFileSync(
+      path.join(tmpDir, '.agents', 'memory', '_TEMPLATE.md'),
+      'utf8'
+    );
+    assert.match(tpl, /\*\*Review-by\*\*/);
+    assert.match(tpl, /\*\*Source\*\*/);
+  });
+
+  it('specifies round numbering that survives round 100', () => {
+    const pdca = fs.readFileSync(
+      path.join(tmpDir, '.agents', 'plan', 'PDCA.md'),
+      'utf8'
+    );
+    assert.match(pdca, /three-digit/);
+    assert.doesNotMatch(pdca, /zero-padded two-digit/);
+    assert.match(pdca, /## Compaction/);
+  });
+
   it('generates .agents/context/philosophy.md', () => {
     assert.ok(
       fs.existsSync(path.join(tmpDir, '.agents', 'context', 'philosophy.md'))

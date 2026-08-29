@@ -136,9 +136,9 @@ a governance change and needs a human decision before any code.
 **Promotions**:
 
 - [x] → context/ : `philosophy.md` — principles that decide close calls
-- [ ] → context/ : harness-behaviour facts (import cost, `Edit()` vs `Write()`,
-      `ask` vs `deny`). Currently inline in `AGENTS.md`; may deserve a
-      `context/harness.md` if it grows.
+- [x] → context/ : `harness-behaviour.md` — import cost, `Edit()` vs `Write()`,
+      `ask` vs `deny`, skill tiers. Dated and sourced, with re-verify triggers,
+      because every one of these is someone else's product behaviour.
 
 ---
 
@@ -151,10 +151,10 @@ landable.
 
 1. **Path-scoped rules emitter** — see Blocked above. Requires agreeing a
    frontmatter convention for `.agents/context/`.
-2. **Memory provenance and staleness** — add `Source` and `Review-by` to the
-   memory file format, and document how `.agents/memory/` relates to Claude
-   Code's own machine-local auto memory. Users currently have two memory
-   systems and no guidance on which is which.
+2. ~~**Memory provenance and staleness**~~ — done. `Source` and `Review-by` are
+   in `memory/_TEMPLATE.md`, with guidance on setting the date from what the
+   finding depends on rather than a fixed interval; `context/memory-placement.md`
+   covers the two-systems question.
 3. **Root `AGENTS.md` for tools with no import support** — Copilot's stub
    restates content, which drifts. Decide whether re-scaffolding is enough or
    whether it needs a `sync` command.
@@ -182,10 +182,8 @@ Full findings in `.agents/tmp/20260829-dogfood-my-dynamic-dashboard.md` (local).
       Output paths are now resolved against the view; dry-run is accurate for
       the first time as a side effect.
 - [ ] `decisions/` directory for cross-round commitments — a real gap.
-- [ ] `plan/cycles/` numbering breaks at 100 (`Round_10, Round_100, Round_11`).
-      Specify three digits.
-- [ ] Compaction guidance for `plan/cycles/` — they are at 174 rounds / 57k
-      lines; we needed to compact at 12 and the template says nothing.
+- [x] `plan/cycles/` numbering breaks at 100. Now three digits.
+- [x] Compaction guidance for `plan/cycles/` — when, how, and what to drop.
 
 ### Ready to build
 

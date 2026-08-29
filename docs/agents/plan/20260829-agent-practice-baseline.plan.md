@@ -227,6 +227,7 @@ Stated so a future survey knows where we were thin, not comprehensive:
 
 ## 6. Change log
 
-| Date       | Change                                                                       |
-| ---------- | ---------------------------------------------------------------------------- |
-| 2026-08-29 | Initial baseline. Surveyed, acted on in Round 13, recorded for re-comparison |
+| Date       | Change                                                                                                                                                                             |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-29 | Initial baseline. Surveyed, acted on in Round 13, recorded for re-comparison                                                                                                       |
+| 2026-08-29 | §2.2-2.4 facts extracted to `.agents/context/harness-behaviour.md`, which carries its own re-verify triggers. This file stays the wider survey; that one is the operational subset |
