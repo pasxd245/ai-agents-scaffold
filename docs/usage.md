@@ -81,20 +81,14 @@ Dry run — template "base" would generate:
   Project name: my-project
 
   Files:
-    - $if{agents.agentsmd}/AGENTS.md
-    - $if{agents.claude}/CLAUDE.md
-    - $if{agents.gemini}/GEMINI.md
     - .agents/.gitignore
     - .agents/AGENTS.md
-    - $if{agents.codex}/.codex/.gitkeep
-    - $if{agents.copilot}/.github/copilot-instructions.md
-    - $if{agents.gemini}/.gemini/.gitkeep
-    - $if{guardrails.claude}/.claude/settings.json
     - .agents/context/.gitkeep
     - .agents/context/memory-placement.md
     - .agents/context/philosophy.md
-    - .agents/memory/.gitkeep
     - .agents/memory/_TEMPLATE.md
+    - .agents/memory/.gitkeep
+    - .agents/plan/cycles/.gitkeep
     - .agents/plan/PDCA.md
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
@@ -105,12 +99,16 @@ Dry run — template "base" would generate:
     - .agents/reference/root-files.md
     - .agents/reference/skills.md
     - .agents/skills/.gitkeep
-    - .agents/plan/cycles/.gitkeep
+    - .claude/settings.json
+    - .github/copilot-instructions.md
+    - AGENTS.md
+    - CLAUDE.md
 ```
 
-Dry-run output is based on raw template paths, so conditional template
-directories such as `$if{agents.claude}` may appear in the preview even
-though they are evaluated during rendering.
+Dry-run evaluates conditional paths against the resolved values, so the list
+is what you will actually get. Files gated on a disabled harness — `GEMINI.md`
+and `.codex/` above, with `agents.gemini` and `agents.codex` off — are omitted
+rather than shown with their `$if{...}` marker.
 
 ### List available templates
 
@@ -232,6 +230,36 @@ CLAUDE.md                # Stub for Claude Code (@.agents/AGENTS.md)
 .github/
   copilot-instructions.md  # Stub for Copilot — restates it (cannot import)
 ```
+
+## Re-running the scaffold
+
+Generated stubs — `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and
+`.github/copilot-instructions.md` — fence their generated content between
+markers:
+
+```markdown
+# CLAUDE.md — my-project
+
+<!-- a2scaffold:start -->
+
+...generated...
+
+<!-- a2scaffold:end -->
+
+## Anything you write here is yours
+```
+
+Re-running `a2scaffold` replaces **only** the fenced block. Edits outside it,
+including changes to the title, survive. Those files are therefore not
+reported as conflicts, and updating them needs no `--force`.
+
+Everything under `.agents/` has no managed region on purpose. It is canonical
+knowledge you are expected to edit freely, so overwriting it is destructive
+and still requires `--force`.
+
+The markers are HTML comments: invisible in rendered markdown, and stripped by
+harnesses that strip comments before loading the file, so they cost nothing at
+read time.
 
 ## File conflict handling
 

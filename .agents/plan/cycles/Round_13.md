@@ -174,9 +174,13 @@ Full findings in `.agents/tmp/20260829-dogfood-my-dynamic-dashboard.md` (local).
       what is on disk, not what is tracked. Now filtered.
 - [x] Promote `context/memory-placement.md` — generalised from their version,
       shipped with a `memory/_TEMPLATE.md` it depends on.
-- [ ] Managed-region markers in generated stubs. Their `CLAUDE.md` carries the
-      generated blockquote *and* a hand-added import; re-scaffolding would
-      clobber their edits.
+- [x] Managed-region markers in generated stubs. While building it, found that
+      **conflict detection never saw any `$if{}`-gated file** — `CLAUDE.md`,
+      root `AGENTS.md`, `GEMINI.md`, copilot and `settings.json` were silently
+      overwritten with no warning and no `--force`. Raw template paths were
+      compared against the output dir, so the marker segment never matched.
+      Output paths are now resolved against the view; dry-run is accurate for
+      the first time as a side effect.
 - [ ] `decisions/` directory for cross-round commitments — a real gap.
 - [ ] `plan/cycles/` numbering breaks at 100 (`Round_10, Round_100, Round_11`).
       Specify three digits.

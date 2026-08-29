@@ -31,3 +31,6 @@ file meant for a different one, and every stub reaches this file in one hop.
   adherence. Anything longer belongs in `.agents/context/` or a skill.
 - 🔁 The stubs are generated from one shared template. When the common wording
   changes, re-scaffold rather than editing the same paragraph four times.
+- ✏️ Generated content is fenced by `<!-- a2scaffold:start -->` /
+  `<!-- a2scaffold:end -->`. Write your own sections **outside** the fence —
+  a re-scaffold replaces the inside and preserves the outside.
