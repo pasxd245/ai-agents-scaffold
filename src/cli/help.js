@@ -17,6 +17,7 @@ a2scaffold v${pkg.version}
 Usage:
   a2scaffold [options]              Scaffold files (default command)
   a2scaffold init [options]         Same as default scaffold command
+  a2scaffold sync [options]         Update the generated surface, safely
   a2scaffold skill <action>         Manage agent skills
 
 Scaffold Options:
@@ -28,6 +29,16 @@ Scaffold Options:
       --dry-run           Preview without writing files
   -h, --help              Show this help
   -v, --version           Show version
+
+sync — bring the generated surface up to date
+  Creates missing files, refreshes managed regions, and leaves everything
+  else alone. Nothing it does can lose work, so there is no --force.
+  Options:
+    -u, --use <name>        Template to use (default: "base")
+    -o, --output <dir>      Target directory (default: ".")
+    -n, --name <name>       Project name (default: directory name)
+        --adopt             Insert markers into a stub that has none
+        --dry-run           Report without writing
 
 Skill Commands:
   skill add <source> [options]              Install a skill into .agents/skills
@@ -69,6 +80,8 @@ Examples:
   npx a2scaffold init
   npx a2scaffold --use base --name my-project
   npx a2scaffold --use shared/research-setup
+  npx a2scaffold sync
+  npx a2scaffold sync --dry-run
   npx a2scaffold skill add my-skill
   npx a2scaffold skill add planning/master-plan
   npx a2scaffold skill add ./my-skill

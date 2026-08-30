@@ -25,12 +25,13 @@ npx a2scaffold
 
 ## Commands
 
-a2scaffold has two command groups:
+a2scaffold has three command groups:
 
 | Command                     | Description                                         |
 | --------------------------- | --------------------------------------------------- |
 | `a2scaffold [options]`      | Scaffold AI agent config files (default)            |
 | `a2scaffold init [options]` | Same as the default scaffold command                |
+| `a2scaffold sync [options]` | Update the generated surface without losing work    |
 | `a2scaffold skill <action>` | Manage agent skills — [see Skills Guide](skills.md) |
 
 Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
@@ -302,6 +303,57 @@ docs/agents/
 Read on demand, never auto-loaded, and `.agents/context/` wins any conflict.
 A plan doc that kicks off real work hands off to `.agents/plan/` — either a
 single round in `cycles/`, or a program (see below) when it spans several.
+
+## Keeping a repo up to date — `sync`
+
+Scaffolding treats every file the same way, so refreshing a stub used to mean
+`--force`, and `--force` also replaces `.agents/` wholesale. In a repo with real
+curated canon that trade is never worth making, which left no way to pick up
+template changes at all.
+
+`sync` separates the two kinds of generated file:
+
+| Kind                                            | Example                  | What sync does                                           |
+| ----------------------------------------------- | ------------------------ | -------------------------------------------------------- |
+| **Managed** — the template owns a fenced region | the harness stubs        | Replaces the region only. Author content cannot be lost. |
+| **Seeded** — written once, then yours           | everything in `.agents/` | Creates it if absent. Never touches it if present.       |
+
+```bash
+a2scaffold sync --dry-run   # report only
+a2scaffold sync
+```
+
+Nothing it does can lose work, so there is no `--force` and no conflict list —
+which makes it safe in CI or a pre-commit hook, where `--force` never will be.
+Files it will not touch are reported instead:
+
+```text
+Synced "base" into /path/to/repo
+
+  Created — new template files:
+    - .agents/plan/DoD.md
+
+  Updated — managed region refreshed:
+    - CLAUDE.md
+
+  Behind the template — review and merge by hand:
+    - .claude/settings.json
+```
+
+Two reports need action from you:
+
+- **Not managed** — the template owns a block in that file and your copy has no
+  markers. `--adopt` inserts them, but read the warning it prints first: a stub
+  generated _before_ markers existed already contains a copy of the block, so
+  adoption duplicates it rather than replacing it. For those, place the markers
+  by hand.
+- **Behind the template** — `.claude/settings.json` carries permission rules,
+  and falling behind means canon the harness is no longer protecting. It is
+  never overwritten, because you may have added rules of your own.
+
+On a repo that has never been scaffolded, `sync` does the whole install
+non-destructively: it creates everything missing and reports any pre-existing
+instruction file rather than touching it.
 
 ## Re-running the scaffold
 

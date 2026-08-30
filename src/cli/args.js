@@ -53,10 +53,10 @@ function findFirstPositional(argv) {
 
 /**
  * Detect command from argv. Returns { command, args } where command is
- * 'scaffold' (default) or 'skill', and args is the remaining argv slice.
+ * 'scaffold' (default), 'skill' or 'sync', and args is the remaining argv slice.
  *
  * @param {string[]} argv
- * @returns {{ command: 'scaffold' | 'skill', args: string[] }}
+ * @returns {{ command: 'scaffold' | 'skill' | 'sync', args: string[] }}
  */
 export function detectCommand(argv) {
   const idx = findFirstPositional(argv);
@@ -64,6 +64,9 @@ export function detectCommand(argv) {
 
   if (argv[idx] === 'skill') {
     return { command: 'skill', args: argv.slice(idx + 1) };
+  }
+  if (argv[idx] === 'sync') {
+    return { command: 'sync', args: argv.slice(idx + 1) };
   }
   if (argv[idx] === 'init') {
     return {

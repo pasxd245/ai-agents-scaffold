@@ -7,6 +7,7 @@ import { TEMPLATE_EXT } from '../constants.js';
 import { mergeManagedRegion, adoptManagedRegion } from './managed-region.js';
 
 export { checkExistingFiles, classifyConflicts } from './conflicts.js';
+export { sync } from './sync.js';
 export { listOutputPaths, resolveOutputPath } from './output-paths.js';
 export {
   hasManagedRegion,

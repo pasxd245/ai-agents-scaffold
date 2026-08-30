@@ -59,6 +59,25 @@ template, and permission rules the flag brings with them.
 Values come from the template's `values.yaml`, overridable per repo through
 `.a2scaffold/.a2scaffoldrc.{json,yaml,yml}`.
 
+### Updating an existing repo — reach for `sync` first
+
+```bash
+npx a2scaffold sync --dry-run   # report only
+npx a2scaffold sync
+```
+
+`sync` creates missing files, refreshes managed regions, and leaves everything
+else alone. Nothing it does can lose work, so it needs no `--force` and asks no
+questions. **This is the right command for almost every update.** It also
+installs cleanly into a repo that has never been scaffolded.
+
+It reports two things it will not do on its own: a stub with no markers, and
+`.claude/settings.json` when it has fallen behind. Both want a human decision —
+relay them, do not work around them.
+
+Reach for the full scaffold below only on a first run, or when the user
+explicitly wants files replaced.
+
 ### Re-scaffolding an existing repo
 
 Three categories of file behave differently, and confusing them destroys
