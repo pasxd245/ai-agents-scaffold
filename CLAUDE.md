@@ -1,5 +1,7 @@
 # CLAUDE.md — a2scaffold
 
+<!-- a2scaffold:start -->
+
 > Claude Code reads this file, not `AGENTS.md`. It is a stub: the project
 > knowledge lives in `.agents/`, imported below.
 
@@ -10,6 +12,8 @@ pair-programming workflow. Treat it as part of these instructions.
 Agents that expand `@` imports load it inline; others open it directly.
 
 @.agents/AGENTS.md
+
+<!-- a2scaffold:end -->
 
 ## Philosophy
 

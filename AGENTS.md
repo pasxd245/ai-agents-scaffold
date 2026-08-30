@@ -1,5 +1,7 @@
 # AGENTS.md — a2scaffold
 
+<!-- a2scaffold:start -->
+
 > Read by Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf, Aider and other
 > tools that follow the [AGENTS.md](https://agents.md) convention. It is a
 > stub: the project knowledge lives in `.agents/`, referenced below.
@@ -11,6 +13,8 @@ pair-programming workflow. Treat it as part of these instructions.
 Agents that expand `@` imports load it inline; others open it directly.
 
 @.agents/AGENTS.md
+
+<!-- a2scaffold:end -->
 
 ## Philosophy
 

@@ -1,5 +1,7 @@
 # copilot-instructions.md — a2scaffold
 
+<!-- a2scaffold:start -->
+
 > Loaded by GitHub Copilot for every request in this repository. Copilot does
 > not expand imports, so this stub restates what the others import.
 
@@ -9,6 +11,8 @@
 pair-programming workflow. Treat it as part of these instructions.
 This harness does not expand `@` imports, so **open it first**:
 [AGENTS.md](../.agents/AGENTS.md).
+
+<!-- a2scaffold:end -->
 
 ## Philosophy
 
