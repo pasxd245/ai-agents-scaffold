@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import { scaffold } from '../src/scaffold/index.js';
 
 describe('scaffold base template', () => {
@@ -513,4 +516,57 @@ describe('scaffold with optional values', () => {
       fs.rmSync(outDir, { recursive: true, force: true });
     }
   });
+});
+
+// ── generated output must not fight the formatter ───────────────────
+
+describe('generated stubs are formatter-stable', () => {
+  /**
+   * The managed region is rewritten on every scaffold, so anything a
+   * formatter insists on changing inside it becomes a permanent ping-pong:
+   * prettier adds it, the next run strips it, the diff never settles.
+   *
+   * This missed once already — `<!-- a2scaffold:start -->` was followed
+   * directly by a blockquote, and prettier wants a blank line between them.
+   */
+  /** @type {string} */
+  let tmpDir;
+
+  const stubs = [
+    'CLAUDE.md',
+    'AGENTS.md',
+    'GEMINI.md',
+    '.github/copilot-instructions.md',
+  ];
+
+  before(async () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-fmt-'));
+    await scaffold({
+      templateName: 'scaffold/base',
+      outputDir: tmpDir,
+      overrides: { project: { name: 'fmt' }, agents: { gemini: true } },
+    });
+  });
+
+  after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+  for (const rel of stubs) {
+    it(`renders ${rel} exactly as prettier would write it`, async () => {
+      const prettier = await import('prettier');
+      const repoRoot = path.dirname(__dirname);
+      const options = await prettier.resolveConfig(
+        path.join(repoRoot, 'README.md')
+      );
+      const text = fs.readFileSync(path.join(tmpDir, rel), 'utf8');
+      const formatted = await prettier.format(text, {
+        ...options,
+        parser: 'markdown',
+      });
+      assert.equal(
+        formatted,
+        text,
+        `${rel} is not formatter-stable; a prettier-using repo would rewrite it every run`
+      );
+    });
+  }
 });
