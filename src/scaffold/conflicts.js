@@ -39,3 +39,49 @@ export function checkExistingFiles(
     })
     .map(({ outputRel }) => outputRel);
 }
+
+/**
+ * Split the conflicts into the two things `--force` would actually do.
+ *
+ * "Would be overwritten" stopped being true for every conflict once `--force`
+ * learned to adopt a stub: a hand-written `AGENTS.md` keeps its content and
+ * gains a managed region, while `.agents/` canon is still replaced wholesale.
+ * Those are different enough that a user deciding whether to type `--force`
+ * needs them apart.
+ *
+ * @param {string} templateDir - Path to template/ directory
+ * @param {string} outDir - Target output directory
+ * @param {Record<string, any>} [view] - Resolved values
+ * @param {string} [extname] - Template file extension (default `.hbs`)
+ * @returns {{ adopt: string[], overwrite: string[] }} output-relative paths
+ */
+export function classifyConflicts(templateDir, outDir, view, extname) {
+  /** @type {string[]} */
+  const adopt = [];
+  /** @type {string[]} */
+  const overwrite = [];
+
+  for (const outputRel of checkExistingFiles(
+    templateDir,
+    outDir,
+    view,
+    extname
+  )) {
+    const templateRel = listOutputPaths(templateDir, view, extname).find(
+      (p) => p.outputRel === outputRel
+    )?.templateRel;
+    if (!templateRel) {
+      overwrite.push(outputRel);
+      continue;
+    }
+    const template = fs.readFileSync(
+      path.join(templateDir, templateRel),
+      'utf8'
+    );
+    // The existing file has no region — checkExistingFiles already excluded
+    // any file that does — so the template having one is the whole test.
+    (hasManagedRegion(template) ? adopt : overwrite).push(outputRel);
+  }
+
+  return { adopt, overwrite };
+}

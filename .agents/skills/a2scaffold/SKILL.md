@@ -61,12 +61,14 @@ Values come from the template's `values.yaml`, overridable per repo through
 
 ### Re-scaffolding an existing repo
 
-Two categories of file behave differently, and confusing them destroys work:
+Three categories of file behave differently, and confusing them destroys
+work:
 
 | File                                                                                  | On re-scaffold                                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Root stubs — `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md` | Carry a managed region (`<!-- a2scaffold:start -->` … `<!-- a2scaffold:end -->`). Only the fenced block is replaced; hand-written sections outside it survive. Not a conflict, needs no `--force`. |
-| Everything under `.agents/`                                                           | **No managed region, on purpose.** It is canonical and human-owned. Re-scaffolding reports it as a conflict and refuses without `--force`.                                                         |
+| A stub that predates the tool, with no markers                                        | **Adopted** under `--force`: the generated block is inserted below the title and everything else the author wrote is kept. Happens once; the file then has markers and merges normally.            |
+| Everything under `.agents/`                                                           | **No managed region, on purpose.** It is canonical and human-owned. Re-scaffolding reports it as a conflict and refuses without `--force`, which replaces it wholesale.                            |
 
 So:
 
@@ -75,10 +77,16 @@ npx a2scaffold --dry-run   # see what would change
 npx a2scaffold             # updates managed regions; exits 1 if canon conflicts
 ```
 
-**Before ever passing `--force`**: it overwrites `.agents/` files _wholesale_,
-including anything the human curated in `context/`, `memory/`, or `plan/`.
-Confirm with the user, naming the specific files the CLI listed. If the repo is
-under git, check `git status` is clean first so the change is recoverable.
+**Before ever passing `--force`**: read the CLI's own split. It lists what
+would be _adopted_ (content kept) separately from what would be _overwritten_
+(replaced wholesale) — and the second list includes anything the human curated
+in `context/`, `memory/`, or `plan/`. Confirm with the user, naming the files
+in the overwrite list specifically. If the repo is under git, check
+`git status` is clean first so the change is recoverable.
+
+Adopting a repo that already has agent files is the normal first run there,
+not a dangerous one: `--force` is required, and no hand-written content is
+lost.
 
 A conflict list is information, not a failure. Report which files differ and
 ask, rather than reaching for `--force` to make the error go away.

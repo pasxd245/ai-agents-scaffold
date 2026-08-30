@@ -4,6 +4,7 @@ import { parseArgs } from 'node:util';
 import {
   scaffold,
   checkExistingFiles,
+  classifyConflicts,
   listOutputPaths,
   resolveScaffoldConfig,
 } from '../../scaffold/index.js';
@@ -99,20 +100,32 @@ export async function runScaffold(argv) {
     view
   );
 
+  const { adopt, overwrite } = classifyConflicts(
+    templatePaths.templateDir,
+    outputDir,
+    view
+  );
+
   if (conflicts.length > 0 && !values.force) {
-    console.error(
-      'The following files already exist and would be overwritten:\n'
-    );
-    for (const file of conflicts) {
-      console.error(`  - ${file}`);
+    console.error('The following files already exist:\n');
+    if (adopt.length > 0) {
+      console.error('  Adopted — your content is kept, the generated block is');
+      console.error('  inserted below the title:\n');
+      for (const file of adopt) console.error(`    - ${file}`);
+      console.error('');
     }
-    console.error('\nUse --force to overwrite existing files.');
+    if (overwrite.length > 0) {
+      console.error('  Overwritten — replaced wholesale, edits lost:\n');
+      for (const file of overwrite) console.error(`    - ${file}`);
+      console.error('');
+    }
+    console.error('Use --force to proceed.');
     process.exit(1);
   }
 
-  if (conflicts.length > 0 && values.force) {
+  if (overwrite.length > 0 && values.force) {
     console.warn(
-      `Warning: overwriting ${conflicts.length} existing file(s).\n`
+      `Warning: overwriting ${overwrite.length} existing file(s).\n`
     );
   }
 
@@ -120,6 +133,7 @@ export async function runScaffold(argv) {
     templateName,
     outputDir,
     overrides,
+    adopt: values.force,
   });
 
   console.log(`\nScaffolded "${useName}" template successfully!\n`);
@@ -129,6 +143,9 @@ export async function runScaffold(argv) {
     console.log(
       `  Updated in place, keeping your edits: ${result.preserved.join(', ')}`
     );
+  }
+  if (result.adopted.length > 0) {
+    console.log(`  Adopted, your content kept: ${result.adopted.join(', ')}`);
   }
   console.log('\nNext steps:');
   console.log('  1. Review the generated .agents/AGENTS.md');

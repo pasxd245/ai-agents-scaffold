@@ -105,6 +105,34 @@ Uncommitted at time of writing; `pnpm check` green, 134 tests (was 126).
 - **Dogfood findings rescued** from gitignored `.agents/tmp/` into
   `memory/2026-08-29-dogfood-my-dynamic-dashboard.md`.
 
+### Adoption — found by scaffolding a repo we did not scaffold (2026-08-30)
+
+Tested against a copy of `hg_p-01`: 389 files, never scaffolded, a hand-written
+56-line `AGENTS.md`, `.claude/CLAUDE.md`, and seven of its own skills.
+
+What held: dry-run matched the real run; the CLI refused with exit 1 naming only
+genuine conflicts; conformance scored seven stranger skills sensibly (their
+`master-plan` 100/100, five terse speckit skills 70–71, all true positives); the
+audit produced **zero findings and zero false positives**; and `skill ref`
+refused to replace a real skill with a pointer even under `--force`.
+
+What broke: `--force` destroyed all 56 lines of their `AGENTS.md`.
+`mergeManagedRegion` needs markers on **both** sides, so the feature built for
+this case could not cover the one moment every adopter passes through — the
+first scaffold. The dogfood report predicted it at High severity and we shipped
+the fix for the wrong half.
+
+`adoptManagedRegion` now inserts the generated block below the author's title
+and keeps everything else, gated on `--force`. Verified on the same repo: zero
+lines lost, title preserved, and the second run takes the ordinary merge path.
+The pre-flight list now separates *adopted* from *overwritten*, because
+"would be overwritten" had stopped being true for half of it.
+
+Still open from the same test: `.claude/CLAUDE.md` and a new root `CLAUDE.md`
+now coexist with nothing detecting the old location (backlog item 9), and
+`skill ref --skill all` is not atomic — it wrote one ref, hit a name collision,
+and exited 1 leaving the destination half-updated.
+
 Governance note: canon was modified under the explicit-instruction exception —
 warned, confirmed, and logged in
 [promotions.md](../promotions.md).

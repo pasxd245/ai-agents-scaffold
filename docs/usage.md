@@ -43,7 +43,7 @@ Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
 | `--output <dir>` | `-o`  | `.`            | Output directory                                |
 | `--name <name>`  | `-n`  | directory name | Project name used in generated files            |
 | `--list`         | `-l`  |                | List available templates and exit               |
-| `--force`        | `-f`  |                | Overwrite existing files without prompting      |
+| `--force`        | `-f`  |                | Adopt existing stubs; overwrite existing canon  |
 | `--dry-run`      |       |                | Preview what would be generated without writing |
 | `--help`         | `-h`  |                | Show help text                                  |
 | `--version`      | `-v`  |                | Show version number                             |
@@ -345,8 +345,53 @@ read time.
 Before writing, the CLI checks whether any output files already exist in the target directory.
 
 - **No conflicts**: files are written normally.
-- **Conflicts found, no `--force`**: the CLI prints the conflicting file list and exits with code 1.
-- **Conflicts found, `--force`**: the CLI prints a warning and overwrites the files.
+- **Conflicts found, no `--force`**: the CLI lists them, split by what `--force`
+  would do, and exits with code 1.
+- **Conflicts found, `--force`**: stubs are **adopted**, canon is overwritten.
+
+### Adopting a repo that already has agent files
+
+Bringing `a2scaffold` into an existing repo used to mean choosing between
+losing a hand-written `AGENTS.md` and not scaffolding at all. The managed-region
+merge could not help: it needs markers on **both** sides, and a file written
+before the tool has none.
+
+So `--force` adopts instead. For any generated file that carries a managed
+region — the four harness stubs — the generated block is inserted below your
+title and **everything else you wrote is kept**, ending up below the end marker
+where user content belongs anyway:
+
+```markdown
+# p-01 Bootstrap ← your title, untouched
+
+<!-- a2scaffold:start -->
+
+…generated pointer to .agents/…
+
+<!-- a2scaffold:end -->
+
+## What is this ← everything you wrote, unchanged
+```
+
+The file now carries markers, so this happens exactly once; later runs take the
+ordinary merge path and need no `--force`.
+
+`.agents/` is different. It has no managed region on purpose, so `--force`
+still replaces it wholesale — which is why the pre-flight list separates the
+two:
+
+```text
+The following files already exist:
+
+  Adopted — your content is kept, the generated block is
+  inserted below the title:
+
+    - AGENTS.md
+
+  Overwritten — replaced wholesale, edits lost:
+
+    - .agents/AGENTS.md
+```
 
 ## Skills management
 

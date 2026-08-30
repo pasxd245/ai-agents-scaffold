@@ -4,13 +4,14 @@ import path from 'node:path';
 import { renderDirectory, resolveConfig } from '@nci-gis/js-tmpl';
 import { resolveTemplatePath } from '../templates/index.js';
 import { TEMPLATE_EXT } from '../constants.js';
-import { mergeManagedRegion } from './managed-region.js';
+import { mergeManagedRegion, adoptManagedRegion } from './managed-region.js';
 
-export { checkExistingFiles } from './conflicts.js';
+export { checkExistingFiles, classifyConflicts } from './conflicts.js';
 export { listOutputPaths, resolveOutputPath } from './output-paths.js';
 export {
   hasManagedRegion,
   mergeManagedRegion,
+  adoptManagedRegion,
   REGION_START,
   REGION_END,
 } from './managed-region.js';
@@ -88,11 +89,16 @@ export function resolveScaffoldConfig({
  *
  * @param {string} stagingDir - Freshly rendered tree
  * @param {string} outDir - Destination
- * @returns {string[]} output-relative paths whose author content was preserved
+ * @param {boolean} [adopt] - Whether a file with no managed region may be
+ *   adopted rather than replaced. Gated because adoption still edits a file
+ *   the author wrote; it is what `--force` means for a stub.
+ * @returns {{ preserved: string[], adopted: string[] }} output-relative paths
  */
-function mergeRenderedTree(stagingDir, outDir) {
+function mergeRenderedTree(stagingDir, outDir, adopt = false) {
   /** @type {string[]} */
   const preserved = [];
+  /** @type {string[]} */
+  const adopted = [];
 
   /** @param {string} rel */
   const walk = (rel) => {
@@ -117,13 +123,25 @@ function mergeRenderedTree(stagingDir, outDir) {
         preserved.push(rel);
         return;
       }
+
+      if (adopt) {
+        const wrapped = adoptManagedRegion(
+          fs.readFileSync(dest, 'utf8'),
+          fs.readFileSync(abs, 'utf8')
+        );
+        if (wrapped !== null) {
+          fs.writeFileSync(dest, wrapped);
+          adopted.push(rel);
+          return;
+        }
+      }
     }
 
     fs.copyFileSync(abs, dest);
   };
 
   walk('');
-  return preserved;
+  return { preserved, adopted };
 }
 
 /**
@@ -137,9 +155,17 @@ function mergeRenderedTree(stagingDir, outDir) {
  * @param {string} options.templateName - Template path (e.g. "scaffold/base")
  * @param {string} options.outputDir - Target directory to write files
  * @param {object} [options.overrides] - Values to merge over template defaults
- * @returns {Promise<{ outputDir: string, template: string, preserved: string[] }>}
+ * @param {boolean} [options.adopt] - Insert the generated block into an
+ *   existing file that has no managed region, instead of replacing it.
+ * @returns {Promise<{ outputDir: string, template: string, preserved: string[],
+ *   adopted: string[] }>}
  */
-export async function scaffold({ templateName, outputDir, overrides = {} }) {
+export async function scaffold({
+  templateName,
+  outputDir,
+  overrides = {},
+  adopt = false,
+}) {
   const { config } = resolveScaffoldConfig({
     templateName,
     outputDir,
@@ -154,8 +180,8 @@ export async function scaffold({ templateName, outputDir, overrides = {} }) {
   try {
     config.outDir = stagingDir;
     await renderDirectory(config);
-    const preserved = mergeRenderedTree(stagingDir, outDir);
-    return { outputDir: outDir, template: templateName, preserved };
+    const { preserved, adopted } = mergeRenderedTree(stagingDir, outDir, adopt);
+    return { outputDir: outDir, template: templateName, preserved, adopted };
   } finally {
     fs.rmSync(stagingDir, { recursive: true, force: true });
   }

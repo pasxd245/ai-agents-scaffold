@@ -69,3 +69,71 @@ export function mergeManagedRegion(existing, incoming) {
     existing.slice(0, existingStart) + generated + existing.slice(existingEnd)
   );
 }
+
+/**
+ * Adopt an existing file that predates the tool.
+ *
+ * The merge above needs a managed region on *both* sides, so it cannot help
+ * the one moment every adopter passes through: the first scaffold of a repo
+ * that already has a hand-written `AGENTS.md` or `CLAUDE.md`. Before this,
+ * `--force` deleted that file's content outright.
+ *
+ * Adoption inserts the generated block into the file and leaves everything
+ * else exactly where it was. The author's content ends up below the end
+ * marker, which is where user content belongs anyway, and the file carries
+ * markers from then on — so every later run takes the ordinary merge path.
+ *
+ * Returns `null` when adoption does not apply, so the caller can fall back to
+ * its normal rules:
+ * - the incoming render has no managed region (`.agents/` canon), or
+ * - the existing file already has one (that is `mergeManagedRegion`'s job).
+ *
+ * @param {string} existing - Current file contents, written by a human
+ * @param {string} incoming - Freshly rendered contents
+ * @returns {string | null} adopted contents, or null if not adoptable
+ */
+export function adoptManagedRegion(existing, incoming) {
+  if (!hasManagedRegion(incoming)) return null;
+  if (hasManagedRegion(existing)) return null;
+
+  const endMatch = incoming.match(END_RE);
+  if (!endMatch) return null;
+  const start = incoming.search(START_RE);
+  const end = incoming.search(END_RE) + endMatch[0].length;
+  const generated = incoming.slice(start, end);
+
+  const at = insertionPoint(existing);
+  const before = existing.slice(0, at).replace(/\s*$/, '');
+  const after = existing.slice(at).replace(/^\s*/, '');
+
+  return [
+    before,
+    before ? '\n\n' : '',
+    generated,
+    after ? `\n\n${after}` : '\n',
+  ].join('');
+}
+
+/**
+ * Where the generated block goes in a file the tool did not write.
+ *
+ * Below the title, so the file still opens with the author's own heading —
+ * the same reason the rendered stubs keep their `# ` line outside the region.
+ * Frontmatter, if any, stays first; some harnesses require it there.
+ *
+ * @param {string} text
+ * @returns {number} character offset to insert at
+ */
+function insertionPoint(text) {
+  let offset = 0;
+
+  const frontmatter = text.match(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/);
+  if (frontmatter) offset = frontmatter[0].length;
+
+  const heading = text
+    .slice(offset)
+    .match(/^[ \t]*\r?\n*(#[ \t][^\n]*)(\r?\n|$)/);
+  if (heading) offset += heading[0].length;
+
+  return offset;
+}

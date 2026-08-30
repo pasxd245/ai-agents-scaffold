@@ -7,9 +7,11 @@ import os from 'node:os';
 import {
   scaffold,
   checkExistingFiles,
+  classifyConflicts,
   listOutputPaths,
   hasManagedRegion,
   mergeManagedRegion,
+  adoptManagedRegion,
 } from '../src/scaffold/index.js';
 import { resolveTemplatePath } from '../src/templates/index.js';
 
@@ -62,6 +64,56 @@ describe('listOutputPaths', () => {
     }).map((p) => p.outputRel);
     assert.ok(!out.includes('CLAUDE.md'));
     assert.ok(out.includes('AGENTS.md'));
+  });
+});
+
+// ── adopting a file the tool did not write ──────────────────────────
+
+describe('adoptManagedRegion', () => {
+  const incoming =
+    '# AGENTS.md — proj\n\n<!-- a2scaffold:start -->\nGENERATED\n' +
+    '<!-- a2scaffold:end -->\n\nseeded tail\n';
+
+  it('keeps every line of a hand-written file', () => {
+    const existing = '# proj Bootstrap\n\n## Stack\n\npnpm, Python 3.11\n';
+    const out = adoptManagedRegion(existing, incoming);
+    for (const line of existing.split('\n').filter(Boolean)) {
+      assert.ok(out.includes(line), `lost: ${line}`);
+    }
+  });
+
+  it("inserts the block below the author's own title", () => {
+    const out = adoptManagedRegion('# proj Bootstrap\n\n## Stack\n', incoming);
+    assert.match(out, /^# proj Bootstrap\n\n<!-- a2scaffold:start -->/);
+    assert.ok(
+      !out.includes('# AGENTS.md — proj'),
+      'template title must not win'
+    );
+  });
+
+  it('leaves frontmatter first, where harnesses require it', () => {
+    const existing = '---\napplyTo: "**"\n---\n\n# Title\n\nbody\n';
+    const out = adoptManagedRegion(existing, incoming);
+    assert.match(
+      out,
+      /^---\napplyTo: "\*\*"\n---\n\n# Title\n\n<!-- a2scaffold:start -->/
+    );
+  });
+
+  it('inserts at the top when there is no heading', () => {
+    const out = adoptManagedRegion('just prose\n', incoming);
+    assert.match(out, /^<!-- a2scaffold:start -->/);
+    assert.ok(out.includes('just prose'));
+  });
+
+  it('declines when the incoming render has no region', () => {
+    // `.agents/` canon has no managed region on purpose, so --force must keep
+    // meaning "replace" there rather than quietly prepending a block.
+    assert.equal(adoptManagedRegion('# mine\n', 'plain canon\n'), null);
+  });
+
+  it('declines when the existing file already has a region', () => {
+    assert.equal(adoptManagedRegion(incoming, incoming), null);
   });
 });
 
@@ -185,5 +237,76 @@ describe('hasManagedRegion (inline mentions)', () => {
     const real =
       '# T\n\n<!-- a2scaffold:start -->\nbody\n<!-- a2scaffold:end -->\n';
     assert.equal(hasManagedRegion(real), true);
+  });
+});
+
+// ── end-to-end: adopting a repo that predates the tool ──────────────
+
+describe('scaffolding a repo that already has agent files', () => {
+  /**
+   * The case every adopter passes through exactly once, and the one the
+   * managed-region merge could not cover: an existing `AGENTS.md` with no
+   * markers. Before adoption, `--force` deleted its content outright.
+   */
+  /** @type {string} */
+  let tmpDir;
+  const handWritten =
+    '# p-01 Bootstrap\n\n## What is this\n\nMonorepo for data processing.\n\n' +
+    '## Stack\n\n- pnpm workspace\n- Python 3.11 with uv\n';
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-adopt-'));
+    fs.writeFileSync(path.join(tmpDir, 'AGENTS.md'), handWritten);
+  });
+
+  afterEach(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+  it('classifies a marker-less stub as adoptable, not overwritable', () => {
+    const { templateDir } = resolveTemplatePath(TEMPLATE);
+    const { adopt, overwrite } = classifyConflicts(templateDir, tmpDir, {
+      agents: { agentsmd: true, claude: true },
+    });
+    assert.ok(adopt.includes('AGENTS.md'));
+    assert.ok(!overwrite.includes('AGENTS.md'));
+  });
+
+  it('keeps the hand-written content when adopting', async () => {
+    const result = await scaffold({
+      templateName: TEMPLATE,
+      outputDir: tmpDir,
+      adopt: true,
+    });
+
+    const after = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
+    for (const line of handWritten.split('\n').filter(Boolean)) {
+      assert.ok(after.includes(line), `adoption lost: ${line}`);
+    }
+    assert.ok(hasManagedRegion(after));
+    assert.ok(result.adopted.includes('AGENTS.md'));
+  });
+
+  it('still replaces the file wholesale without adopt', async () => {
+    // `--force` is what turns replacement into adoption. The default path
+    // must keep its old behaviour so nothing changes for callers that mean it.
+    await scaffold({ templateName: TEMPLATE, outputDir: tmpDir });
+    const after = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
+    assert.ok(!after.includes('Monorepo for data processing.'));
+  });
+
+  it('takes the ordinary merge path on the next run', async () => {
+    await scaffold({ templateName: TEMPLATE, outputDir: tmpDir, adopt: true });
+    const second = await scaffold({
+      templateName: TEMPLATE,
+      outputDir: tmpDir,
+      adopt: true,
+    });
+
+    // Adoption happens once. After it, the file has markers and is merged.
+    assert.ok(second.preserved.includes('AGENTS.md'));
+    assert.ok(!second.adopted.includes('AGENTS.md'));
+
+    const after = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
+    assert.ok(after.includes('Monorepo for data processing.'));
+    assert.match(after, /^# p-01 Bootstrap/);
   });
 });

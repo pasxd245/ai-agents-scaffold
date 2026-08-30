@@ -24,7 +24,7 @@ Scaffold Options:
   -o, --output <dir>      Output directory (default: ".")
   -n, --name <name>       Project name (default: directory name)
   -l, --list              List available templates
-  -f, --force             Overwrite existing files
+  -f, --force             Adopt existing stubs, overwrite existing canon
       --dry-run           Preview without writing files
   -h, --help              Show this help
   -v, --version           Show version
