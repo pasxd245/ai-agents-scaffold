@@ -1072,7 +1072,7 @@ describe('this repo installs its own pool skills', () => {
    * runs `skill add` next.
    */
   const repoRoot = path.dirname(__dirname);
-  const installed = ['master-plan', 'repo-explainer', 'research'];
+  const installed = ['a2scaffold', 'master-plan', 'repo-explainer', 'research'];
 
   /**
    * Every file under `dir`, relative and sorted.
