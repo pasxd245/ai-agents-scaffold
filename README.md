@@ -105,22 +105,26 @@ a2scaffold --dry-run
 # List available templates
 a2scaffold --list
 
-# Overwrite existing files
+# Adopt existing agent files: keep what they say, add the generated block
+a2scaffold --adopt
+
+# Replace existing files wholesale, losing edits (implies --adopt for stubs)
 a2scaffold --force
 ```
 
 ### Options
 
-| Flag        | Short | Default  | Description              |
-| ----------- | ----- | -------- | ------------------------ |
-| `--use`     | `-u`  | `base`   | Template to use          |
-| `--output`  | `-o`  | `.`      | Output directory         |
-| `--name`    | `-n`  | dir name | Project name             |
-| `--list`    | `-l`  |          | List available templates |
-| `--force`   | `-f`  |          | Overwrite existing files |
-| `--dry-run` |       |          | Preview without writing  |
-| `--help`    | `-h`  |          | Show help                |
-| `--version` | `-v`  |          | Show version             |
+| Flag        | Short | Default  | Description                                                           |
+| ----------- | ----- | -------- | --------------------------------------------------------------------- |
+| `--use`     | `-u`  | `base`   | Template to use                                                       |
+| `--output`  | `-o`  | `.`      | Output directory                                                      |
+| `--name`    | `-n`  | dir name | Project name                                                          |
+| `--list`    | `-l`  |          | List available templates                                              |
+| `--adopt`   |       |          | Insert the generated block into an existing stub, keeping its content |
+| `--force`   | `-f`  |          | Replace existing files wholesale, edits lost (implies `--adopt`)      |
+| `--dry-run` |       |          | Preview without writing                                               |
+| `--help`    | `-h`  |          | Show help                                                             |
+| `--version` | `-v`  |          | Show version                                                          |
 
 ## Programmatic API
 

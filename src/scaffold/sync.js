@@ -4,6 +4,7 @@ import path from 'node:path';
 import { renderDirectory } from '@nci-gis/js-tmpl';
 
 import { ENFORCEMENT_FILES } from '../constants.js';
+import { missingEnforcement } from './enforcement.js';
 import { resolveScaffoldConfig } from './index.js';
 import {
   hasManagedRegion,
@@ -26,8 +27,13 @@ import {
  * - **Seeded** — written once and then the human's (all of `.agents/`).
  *   Created when absent, never touched when present.
  *
- * Nothing here can lose work, so there is no `--force` and no conflict list.
- * Files it will not touch are reported instead, so the human can decide.
+ * The contract, stated narrowly enough to be true: sync replaces content only
+ * inside one unambiguous managed region, and never overwrites a seeded file
+ * that already exists. Where it cannot establish both — a file whose markers
+ * are absent, duplicated, fenced inside an example, or out of order — it
+ * touches nothing and reports the file instead, so the human can decide.
+ *
+ * That is why it needs no `--force` and keeps no conflict list.
  *
  * @param {object} options
  * @param {string} options.templateName
@@ -39,7 +45,8 @@ import {
  *   it rather than replace it.
  * @param {boolean} [options.dryRun] - Report without writing.
  * @returns {Promise<{ created: string[], updated: string[], unchanged: string[],
- *   adopted: string[], unmanaged: string[], drifted: string[] }>}
+ *   adopted: string[], unmanaged: string[],
+ *   drifted: Array<{ file: string, missing: string[] }> }>}
  */
 export async function sync({
   templateName,
@@ -60,7 +67,7 @@ export async function sync({
     config.outDir = stagingDir;
     await renderDirectory(config);
 
-    /** @type {Record<string, string[]>} */
+    /** @type {Record<string, any[]>} */
     const result = {
       created: [],
       updated: [],
@@ -123,9 +130,12 @@ export async function sync({
 
       // Enforcement files are seeded, but falling behind them has a security
       // cost a stale doc does not: a new `ask` rule protecting a new directory
-      // should reach existing repos. Report, never overwrite.
-      if (ENFORCEMENT_FILES.includes(rel.split(path.sep).join('/'))) {
-        if (existing !== incoming) result.drifted.push(rel);
+      // should reach existing repos. Report, never overwrite — and report on
+      // a missing *rule*, not on a changed byte; see `enforcement.js`.
+      const posix = rel.split(path.sep).join('/');
+      if (ENFORCEMENT_FILES.includes(posix)) {
+        const missing = missingEnforcement(posix, existing, incoming);
+        if (missing.length > 0) result.drifted.push({ file: rel, missing });
         return;
       }
 

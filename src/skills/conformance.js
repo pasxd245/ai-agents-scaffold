@@ -77,12 +77,15 @@ const PENALTY = {
 
 /**
  * @typedef {object} ConformanceReport
- * @property {number} score - 0-100, where 100 is fully conformant
+ * @property {number} score - 0-100 local guidance score. The weights below are
+ *   chosen rather than calibrated and the checks draw on several sources, so
+ *   this orders skills roughly; it does not rate them against one published
+ *   specification. The warnings are the substance.
  * @property {ConformanceWarning[]} warnings
  */
 
 /**
- * Score a parsed SKILL.md against the published spec.
+ * Score a parsed SKILL.md for problems that make it work badly.
  *
  * @param {import('../utils/frontmatter.js').Frontmatter} frontmatter
  * @param {string} body - Markdown body below the frontmatter

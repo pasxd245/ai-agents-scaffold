@@ -60,7 +60,10 @@ copilot:
 # human to authorise a change after an explicit warning, and `ask` is exactly
 # that handshake. `deny` cannot be overridden in-session.
 #
-# Requires the matching harness flag above (claude).
+# Independent of the harness flags above. `.claude/settings.json` is read by
+# Claude Code whether or not a CLAUDE.md stub exists, so a repo can enforce the
+# authority rules without generating the stub — and turning the stub off is not
+# a request to drop the protection. Set this to false to opt out of that.
 guardrails:
   claude: true # .claude/settings.json — ask before writing to canon
 

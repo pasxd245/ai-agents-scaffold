@@ -97,24 +97,39 @@ const PATTERNS = [
 const HIDDEN_CHARS = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/;
 
 /**
- * Recursively list files under a directory, relative to it.
+ * Recursively list a skill's entries, relative to its root.
+ *
+ * Symbolic links are returned separately rather than followed. A link is
+ * neither a directory nor a regular file, so a walk that tests only those two
+ * drops it silently — and the installer copies links verbatim, which is how a
+ * benignly named `notes.md` pointing at `~/.ssh/id_rsa` reached an installed
+ * skill through an audit that reported `clean: true`. What a link points at is
+ * not visible in the file's own bytes, so it is reported, never scanned.
  *
  * @param {string} root
- * @returns {string[]}
+ * @returns {{ files: string[], links: Array<{ rel: string, target: string }> }}
  */
-function listFiles(root) {
+function listEntries(root) {
   /** @type {string[]} */
-  const out = [];
+  const files = [];
+  /** @type {Array<{ rel: string, target: string }>} */
+  const links = [];
   /** @param {string} dir */
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const abs = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(abs);
-      else if (entry.isFile()) out.push(path.relative(root, abs));
+      const rel = path.relative(root, abs);
+      if (entry.isSymbolicLink()) {
+        links.push({ rel, target: fs.readlinkSync(abs) });
+      } else if (entry.isDirectory()) {
+        walk(abs);
+      } else if (entry.isFile()) {
+        files.push(rel);
+      }
     }
   };
   walk(root);
-  return out;
+  return { files, links };
 }
 
 /**
@@ -172,8 +187,19 @@ export function auditSkill(skillDir) {
     };
   }
 
-  const files = listFiles(skillDir);
+  const { files, links } = listEntries(skillDir);
   let scanned = 0;
+
+  for (const { rel, target } of links) {
+    findings.push({
+      category: 'opaque',
+      severity: 'high',
+      file: rel,
+      message:
+        `symbolic link pointing at "${target}" — its contents are not part ` +
+        'of the skill and cannot be reviewed here',
+    });
+  }
 
   for (const rel of files) {
     const abs = path.join(skillDir, rel);

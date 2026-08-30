@@ -25,14 +25,18 @@ Scaffold Options:
   -o, --output <dir>      Output directory (default: ".")
   -n, --name <name>       Project name (default: directory name)
   -l, --list              List available templates
-  -f, --force             Adopt existing stubs, overwrite existing canon
+      --adopt             Insert the generated block into an existing stub,
+                          keeping everything the author wrote
+  -f, --force             Replace existing files wholesale, edits lost
+                          (implies --adopt for stubs)
       --dry-run           Preview without writing files
   -h, --help              Show this help
   -v, --version           Show version
 
 sync — bring the generated surface up to date
-  Creates missing files, refreshes managed regions, and leaves everything
-  else alone. Nothing it does can lose work, so there is no --force.
+  Creates missing files, refreshes managed regions, and leaves every seeded
+  file that already exists alone. It writes only inside an unambiguous
+  managed region, so there is no --force; what it will not touch is reported.
   Options:
     -u, --use <name>        Template to use (default: "base")
     -o, --output <dir>      Target directory (default: ".")
@@ -56,7 +60,8 @@ skill add — install a skill
   Options:
     -d, --agents-dir <dir>  Target agents directory (default: ".agents")
         --from <registry>   Fetch from a named registry in .a2scaffoldrc.json
-    -f, --force             Overwrite an existing skill of the same name
+    -f, --force             Install despite a high-severity audit finding,
+                            and replace an existing skill of the same name
 
 skill list — show installed skills
   Options:
@@ -65,6 +70,12 @@ skill list — show installed skills
 skill validate [name] — validate skill frontmatter
   Args:
     name                    Optional skill directory name; omit to validate all
+  Options:
+    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
+
+skill audit [name] — screen skills for supply-chain risks
+  Args:
+    name                    Optional skill directory name; omit to audit all
   Options:
     -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
 

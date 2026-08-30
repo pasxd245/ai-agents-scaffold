@@ -309,3 +309,24 @@ The skill now copies the template and puts invariants and the phase table under
 copyable one wins. I created the second copy the same day I wrote that rule.
 
 **Promoted by**: Vien Pham (review and direction in session; drafted by Claude Code)
+
+## 2026-08-30: PR pre-review fixes → `.agents/` canon (authorised write)
+
+**Source**: `PR-review.md`, findings on the authority/PDCA contradiction and
+the `--force` conflation, verified against the code before acting.
+
+**Rationale**: The generated authority table forbade the `Do`/`Check` writes
+the generated PDCA guide asks for, and the PDCA compaction procedure required
+deleting round files the same document calls append-only. An agent reading the
+higher-authority root file had to refuse the workflow the lower-level guide
+prescribed. Both are now stated once: `plan/` allows appending to
+`promotions.md` and editing `Do`/`Check` of an active round, and compaction is
+named as the append-only exception a human authorises. Fixed at the template
+first (`templates/scaffold/base/template/.agents/`), then applied here, so the
+scaffold and its own dogfood do not diverge.
+
+Three files touched under the read-only path: `AGENTS.md` (authority table),
+`plan/PDCA.md` (compaction exception), and `skills/a2scaffold/SKILL.md`
+(reinstalled from the pool after the `--adopt`/`--force` split).
+
+**Promoted by**: Vien Pham (authorised in session after warning; drafted by Claude Code)

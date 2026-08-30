@@ -861,6 +861,57 @@ describe('auditSkill', () => {
     assert.equal(clean, false);
     assert.equal(findings[0].category, 'opaque');
   });
+
+  it('reports a symbolic link instead of walking past it', () => {
+    // A link is neither a directory nor a regular file, so a walk that tests
+    // only those two drops it — and the installer copies links verbatim. That
+    // combination let a skill ship a benignly named pointer at a private key
+    // and still audit `clean: true`.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-symlink-'));
+    try {
+      fs.writeFileSync(
+        path.join(dir, 'SKILL.md'),
+        '---\nname: linky\ndescription: d\n---\n\nBody.\n'
+      );
+      fs.symlinkSync('/home/someone/.ssh/id_rsa', path.join(dir, 'notes.md'));
+
+      const { findings, clean } = auditSkill(dir);
+      assert.equal(clean, false);
+      const link = findings.find((f) => f.file === 'notes.md');
+      assert.ok(link, 'the link should be reported');
+      assert.equal(link.severity, 'high', 'a remote install must abort on it');
+      assert.match(link.message, /symbolic link/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not copy a symbolic link into an installed skill', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-symlink-src-'));
+    const source = path.join(root, 'linky');
+    const target = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-symlink-dst-'));
+    try {
+      fs.mkdirSync(source);
+      fs.writeFileSync(
+        path.join(source, 'SKILL.md'),
+        '---\nname: linky\ndescription: ' +
+          'A skill used for exercising the symlink exclusion in installs.\n' +
+          '---\n\nBody.\n'
+      );
+      fs.symlinkSync('/home/someone/.ssh/id_rsa', path.join(source, 'k.md'));
+
+      const { path: installed } = installSkill(source, target);
+      assert.equal(
+        fs.existsSync(path.join(installed, 'k.md')),
+        false,
+        'the link must not follow the skill into the project'
+      );
+      assert.ok(fs.existsSync(path.join(installed, 'SKILL.md')));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      fs.rmSync(target, { recursive: true, force: true });
+    }
+  });
 });
 
 // ── auditSkill — calibration against real-world skills ──────────────

@@ -43,11 +43,13 @@ by habit. Loading everything is a cost, not thoroughness.
 
 ## Authority
 
-| Path                                                         | Agents may                        |
-| ------------------------------------------------------------ | --------------------------------- |
-| `AGENTS.md`, `reference/`, `context/`, `prompts/`, `skills/` | ❌ READ ONLY                      |
-| `memory/`                                                    | ✅ READ + WRITE                   |
-| `plan/`                                                      | ⚠️ APPEND-ONLY to `promotions.md` |
+| Path                                                         | Agents may                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `AGENTS.md`, `reference/`, `context/`, `prompts/`, `skills/` | ❌ READ ONLY                                                       |
+| `memory/`                                                    | ✅ READ + WRITE                                                    |
+| `plan/`                                                      | ⚠️ APPEND to `promotions.md`; edit `Do`/`Check` of an active round |
+
+Closing a round, editing a closed one and compacting `cycles/` are human calls — see [plan/PDCA.md](plan/PDCA.md).
 
 Backed by permission rules in `.claude/settings.json` that make Claude Code
 **ask** before any edit under `.agents/`. Instruction files are context an

@@ -35,7 +35,10 @@ export async function runSync(argv) {
   const templateName = `${SCAFFOLD_TYPE}/${useName}`;
   const outputDir = path.resolve(/** @type {string} */ (values.output));
 
-  const projectValues = loadProjectValues(process.cwd());
+  // Read from the repository being synced, not the caller's. `sync --output
+  // ../other-repo` exists to update *that* repo, so taking this one's harness
+  // flags and project name there would render the wrong stubs into it.
+  const projectValues = loadProjectValues(outputDir);
   const fileProjectName = /** @type {{ project?: { name?: string } }} */ (
     projectValues
   ).project?.name;
@@ -79,11 +82,15 @@ export async function runSync(argv) {
   }
 
   if (result.drifted.length > 0) {
-    report('Behind the template — review and merge by hand:', result.drifted);
+    console.log('  Missing enforcement rules — add these by hand:');
+    for (const { file, missing } of result.drifted) {
+      console.log(`    - ${file}`);
+      for (const rule of missing) console.log(`        ${rule}`);
+    }
     console.log(
-      '    These carry enforcement rules. Falling behind means canon the\n' +
-        '    harness is no longer protecting. Never overwritten: you may have\n' +
-        '    added rules of your own.\n'
+      '\n    A rule the template requires is absent here, so it is canon the\n' +
+        '    harness is no longer protecting. Never overwritten: rules you\n' +
+        '    added yourself, and your formatting, are left exactly as they are.\n'
     );
   }
 

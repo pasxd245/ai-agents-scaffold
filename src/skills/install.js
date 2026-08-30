@@ -37,10 +37,18 @@ const EXCLUDED_EXTENSIONS = new Set(['.pyc', '.pyo', '.pyd']);
 /**
  * Decide whether a path should be copied into the installed skill.
  *
+ * Symbolic links never are. `fs.cpSync` does not dereference by default, so a
+ * link is copied as a link and keeps pointing wherever it pointed — out of the
+ * skill, and out of the project. A skill shipping `notes.md -> ~/.ssh/id_rsa`
+ * then reads as an ordinary file to the agent told to open it. The audit
+ * reports links as high-severity ({@link auditSkill}); dropping them here is
+ * the half that holds even when someone passes `--force`.
+ *
  * @param {string} src - Absolute source path offered by `fs.cpSync`
  * @returns {boolean} true to copy
  */
 function isInstallable(src) {
+  if (fs.lstatSync(src).isSymbolicLink()) return false;
   const name = path.basename(src);
   if (EXCLUDED_NAMES.has(name)) return false;
   return !EXCLUDED_EXTENSIONS.has(path.extname(name).toLowerCase());

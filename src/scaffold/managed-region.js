@@ -24,20 +24,85 @@ export const REGION_END = '<!-- a2scaffold:end -->';
 // inline — `<!-- a2scaffold:start -->` inside backticks, as this repo's own
 // reference docs do — must not turn that file into a managed one, or a merge
 // would splice it at the wrong boundaries.
-const START_RE = /^[ \t]*<!--\s*a2scaffold:start[^>]*-->[ \t]*$/m;
-const END_RE = /^[ \t]*<!--\s*a2scaffold:end[^>]*-->[ \t]*$/m;
+const START_LINE_RE = /^[ \t]*<!--\s*a2scaffold:start[^>]*-->[ \t]*$/;
+const END_LINE_RE = /^[ \t]*<!--\s*a2scaffold:end[^>]*-->[ \t]*$/;
+
+/** A fence opener: ``` or ~~~ (three or more), indented up to three spaces. */
+const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 
 /**
- * Whether a file carries a complete, correctly ordered managed region.
+ * Locate the file's one managed region, or report that it has none.
+ *
+ * Own-line matching is not enough on its own. A fenced Markdown example that
+ * *shows* what a generated stub looks like puts real markers on real lines:
+ *
+ * ````markdown
+ * ```markdown
+ * <!-- a2scaffold:start -->
+ * example
+ * <!-- a2scaffold:end -->
+ * ```
+ * ````
+ *
+ * Treating that as a managed region would let a merge overwrite the author's
+ * example — the one thing the region exists to prevent. So markers inside a
+ * fenced code block do not count.
+ *
+ * This fails closed. Zero markers, duplicates, a pair the wrong way round, a
+ * start with no end — all of them return `null` rather than a best guess, and
+ * the caller falls back to its ordinary rules, which refuse to destroy
+ * anything without an explicit permission. Being unsure is a reason to leave
+ * a file alone, not a reason to pick a boundary.
+ *
+ * @param {string} text
+ * @returns {{ start: number, end: number } | null} offsets into `text`, where
+ *   `end` is just past the closing marker
+ */
+function findRegion(text) {
+  /** @type {number[]} */
+  const starts = [];
+  /** @type {number[]} */
+  const ends = [];
+
+  /** @type {string | null} */
+  let fence = null;
+  let offset = 0;
+
+  for (const line of text.split('\n')) {
+    const opener = FENCE_RE.exec(line);
+    if (fence === null) {
+      if (opener) {
+        fence = opener[1];
+      } else if (START_LINE_RE.test(line)) {
+        starts.push(offset);
+      } else if (END_LINE_RE.test(line)) {
+        ends.push(offset + line.replace(/\r$/, '').length);
+      }
+    } else if (
+      opener &&
+      opener[1][0] === fence[0] &&
+      opener[1].length >= fence.length &&
+      line.slice(opener[0].length).trim() === ''
+    ) {
+      fence = null;
+    }
+    offset += line.length + 1;
+  }
+
+  if (starts.length !== 1 || ends.length !== 1) return null;
+  if (ends[0] <= starts[0]) return null;
+  return { start: starts[0], end: ends[0] };
+}
+
+/**
+ * Whether a file carries exactly one complete, correctly ordered managed
+ * region outside any fenced code block.
  *
  * @param {string} text
  * @returns {boolean}
  */
 export function hasManagedRegion(text) {
-  const start = text.search(START_RE);
-  if (start === -1) return false;
-  const end = text.search(END_RE);
-  return end > start;
+  return findRegion(text) !== null;
 }
 
 /**
@@ -52,21 +117,14 @@ export function hasManagedRegion(text) {
  * @returns {string | null} merged contents, or null if not mergeable
  */
 export function mergeManagedRegion(existing, incoming) {
-  if (!hasManagedRegion(existing) || !hasManagedRegion(incoming)) return null;
-
-  const incomingStart = incoming.search(START_RE);
-  const incomingEndMatch = incoming.match(END_RE);
-  if (!incomingEndMatch) return null;
-  const incomingEnd = incoming.search(END_RE) + incomingEndMatch[0].length;
-  const generated = incoming.slice(incomingStart, incomingEnd);
-
-  const existingStart = existing.search(START_RE);
-  const existingEndMatch = existing.match(END_RE);
-  if (!existingEndMatch) return null;
-  const existingEnd = existing.search(END_RE) + existingEndMatch[0].length;
+  const source = findRegion(incoming);
+  const target = findRegion(existing);
+  if (!source || !target) return null;
 
   return (
-    existing.slice(0, existingStart) + generated + existing.slice(existingEnd)
+    existing.slice(0, target.start) +
+    incoming.slice(source.start, source.end) +
+    existing.slice(target.end)
   );
 }
 
@@ -93,14 +151,11 @@ export function mergeManagedRegion(existing, incoming) {
  * @returns {string | null} adopted contents, or null if not adoptable
  */
 export function adoptManagedRegion(existing, incoming) {
-  if (!hasManagedRegion(incoming)) return null;
-  if (hasManagedRegion(existing)) return null;
+  const source = findRegion(incoming);
+  if (!source) return null;
+  if (findRegion(existing)) return null;
 
-  const endMatch = incoming.match(END_RE);
-  if (!endMatch) return null;
-  const start = incoming.search(START_RE);
-  const end = incoming.search(END_RE) + endMatch[0].length;
-  const generated = incoming.slice(start, end);
+  const generated = incoming.slice(source.start, source.end);
 
   const at = insertionPoint(existing);
   const before = existing.slice(0, at).replace(/\s*$/, '');

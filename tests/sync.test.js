@@ -12,7 +12,9 @@ const TEMPLATE = 'scaffold/base';
  * `sync` exists because the full scaffold has one behaviour for every file:
  * refreshing a stub meant `--force`, and `--force` also replaces `.agents/`
  * wholesale. Every test here is really the same assertion from a different
- * angle — sync cannot lose work, so it needs no `--force` and no conflict list.
+ * angle — sync writes only inside one unambiguous managed region and never
+ * overwrites an existing seeded file, so it needs no `--force` and no conflict
+ * list.
  */
 describe('sync', () => {
   /** @type {string} */
@@ -97,7 +99,7 @@ describe('sync', () => {
     assert.ok(read('AGENTS.md').includes('a2scaffold:start'));
   });
 
-  it('reports enforcement drift without overwriting local rules', async () => {
+  it('reports a missing enforcement rule, and names it', async () => {
     await scaffold({ templateName: TEMPLATE, outputDir: dir });
     const trimmed = JSON.stringify(
       { permissions: { ask: ['Edit(/.agents/AGENTS.md)'] } },
@@ -108,11 +110,34 @@ describe('sync', () => {
 
     const result = await sync({ templateName: TEMPLATE, outputDir: dir });
 
-    assert.ok(result.drifted.includes('.claude/settings.json'));
+    const drift = result.drifted.find(
+      (d) => d.file === path.join('.claude', 'settings.json')
+    );
+    assert.ok(drift, 'a stripped settings file is behind the template');
+    assert.ok(drift.missing.length > 0, 'the missing rules should be named');
+    assert.ok(drift.missing.every((m) => m.startsWith('permissions.')));
     assert.equal(
       read('.claude/settings.json'),
       trimmed,
       'must not be rewritten'
+    );
+  });
+
+  it('does not call a reformatted settings file drift', async () => {
+    // Byte comparison called every formatter run, key reorder and local rule
+    // a security regression. A warning that is usually wrong gets ignored,
+    // which is the protection it claims to defend.
+    await scaffold({ templateName: TEMPLATE, outputDir: dir });
+    const settings = JSON.parse(read('.claude/settings.json'));
+    settings.permissions.ask.push('Edit(/secrets/**)');
+    write('.claude/settings.json', JSON.stringify(settings));
+
+    const result = await sync({ templateName: TEMPLATE, outputDir: dir });
+
+    assert.deepEqual(
+      result.drifted,
+      [],
+      'reformatting and extra local rules are the user\u2019s business'
     );
   });
 

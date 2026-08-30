@@ -3,8 +3,7 @@ import { parseArgs } from 'node:util';
 
 import {
   scaffold,
-  checkExistingFiles,
-  classifyConflicts,
+  ScaffoldRefusal,
   listOutputPaths,
   resolveScaffoldConfig,
 } from '../../scaffold/index.js';
@@ -22,6 +21,7 @@ export async function runScaffold(argv) {
       output: { type: 'string', short: 'o', default: '.' },
       name: { type: 'string', short: 'n' },
       list: { type: 'boolean', short: 'l', default: false },
+      adopt: { type: 'boolean', default: false },
       force: { type: 'boolean', short: 'f', default: false },
       'dry-run': { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
@@ -55,7 +55,11 @@ export async function runScaffold(argv) {
 
   // Project-local values (.a2scaffold/values.{json,yaml,yml}) layer over
   // template defaults; explicit CLI flags layer over project values.
-  const projectValues = loadProjectValues(process.cwd());
+  //
+  // They are read from the repository being scaffolded, not from the caller's:
+  // `--output ../other-repo` is a statement about `../other-repo`, and taking
+  // this repo's harness flags and project name there is never what was meant.
+  const projectValues = loadProjectValues(outputDir);
   const fileProjectName = /** @type {{ project?: { name?: string } }} */ (
     projectValues
   ).project?.name;
@@ -93,48 +97,47 @@ export async function runScaffold(argv) {
     return;
   }
 
-  // Safety check. Files with a managed region are excluded: they merge.
-  const conflicts = checkExistingFiles(
-    templatePaths.templateDir,
-    outputDir,
-    view
-  );
+  // No preflight of our own. `scaffold()` builds its whole plan before writing
+  // a byte and refuses with the exact files it would have touched, so asking
+  // the same question twice could only produce two different answers — and the
+  // preflight's would be the wrong one. It compares the *unrendered* template
+  // against the target, so it called every already-correct file a conflict:
+  // 23 names under "edits lost" when one had changed, which is how a --force
+  // prompt gets typed past without being read.
+  //
+  // `--force` has always adopted stubs as well as replacing canon, and the
+  // adopting half is the safe one — narrowing it now would turn an existing
+  // `--force` into a *more* destructive command.
+  const mayAdopt = Boolean(values.adopt) || Boolean(values.force);
+  const mayOverwrite = Boolean(values.force);
 
-  const { adopt, overwrite } = classifyConflicts(
-    templatePaths.templateDir,
-    outputDir,
-    view
-  );
+  /** @type {Awaited<ReturnType<typeof scaffold>>} */
+  let result;
+  try {
+    result = await scaffold({
+      templateName,
+      outputDir,
+      overrides,
+      adopt: mayAdopt,
+      force: mayOverwrite,
+    });
+  } catch (err) {
+    if (!(err instanceof ScaffoldRefusal)) throw err;
 
-  if (conflicts.length > 0 && !values.force) {
     console.error('The following files already exist:\n');
-    if (adopt.length > 0) {
+    if (err.needsAdopt.length > 0) {
       console.error('  Adopted — your content is kept, the generated block is');
       console.error('  inserted below the title:\n');
-      for (const file of adopt) console.error(`    - ${file}`);
-      console.error('');
+      for (const file of err.needsAdopt) console.error(`    - ${file}`);
+      console.error('\n  Use --adopt to proceed.\n');
     }
-    if (overwrite.length > 0) {
+    if (err.needsForce.length > 0) {
       console.error('  Overwritten — replaced wholesale, edits lost:\n');
-      for (const file of overwrite) console.error(`    - ${file}`);
-      console.error('');
+      for (const file of err.needsForce) console.error(`    - ${file}`);
+      console.error('\n  Use --force to proceed.\n');
     }
-    console.error('Use --force to proceed.');
     process.exit(1);
   }
-
-  if (overwrite.length > 0 && values.force) {
-    console.warn(
-      `Warning: overwriting ${overwrite.length} existing file(s).\n`
-    );
-  }
-
-  const result = await scaffold({
-    templateName,
-    outputDir,
-    overrides,
-    adopt: values.force,
-  });
 
   console.log(`\nScaffolded "${useName}" template successfully!\n`);
   console.log(`  Output: ${outputDir}`);

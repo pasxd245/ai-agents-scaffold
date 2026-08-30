@@ -89,7 +89,9 @@ drives the condensing. The steps below are what it has to preserve.
    ledgers, "tests pass" restatements, LOC tables.
 3. Delete the original `Round_NNN.md` files in the same commit, and say in
    the compacted file's header that `git log -- .agents/plan/cycles/` recovers
-   any of them.
+   any of them. This is the documented exception to append-only below, so it
+   needs a human's say-so — an agent proposes the compaction, never performs
+   it unasked.
 4. Keep going from the next number. Do not renumber.
 
 Compaction is lossy on purpose. The full record stays in git; what survives
@@ -107,7 +109,10 @@ copyable one wins.
 
 ## Governance
 
-- **Rounds are append-only** — do not delete or rewrite history
+- **Rounds are append-only** — do not delete or rewrite history. Compaction is
+  the one exception, and it is a human's to authorise: a closed range may be
+  replaced by a single compacted record in one commit, never piecemeal, and
+  never while a round in the range is still active
 - **Promotions** from Act phase are logged in [promotions.md](promotions.md)
 - **Promotion criteria** are defined in [AGENTS.md](../AGENTS.md)
 - Agents may update the `Do` and `Check` sections of active rounds

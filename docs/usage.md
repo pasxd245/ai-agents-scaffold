@@ -38,16 +38,17 @@ Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
 
 ## Scaffold options
 
-| Flag             | Short | Default        | Description                                     |
-| ---------------- | ----- | -------------- | ----------------------------------------------- |
-| `--use <name>`   | `-u`  | `base`         | Template to use                                 |
-| `--output <dir>` | `-o`  | `.`            | Output directory                                |
-| `--name <name>`  | `-n`  | directory name | Project name used in generated files            |
-| `--list`         | `-l`  |                | List available templates and exit               |
-| `--force`        | `-f`  |                | Adopt existing stubs; overwrite existing canon  |
-| `--dry-run`      |       |                | Preview what would be generated without writing |
-| `--help`         | `-h`  |                | Show help text                                  |
-| `--version`      | `-v`  |                | Show version number                             |
+| Flag             | Short | Default        | Description                                                      |
+| ---------------- | ----- | -------------- | ---------------------------------------------------------------- |
+| `--use <name>`   | `-u`  | `base`         | Template to use                                                  |
+| `--output <dir>` | `-o`  | `.`            | Output directory                                                 |
+| `--name <name>`  | `-n`  | directory name | Project name used in generated files                             |
+| `--list`         | `-l`  |                | List available templates and exit                                |
+| `--adopt`        |       |                | Adopt existing stubs, keeping what they say                      |
+| `--force`        | `-f`  |                | Replace existing files wholesale, edits lost — implies `--adopt` |
+| `--dry-run`      |       |                | Preview what would be generated without writing                  |
+| `--help`         | `-h`  |                | Show help text                                                   |
+| `--version`      | `-v`  |                | Show version number                                              |
 
 ## Common workflows
 
@@ -133,18 +134,29 @@ Available templates:
 If the output directory already contains files that would be generated, the CLI exits with an error by default:
 
 ```text
-The following files already exist and would be overwritten:
+The following files already exist:
 
-  - .agents/AGENTS.md
-  - CLAUDE.md
+  Adopted — your content is kept, the generated block is
+  inserted below the title:
 
-Use --force to overwrite existing files.
+    - AGENTS.md
+
+  Use --adopt to proceed.
+
+  Overwritten — replaced wholesale, edits lost:
+
+    - .agents/AGENTS.md
+
+  Use --force to proceed.
 ```
 
-Use `--force` to overwrite:
+The two are different permissions and have different flags. Adoption keeps a
+hand-written stub's content; replacement deletes what is there. Grant only the
+one you meant:
 
 ```bash
-a2scaffold --force
+a2scaffold --adopt   # keep the stubs, add the generated block
+a2scaffold --force   # replace canon too — and adopt stubs, as before
 ```
 
 ### Use a specific template
@@ -323,7 +335,8 @@ a2scaffold sync --dry-run   # report only
 a2scaffold sync
 ```
 
-Nothing it does can lose work, so there is no `--force` and no conflict list —
+It writes only inside one unambiguous managed region and never overwrites a
+seeded file that exists, so there is no `--force` and no conflict list —
 which makes it safe in CI or a pre-commit hook, where `--force` never will be.
 Files it will not touch are reported instead:
 
@@ -397,9 +410,14 @@ read time.
 Before writing, the CLI checks whether any output files already exist in the target directory.
 
 - **No conflicts**: files are written normally.
-- **Conflicts found, no `--force`**: the CLI lists them, split by what `--force`
-  would do, and exits with code 1.
-- **Conflicts found, `--force`**: stubs are **adopted**, canon is overwritten.
+- **Conflicts found, permission missing**: the CLI lists them, split by the
+  flag each kind needs, and exits with code 1.
+- **`--adopt`**: marker-less stubs are **adopted**. Canon still blocks the run.
+- **`--force`**: canon is overwritten, and stubs are adopted as well.
+
+`scaffold()` enforces this itself rather than trusting the pre-flight, and
+throws **before writing anything** when a permission is missing — so a refused
+run leaves the target exactly as it was.
 
 ### Adopting a repo that already has agent files
 
@@ -408,7 +426,7 @@ losing a hand-written `AGENTS.md` and not scaffolding at all. The managed-region
 merge could not help: it needs markers on **both** sides, and a file written
 before the tool has none.
 
-So `--force` adopts instead. For any generated file that carries a managed
+So `--adopt` exists instead. For any generated file that carries a managed
 region — the four harness stubs — the generated block is inserted below your
 title and **everything else you wrote is kept**, ending up below the end marker
 where user content belongs anyway:
@@ -426,11 +444,10 @@ where user content belongs anyway:
 ```
 
 The file now carries markers, so this happens exactly once; later runs take the
-ordinary merge path and need no `--force`.
+ordinary merge path and need no flag at all.
 
-`.agents/` is different. It has no managed region on purpose, so `--force`
-still replaces it wholesale — which is why the pre-flight list separates the
-two:
+`.agents/` is different. It has no managed region on purpose, so only `--force`
+replaces it, wholesale — which is why the pre-flight list separates the two:
 
 ```text
 The following files already exist:

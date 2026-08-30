@@ -67,7 +67,8 @@ npx a2scaffold sync
 ```
 
 `sync` creates missing files, refreshes managed regions, and leaves everything
-else alone. Nothing it does can lose work, so it needs no `--force` and asks no
+else alone. It writes only inside one unambiguous managed region and never
+overwrites a seeded file that exists, so it needs no `--force` and asks no
 questions. **This is the right command for almost every update.** It also
 installs cleanly into a repo that has never been scaffolded.
 
@@ -86,7 +87,7 @@ work:
 | File                                                                                  | On re-scaffold                                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Root stubs — `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md` | Carry a managed region (`<!-- a2scaffold:start -->` … `<!-- a2scaffold:end -->`). Only the fenced block is replaced; hand-written sections outside it survive. Not a conflict, needs no `--force`. |
-| A stub that predates the tool, with no markers                                        | **Adopted** under `--force`: the generated block is inserted below the title and everything else the author wrote is kept. Happens once; the file then has markers and merges normally.            |
+| A stub that predates the tool, with no markers                                        | **Adopted** under `--adopt`: the generated block is inserted below the title and everything else the author wrote is kept. Happens once; the file then has markers and merges normally.            |
 | Everything under `.agents/`                                                           | **No managed region, on purpose.** It is canonical and human-owned. Re-scaffolding reports it as a conflict and refuses without `--force`, which replaces it wholesale.                            |
 
 So:
@@ -96,16 +97,19 @@ npx a2scaffold --dry-run   # see what would change
 npx a2scaffold             # updates managed regions; exits 1 if canon conflicts
 ```
 
-**Before ever passing `--force`**: read the CLI's own split. It lists what
-would be _adopted_ (content kept) separately from what would be _overwritten_
-(replaced wholesale) — and the second list includes anything the human curated
-in `context/`, `memory/`, or `plan/`. Confirm with the user, naming the files
-in the overwrite list specifically. If the repo is under git, check
-`git status` is clean first so the change is recoverable.
+`--adopt` and `--force` are **not** interchangeable. `--adopt` keeps what a
+stub says; `--force` replaces files wholesale, and its list includes anything
+the human curated in `context/`, `memory/` or `plan/`. Reach for the narrower
+one, and reach for it deliberately.
+
+**Before ever passing `--force`**: read the CLI's own split — it lists what
+would be _adopted_ separately from what would be _overwritten_. Confirm with
+the user, naming the files in the overwrite list specifically. If the repo is
+under git, check `git status` is clean first so the change is recoverable.
 
 Adopting a repo that already has agent files is the normal first run there,
-not a dangerous one: `--force` is required, and no hand-written content is
-lost.
+not a dangerous one: `--adopt` is enough, and no hand-written content is
+lost — never escalate to `--force` for it.
 
 A conflict list is information, not a failure. Report which files differ and
 ask, rather than reaching for `--force` to make the error go away.
@@ -171,7 +175,8 @@ editable copy.
 Agents may write to `.agents/memory/` and append to `plan/promotions.md`;
 `AGENTS.md`, `context/`, `reference/`, `prompts/` and `skills/` are read-only
 without explicit human instruction. Running `a2scaffold --force` over canon is
-a write to canon — same rule, so warn and confirm first.
+a write to canon — same rule, so warn and confirm first. `--adopt` does not
+touch canon and needs no such warning.
 
 Read `.agents/AGENTS.md` for the repo's own table; it is authoritative over
 this file.
@@ -180,7 +185,7 @@ this file.
 
 | Symptom                            | Cause                                    | Do this                                                     |
 | ---------------------------------- | ---------------------------------------- | ----------------------------------------------------------- |
-| Exit 1, list of files              | Canon would be overwritten               | Report the list; ask before `--force`                       |
+| Exit 1, list of files              | A permission is missing for a conflict   | Report the split; `--adopt` for stubs, ask before `--force` |
 | Hand edits to a stub vanished      | Edits were _inside_ the managed region   | Move them below `<!-- a2scaffold:end -->`; recover from git |
 | `skill 'x' not found locally`      | Name is not in the pool, and no `--from` | Use the printed suggestion; do not guess a registry         |
 | Conditional file did not appear    | Its `agents.*` flag is false             | Set the flag in values, then re-run                         |

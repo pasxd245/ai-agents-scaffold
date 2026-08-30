@@ -12,6 +12,13 @@ import { hasManagedRegion } from './managed-region.js';
  * a conflict: the render replaces only the fenced block and leaves the
  * author's surrounding edits alone.
  *
+ * **This is a prediction, not the verdict.** It compares the *unrendered*
+ * template against the target, so it cannot tell a file that would change from
+ * one the render would rewrite byte-identically, and it reports both. Only
+ * `scaffold()` knows the difference, and it refuses with the true list — which
+ * is why the CLI reports that refusal rather than calling this first. Use this
+ * to warn ahead of time; do not use it to decide what a run will destroy.
+ *
  * @param {string} templateDir - Path to template/ directory
  * @param {string} outDir - Target output directory
  * @param {Record<string, any>} [view] - Resolved values. Without it, `$if{...}`

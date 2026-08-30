@@ -1,6 +1,6 @@
 # Skills Guide
 
-a2scaffold can install, list, validate, and reference [Agent Skills](https://agentskills.io/specification) in your project's `.agents/skills/` directory.
+a2scaffold can install, list, validate, audit, and reference [Agent Skills](https://agentskills.io/specification) in your project's `.agents/skills/` directory.
 
 Skills are modular folders of instructions, scripts, and resources that AI agents discover and load on demand. a2scaffold provides lightweight skill management — install from local paths or GitHub, validate against the spec, and list what's installed. For registry search and auto-updates, see [Using with ecosystem tools](#using-with-ecosystem-tools).
 
@@ -166,10 +166,9 @@ Exits with code 1 if any skill is invalid. Output for each skill is shown as `�
 
 #### Conformance score
 
-Alongside hard spec errors, validation reports a **0–100 conformance score**
-with any warnings behind it. A warning means the skill is well-formed but will
-work badly — most often a description too vague for the model to match a task
-against:
+Alongside hard spec errors, validation reports the warnings behind a **0–100
+guidance score**. A warning means the skill is well-formed but will work badly
+— most often a description too vague for the model to match a task against:
 
 ```text
   ✔ create-template [skill] — valid, 99/100
@@ -185,6 +184,13 @@ keys — which catches typos like `when-to-use` for `when_to_use`.
 
 **Warnings never affect the exit code.** Only spec errors do. A vague skill is
 still a valid one; the author just needs to know.
+
+**The number is local guidance, not a rating.** The checks draw on the Agent
+Skills specification, Claude Code's listing behaviour, Skilldex's conformance
+guidance and local judgement in roughly equal measure, and the weights behind
+the arithmetic are chosen, not calibrated. Two skills a point apart are not
+meaningfully different, and 100 does not certify anything. Read the warnings;
+treat the score as a rough ordering.
 
 Build artefacts are not installed. A source skill is a working directory and
 accumulates caches its own repo gitignores, but `cpSync` copies what is on disk
@@ -209,7 +215,7 @@ reaches your API keys, SSH credentials and shell. Published skills have a poor
 safety record: Snyk's 2026 ToxicSkills audit of 3,984 skills found ~37%
 carrying at least one security flaw and 76 with live malicious payloads.
 
-The audit flags four categories:
+The audit flags five categories:
 
 | Category      | What it looks for                                                   |
 | ------------- | ------------------------------------------------------------------- |
@@ -217,7 +223,7 @@ The audit flags four categories:
 | `credentials` | References to `~/.ssh`, `.env`, keychains, wallets, browser cookies |
 | `execution`   | `eval`, `subprocess`, piping to a shell, base64 decoding            |
 | `network`     | `curl`, `wget`, `fetch`, non-allowlisted URLs                       |
-| `opaque`      | Binary or oversized files that cannot be screened                   |
+| `opaque`      | Symbolic links, binary or oversized files that cannot be screened   |
 
 ```text
   • research — 1 finding(s)
@@ -258,13 +264,13 @@ A skill-ref is a `SKILL.md` whose frontmatter `metadata.type` is `skill-ref` and
 
 ## Options
 
-`-d, --agents-dir <dir>` (default `.agents`) applies to `skill add`, `skill list`, and `skill validate`. `skill ref` uses `--from` and `--to` instead.
+`-d, --agents-dir <dir>` (default `.agents`) applies to `skill add`, `skill list`, `skill validate`, and `skill audit`. `skill ref` uses `--from` and `--to` instead.
 
-| Flag                 | Short | Default   | Applies to          | Description                                               |
-| -------------------- | ----- | --------- | ------------------- | --------------------------------------------------------- |
-| `--agents-dir <dir>` | `-d`  | `.agents` | add, list, validate | Target agents directory (e.g. `.agents`, `.claude`, etc.) |
-| `--from <name>`      |       |           | add                 | Fetch from a registry defined in `.a2scaffoldrc.json`     |
-| `--force`            | `-f`  |           | add, ref            | Overwrite an existing skill or skill-ref                  |
+| Flag                 | Short | Default   | Applies to                 | Description                                               |
+| -------------------- | ----- | --------- | -------------------------- | --------------------------------------------------------- |
+| `--agents-dir <dir>` | `-d`  | `.agents` | add, list, validate, audit | Target agents directory (e.g. `.agents`, `.claude`, etc.) |
+| `--from <name>`      |       |           | add                        | Fetch from a registry defined in `.a2scaffoldrc.json`     |
+| `--force`            | `-f`  |           | add, ref                   | Overwrite an existing skill or skill-ref                  |
 
 ## Skill format reference
 
@@ -291,7 +297,7 @@ The `name` field must match the directory name. See the full [Agent Skills speci
 
 ## Using with ecosystem tools
 
-a2scaffold's skill management is intentionally minimal — it handles install, list, validate, and skill-ref creation. For advanced features, use ecosystem tools alongside a2scaffold:
+a2scaffold's skill management is intentionally minimal — it handles install, list, validate, audit, and skill-ref creation. For advanced features, use ecosystem tools alongside a2scaffold:
 
 - **[skills.sh](https://skills.sh/)** (Vercel) — `npx skills add owner/repo/skill` — registry search, auto-updates, supports 40+ agents
 - **[gh-upskill](https://github.com/trieloff/gh-upskill)** — `gh upskill owner/repo` — install from GitHub with path filtering

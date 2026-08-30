@@ -12,10 +12,26 @@ import {
   hasManagedRegion,
   mergeManagedRegion,
   adoptManagedRegion,
+  resolveScaffoldConfig,
 } from '../src/scaffold/index.js';
 import { resolveTemplatePath } from '../src/templates/index.js';
 
 const TEMPLATE = 'scaffold/base';
+
+/**
+ * The view the CLI would resolve, with `overrides` layered on top.
+ *
+ * Path prediction is a mirror of the renderer, and the renderer *throws* on a
+ * formula naming a variable the view does not define — so a hand-rolled
+ * partial view is not a smaller version of the real thing, it is an error.
+ * Building it the way the CLI does keeps these tests honest.
+ *
+ * @param {Record<string, any>} [overrides]
+ * @returns {Record<string, any>}
+ */
+const view = (overrides = {}) =>
+  resolveScaffoldConfig({ templateName: TEMPLATE, outputDir: '.', overrides })
+    .view;
 
 // ── mergeManagedRegion ──────────────────────────────────────────────
 
@@ -51,17 +67,19 @@ describe('listOutputPaths', () => {
   const templateDir = resolveTemplatePath(TEMPLATE).templateDir;
 
   it('resolves $if{} segments away when the condition is truthy', () => {
-    const out = listOutputPaths(templateDir, {
-      agents: { claude: true, agentsmd: true },
-    }).map((p) => p.outputRel);
+    const out = listOutputPaths(
+      templateDir,
+      view({ agents: { claude: true, agentsmd: true } })
+    ).map((p) => p.outputRel);
     assert.ok(out.includes('CLAUDE.md'), 'CLAUDE.md should be predicted');
     assert.ok(!out.some((p) => p.includes('$if{')));
   });
 
   it('omits files whose condition is falsy', () => {
-    const out = listOutputPaths(templateDir, {
-      agents: { claude: false, agentsmd: true },
-    }).map((p) => p.outputRel);
+    const out = listOutputPaths(
+      templateDir,
+      view({ agents: { claude: false, agentsmd: true } })
+    ).map((p) => p.outputRel);
     assert.ok(!out.includes('CLAUDE.md'));
     assert.ok(out.includes('AGENTS.md'));
   });
@@ -139,9 +157,10 @@ describe('re-scaffolding an existing project', () => {
 
     // With a view, CLAUDE.md resolves — and is then excluded only because it
     // carries a managed region, not because it was never seen.
-    const seen = listOutputPaths(templateDir, {
-      agents: { claude: true },
-    }).map((p) => p.outputRel);
+    const seen = listOutputPaths(
+      templateDir,
+      view({ agents: { claude: true } })
+    ).map((p) => p.outputRel);
     assert.ok(seen.includes('CLAUDE.md'));
   });
 
@@ -207,11 +226,31 @@ describe('re-scaffolding an existing project', () => {
     assert.ok(result.preserved.includes('CLAUDE.md'));
   });
 
+  it('refuses only the files that would actually change', async () => {
+    // The old pre-flight compared the *unrendered* template against the
+    // target, so every already-correct canon file counted as a conflict: 23
+    // names under "edits lost" when one had changed. A list that is mostly
+    // noise is a list people type past, which defeats the prompt entirely.
+    fs.appendFileSync(
+      path.join(tmpDir, '.agents/context/philosophy.md'),
+      '\nMy own principle.\n'
+    );
+
+    await assert.rejects(
+      () => scaffold({ templateName: TEMPLATE, outputDir: tmpDir }),
+      (/** @type {any} */ err) => {
+        assert.deepEqual(err.needsForce, [
+          path.join('.agents', 'context', 'philosophy.md'),
+        ]);
+        assert.deepEqual(err.needsAdopt, []);
+        return true;
+      }
+    );
+  });
+
   it('does not report a managed stub as a conflict', () => {
     const { templateDir } = resolveTemplatePath(TEMPLATE);
-    const conflicts = checkExistingFiles(templateDir, tmpDir, {
-      agents: { claude: true, agentsmd: true, copilot: true },
-    });
+    const conflicts = checkExistingFiles(templateDir, tmpDir, view());
     assert.ok(!conflicts.includes('CLAUDE.md'));
     // Canonical knowledge has no managed region and must still conflict.
     assert.ok(conflicts.includes(path.join('.agents', 'AGENTS.md')));
@@ -220,7 +259,10 @@ describe('re-scaffolding an existing project', () => {
 
 // ── prose that mentions the markers is not a managed file ───────────
 
-describe('hasManagedRegion (inline mentions)', () => {
+describe('hasManagedRegion (markers that are not a region)', () => {
+  const wrapped = (/** @type {string} */ body) =>
+    `<!-- a2scaffold:start -->\n${body}\n<!-- a2scaffold:end -->`;
+
   it('ignores markers inside inline code', () => {
     // This repo's own reference docs describe the markers in backticks. If
     // that counted, a re-scaffold would splice the doc at the wrong offsets.
@@ -237,6 +279,59 @@ describe('hasManagedRegion (inline mentions)', () => {
     const real =
       '# T\n\n<!-- a2scaffold:start -->\nbody\n<!-- a2scaffold:end -->\n';
     assert.equal(hasManagedRegion(real), true);
+  });
+
+  it('ignores markers inside a fenced example', () => {
+    // A doc that *shows* what a generated stub looks like puts real markers
+    // on real lines. Counting those would let a merge overwrite the author's
+    // example — the one thing the region exists to prevent.
+    const doc = [
+      '# Root files',
+      '',
+      '```markdown',
+      '<!-- a2scaffold:start -->',
+      'example generated content',
+      '<!-- a2scaffold:end -->',
+      '```',
+      '',
+      'Prose after the example.',
+    ].join('\n');
+    assert.equal(hasManagedRegion(doc), false);
+    assert.equal(mergeManagedRegion(doc, wrapped('new')), null);
+  });
+
+  it('reads a region that surrounds a fenced example', () => {
+    // The inverse: a generated block may legitimately contain fenced code,
+    // and the markers around it are outside the fence.
+    const doc = [
+      '# T',
+      '',
+      '<!-- a2scaffold:start -->',
+      '',
+      '```bash',
+      'a2scaffold sync',
+      '```',
+      '',
+      '<!-- a2scaffold:end -->',
+    ].join('\n');
+    assert.equal(hasManagedRegion(doc), true);
+  });
+
+  it('fails closed on a duplicated marker pair', () => {
+    // Two candidate regions and no way to know which one the template owns.
+    // Refusing leaves the file to the caller's ordinary rules, which will not
+    // destroy it without an explicit permission.
+    const doubled =
+      '<!-- a2scaffold:start -->\na\n<!-- a2scaffold:end -->\n\n' +
+      '<!-- a2scaffold:start -->\nb\n<!-- a2scaffold:end -->\n';
+    assert.equal(hasManagedRegion(doubled), false);
+  });
+
+  it('fails closed on a start with no end', () => {
+    assert.equal(
+      hasManagedRegion('# T\n\n<!-- a2scaffold:start -->\nbody\n'),
+      false
+    );
   });
 });
 
@@ -263,9 +358,11 @@ describe('scaffolding a repo that already has agent files', () => {
 
   it('classifies a marker-less stub as adoptable, not overwritable', () => {
     const { templateDir } = resolveTemplatePath(TEMPLATE);
-    const { adopt, overwrite } = classifyConflicts(templateDir, tmpDir, {
-      agents: { agentsmd: true, claude: true },
-    });
+    const { adopt, overwrite } = classifyConflicts(
+      templateDir,
+      tmpDir,
+      view({ agents: { agentsmd: true, claude: true } })
+    );
     assert.ok(adopt.includes('AGENTS.md'));
     assert.ok(!overwrite.includes('AGENTS.md'));
   });
@@ -285,10 +382,32 @@ describe('scaffolding a repo that already has agent files', () => {
     assert.ok(result.adopted.includes('AGENTS.md'));
   });
 
-  it('still replaces the file wholesale without adopt', async () => {
-    // `--force` is what turns replacement into adoption. The default path
-    // must keep its old behaviour so nothing changes for callers that mean it.
-    await scaffold({ templateName: TEMPLATE, outputDir: tmpDir });
+  it('refuses to replace the file when given neither permission', async () => {
+    // Adoption and replacement are different permissions, and the merge is
+    // the last thing between a render and someone's file: it decides for
+    // itself rather than trusting a caller to have run the preflight.
+    await assert.rejects(
+      () => scaffold({ templateName: TEMPLATE, outputDir: tmpDir }),
+      (/** @type {any} */ err) => {
+        assert.equal(err.name, 'ScaffoldRefusal');
+        assert.deepEqual(err.needsAdopt, ['AGENTS.md']);
+        assert.deepEqual(
+          err.needsForce,
+          [],
+          'a stub is adoptable, so it must not demand the destructive flag'
+        );
+        return true;
+      }
+    );
+    const after = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
+    assert.ok(
+      after.includes('Monorepo for data processing.'),
+      'a refused run must leave the file exactly as it was'
+    );
+  });
+
+  it('replaces the file wholesale when force says so', async () => {
+    await scaffold({ templateName: TEMPLATE, outputDir: tmpDir, force: true });
     const after = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
     assert.ok(!after.includes('Monorepo for data processing.'));
   });
