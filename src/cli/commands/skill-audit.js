@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { auditSkill } from '../../skills/index.js';
+import { auditSkill, discoverSkills } from '../../skills/index.js';
 import { SKILLS_DIRNAME } from '../../constants.js';
 
 const SEVERITY_ORDER = { high: 0, medium: 1 };
@@ -23,14 +23,13 @@ export function runSkillAudit(targetName, agentsDir) {
     process.exit(1);
   }
 
-  const dirs = targetName
-    ? [path.join(skillsDir, targetName)]
-    : fs
-        .readdirSync(skillsDir, { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .map((e) => path.join(skillsDir, e.name));
+  // Recurse, so a nested skill is screened rather than its parent directory
+  // being reported as a skill with no SKILL.md.
+  const targets = targetName
+    ? [{ name: targetName, skillDir: path.join(skillsDir, targetName) }]
+    : discoverSkills(agentsDir);
 
-  if (dirs.length === 0) {
+  if (targets.length === 0) {
     console.log('No skills to audit.');
     return;
   }
@@ -38,14 +37,13 @@ export function runSkillAudit(targetName, agentsDir) {
   let total = 0;
   let high = 0;
 
-  for (const dir of dirs) {
-    const name = path.basename(dir);
-    if (!fs.existsSync(dir)) {
+  for (const { name, skillDir } of targets) {
+    if (!fs.existsSync(skillDir)) {
       console.error(`Skill not found: ${name}`);
       process.exit(1);
     }
 
-    const { findings, scanned, clean } = auditSkill(dir);
+    const { findings, scanned, clean } = auditSkill(skillDir);
 
     if (clean) {
       console.log(`  ✔ ${name} — ${scanned} file(s) screened, nothing flagged`);

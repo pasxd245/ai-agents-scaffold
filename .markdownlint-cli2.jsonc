@@ -12,7 +12,11 @@
   "ignores": [
     "node_modules/**",
     "CHANGELOG.md",
-    "templates/**",
+    // Rendered templates contain Handlebars, which is not valid markdown.
+    // Pool skills under templates/skills/ are plain .md and copied verbatim,
+    // so they are linted like anything else — link rot in a published skill
+    // reaches every repo that installs it.
+    "templates/scaffold/**",
     ".claude/**",
     ".codex/**",
     ".gemini/**",

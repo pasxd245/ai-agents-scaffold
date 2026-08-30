@@ -2,6 +2,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -148,5 +149,71 @@ describe('CLI skill commands', () => {
         ),
       /Source skill is invalid/
     );
+  });
+});
+
+describe('CLI skill commands (nested skills)', () => {
+  // `skill add group/name` is a documented form, and `skill list` recursed
+  // while `validate` and `audit` did not: they read one level, found a
+  // group directory with no SKILL.md, and reported the group as a broken
+  // skill — a high-severity audit finding for a skill that was fine.
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2s-nested-'));
+    const skillDir = path.join(tmpDir, '.agents', 'skills', 'planning', 'deep');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, 'SKILL.md'),
+      [
+        '---',
+        'name: deep',
+        'description: Use when checking that a nested skill is discovered by ' +
+          'the validate and audit commands rather than being reported as a ' +
+          'directory that is missing its SKILL.md file entirely.',
+        '---',
+        '',
+        '## Trigger',
+        '',
+        'When a nested skill needs validating.',
+        '',
+      ].join('\n')
+    );
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('validates a nested skill under its full name', () => {
+    const out = execFileSync(
+      'node',
+      [
+        CLI_PATH,
+        'skill',
+        'validate',
+        '--agents-dir',
+        path.join(tmpDir, '.agents'),
+      ],
+      { encoding: 'utf8' }
+    );
+    assert.match(out, /planning\/deep/);
+    assert.ok(!out.includes('SKILL.md not found'), out);
+  });
+
+  it('audits a nested skill instead of flagging its parent directory', () => {
+    const out = execFileSync(
+      'node',
+      [
+        CLI_PATH,
+        'skill',
+        'audit',
+        '--agents-dir',
+        path.join(tmpDir, '.agents'),
+      ],
+      { encoding: 'utf8' }
+    );
+    assert.match(out, /planning\/deep/);
+    assert.ok(!out.includes('not a skill directory'), out);
   });
 });

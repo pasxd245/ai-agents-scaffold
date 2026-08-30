@@ -38,18 +38,32 @@ Resolution order: explicit local paths and `https://github.com/...` URLs are use
 
 **From the built-in pool:**
 
-Built-in names resolve under `templates/skills/` when this package ships
-skills there.
+Built-in names resolve under `templates/skills/`.
+
+| Skill            | What it does                                                                                                                                                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `a2scaffold`     | Teaches an agent to operate this CLI on your behalf — scaffolding, re-scaffolding, installing and screening skills. Install it in a scaffolded repo so the agent runs the right command instead of hand-writing `.agents/` files.  |
+| `master-plan`    | Decomposes a non-trivial refactor into numbered, commit-sized phases with acceptance gates.                                                                                                                                        |
+| `repo-explainer` | Explains a repository or subsystem with Mermaid diagrams that render natively in GitHub and VS Code.                                                                                                                               |
+| `research`       | Investigates a topic and produces a sourced brief, crawling primary sources rather than answering from memory. Ships a crawler; `skill audit` reports its network access, which is expected — read the findings before installing. |
 
 ```bash
 # Bare name — installs templates/skills/<name>/
-a2scaffold skill add my-skill
+a2scaffold skill add a2scaffold
 
 # Nested name — preserves the path under skills/
 a2scaffold skill add planning/master-plan
 ```
 
 Bare and nested names preserve the requested path: `skill add planning/master-plan` lands at `.agents/skills/planning/master-plan/`. Explicit paths and URLs use the source's basename instead.
+
+`skill list`, `skill validate` and `skill audit` all recurse, so a nested skill is reported under its full name (`group/name`).
+
+> **Do not group a skill you intend to project into a harness.** A harness
+> skills directory is exactly one level — `.claude/skills/<skill-name>/SKILL.md`
+> — so `skill ref` writing `.claude/skills/group/name/` produces a skill the
+> harness never discovers. Grouping is safe for skills that stay in `.agents/`.
+> See [harness behaviour](../.agents/context/harness-behaviour.md).
 
 **From a local directory:**
 

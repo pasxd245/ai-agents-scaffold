@@ -16,6 +16,7 @@ import {
   discoverSkills,
   installSkillRef,
 } from '../src/skills/index.js';
+import { BUILTIN_SKILLS_DIR } from '../src/templates/index.js';
 import yaml from 'js-yaml';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -764,6 +765,48 @@ describe('scoreConformance', () => {
 
 // ── validateSkill exposes conformance ───────────────────────────────
 
+describe('scoreConformance (trigger-phrase calibration)', () => {
+  // A description that names the moment to reach for the skill has a trigger,
+  // whatever verb it uses. Penalising "Use before starting a refactor" pushes
+  // authors to reword good descriptions to satisfy a regex, which is the
+  // failure mode the audit already had.
+  const withTrigger = [
+    'Use before starting any multi-step change that will land across several commits.',
+    'Use after a release to reconcile the changelog with what actually shipped.',
+    'Use during an incident to collect the timeline before memory fades.',
+    'Skip for one-shot fixes; reach for it on cross-cutting renames.',
+    'Use when the user asks how a subsystem works.',
+    'Whenever a contributor adds a new template to the repository.',
+  ];
+
+  for (const description of withTrigger) {
+    it(`accepts a trigger phrase: "${description.slice(0, 32)}…"`, () => {
+      const padding = ' word'.repeat(40);
+      const report = scoreConformance(
+        { name: 'x', description: description + padding },
+        'body'
+      );
+      assert.ok(
+        !report.warnings.some((w) => w.code === 'description-no-trigger'),
+        `should read as a trigger: ${description}`
+      );
+    });
+  }
+
+  it('still flags a description that only says what the skill does', () => {
+    const report = scoreConformance(
+      {
+        name: 'x',
+        description:
+          'Decomposes a refactor into numbered phases with acceptance gates and ' +
+          'produces a plan document describing each of the resulting stages in turn.',
+      },
+      'body'
+    );
+    assert.ok(report.warnings.some((w) => w.code === 'description-no-trigger'));
+  });
+});
+
 describe('validateSkill (conformance)', () => {
   it('reports warnings and a score without affecting validity', () => {
     const result = validateSkill(path.join(FIXTURES, 'valid-skill'));
@@ -892,4 +935,185 @@ describe('installSkill (excludes build artefacts)', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
+});
+
+// ── built-in skill pool ─────────────────────────────────────────────
+
+/**
+ * Medium-severity audit findings the pool ships on purpose, with the reason.
+ * Anything not listed here is a regression.
+ *
+ * @type {Record<string, string[]>}
+ */
+const DECLARED_MEDIUM_FINDINGS = {
+  // `research` documents how to drive crawl4ai; a reference on crawling
+  // necessarily contains network calls. Reviewed 2026-08-29: documentation
+  // only, no executable network access outside the documented crawler.
+  research: [
+    'references/crawl4ai.md: reaches the network',
+    'references/crawl4ai.md: reaches the network',
+    'references/crawl4ai.md: reaches the network',
+  ],
+};
+
+describe('built-in skill pool', () => {
+  /**
+   * Every directory under `templates/skills/` is installable by name via
+   * `skill add <name>`, so the pool is a published surface. A skill that ships
+   * broken is worse than one that does not ship: the user gets it by name and
+   * has no reason to re-check it. Hold the pool to the standard the tool
+   * itself enforces on everyone else.
+   */
+  // `discoverSkills` appends `skills/` itself, and BUILTIN_SKILLS_DIR already
+  // ends in it, so hand it the parent.
+  const poolSkills = discoverSkills(path.dirname(BUILTIN_SKILLS_DIR));
+
+  it('is flat, because a harness skills directory is one level deep', () => {
+    // Claude Code discovers `<skills-dir>/<name>/SKILL.md` and nothing deeper,
+    // so `skill ref` projecting a grouped skill produces one the harness never
+    // finds. The SKILL.md stays spec-valid — `name` matches its parent
+    // directory — so `skill validate` cannot catch it. Verified against a live
+    // session on 2026-08-29; see context/harness-behaviour.md.
+    const grouped = poolSkills
+      .map((s) => s.name)
+      .filter((n) => n.includes('/'));
+    assert.deepEqual(
+      grouped,
+      [],
+      'a grouped pool skill is undiscoverable once projected into .claude/skills/'
+    );
+  });
+
+  it('is not empty', () => {
+    assert.ok(
+      poolSkills.length > 0,
+      'templates/skills/ advertises `skill add <name>` but ships nothing'
+    );
+  });
+
+  for (const { name, skillDir } of poolSkills) {
+    it(`ships ${name} as a valid, fully conformant skill`, () => {
+      const result = validateSkill(skillDir);
+      assert.equal(
+        result.valid,
+        true,
+        `${name} is invalid: ${result.errors.join('; ')}`
+      );
+      assert.equal(
+        result.score,
+        100,
+        `${name} scores ${result.score}: ` +
+          result.warnings.map((w) => w.code).join(', ')
+      );
+    });
+
+    it(`ships ${name} with no parent-relative links`, () => {
+      // `installSkill` copies verbatim, so one file has to serve both
+      // `templates/skills/<name>/` and `.agents/skills/<name>/` at whatever
+      // depth the user installs it. No `../` path resolves in both places, so
+      // a relative link is broken somewhere by construction. Nesting
+      // `master-plan` under `planning/` broke two of them exactly this way.
+      const offenders = [];
+      const walk = (/** @type {string} */ dir) => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const abs = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            walk(abs);
+          } else if (entry.name.endsWith('.md')) {
+            const text = fs.readFileSync(abs, 'utf8');
+            for (const [, link] of text.matchAll(/]\((\.\.\/[^)]*)\)/g)) {
+              offenders.push(`${path.relative(skillDir, abs)} -> ${link}`);
+            }
+          }
+        }
+      };
+      walk(skillDir);
+      assert.deepEqual(
+        offenders,
+        [],
+        `${name} uses parent-relative links; write the path in backticks instead`
+      );
+    });
+
+    it(`ships ${name} with no high-severity audit finding`, () => {
+      const findings = auditSkill(skillDir).findings;
+      const high = findings.filter((f) => f.severity === 'high');
+      assert.deepEqual(
+        high.map((f) => `${f.file}: ${f.message}`),
+        [],
+        `${name} would trip our own supply-chain screen at high severity`
+      );
+    });
+
+    it(`ships ${name} with every medium finding declared`, () => {
+      // A skill may legitimately reach the network — that is what a crawler
+      // does. What is not acceptable is an undeclared one: if the pool grows a
+      // finding nobody signed off on, this fails and someone has to look.
+      const medium = auditSkill(skillDir)
+        .findings.filter((f) => f.severity === 'medium')
+        .map((f) => `${f.file}: ${f.message}`);
+      assert.deepEqual(
+        medium,
+        DECLARED_MEDIUM_FINDINGS[name] ?? [],
+        `${name} has medium findings that are not declared in the test`
+      );
+    });
+  }
+});
+
+// ── the pool, dogfooded ─────────────────────────────────────────────
+
+describe('this repo installs its own pool skills', () => {
+  /**
+   * `templates/skills/` is the only thing that ships — `.agents/skills/` goes
+   * to nobody. So the pool is canonical and this repo installs from it exactly
+   * as a user would. That leaves two copies on disk, and two copies drift; this
+   * turns the drift into a failing test rather than a surprise for whoever
+   * runs `skill add` next.
+   */
+  const repoRoot = path.dirname(__dirname);
+  const installed = ['master-plan', 'repo-explainer', 'research'];
+
+  /**
+   * Every file under `dir`, relative and sorted.
+   *
+   * @param {string} dir
+   * @param {string} [prefix]
+   * @returns {string[]}
+   */
+  const filesUnder = (dir, prefix = '') =>
+    fs
+      .readdirSync(dir, { withFileTypes: true })
+      .flatMap((entry) => {
+        const rel = prefix ? path.join(prefix, entry.name) : entry.name;
+        return entry.isDirectory()
+          ? filesUnder(path.join(dir, entry.name), rel)
+          : [rel];
+      })
+      .sort();
+
+  for (const name of installed) {
+    it(`keeps .agents/skills/${name} identical to the pool`, () => {
+      const source = path.join(BUILTIN_SKILLS_DIR, name);
+      const dest = path.join(repoRoot, '.agents', 'skills', name);
+
+      assert.ok(
+        fs.existsSync(dest),
+        `${name} should be installed in this repo`
+      );
+      assert.deepEqual(
+        filesUnder(dest),
+        filesUnder(source),
+        `${name} has files the pool does not, or is missing some`
+      );
+
+      for (const file of filesUnder(source)) {
+        assert.equal(
+          fs.readFileSync(path.join(dest, file), 'utf8'),
+          fs.readFileSync(path.join(source, file), 'utf8'),
+          `${name}/${file} has drifted from the pool — edit the pool, then reinstall`
+        );
+      }
+    });
+  }
 });

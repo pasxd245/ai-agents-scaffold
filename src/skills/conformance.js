@@ -50,7 +50,7 @@ const MIN_DESC_WORDS = 30;
 
 /** Phrases that signal a description says *when* to use the skill, not only what it does. */
 const TRIGGER_HINTS =
-  /\b(use (this|it|when)|when (you|the|a|an|asked)|whenever|triggers?|applies when|for (creating|reviewing|writing|running|debugging))\b/i;
+  /\b(use (this|it|when|before|after|during|while)|when (you|the|a|an|asked)|whenever|triggers?|applies when|skip (for|when)|for (creating|reviewing|writing|running|debugging))\b/i;
 
 /**
  * Weight subtracted from the score for each warning code. A warning may carry
