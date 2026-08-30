@@ -104,12 +104,28 @@ describe('scaffold base template', () => {
     }
   });
 
+  it('does not ship a policy for docs/agents/, which it never creates', () => {
+    // The scaffold has no opinion it can enforce about a directory outside
+    // .agents/. Shipping one charged every repo ~50 lines for a convention
+    // that may not apply. It is a recommendation in docs/usage.md instead.
+    assert.equal(
+      fs.existsSync(
+        path.join(tmpDir, '.agents', 'reference', 'docs-agents.md')
+      ),
+      false
+    );
+    const kb = fs.readFileSync(
+      path.join(tmpDir, '.agents', 'AGENTS.md'),
+      'utf8'
+    );
+    assert.ok(!kb.includes('docs-agents.md'));
+  });
+
   it('generates the on-demand reference docs', () => {
     for (const name of [
       'root-files.md',
       'mechanisms.md',
       'skills.md',
-      'docs-agents.md',
       'memory-and-promotion.md',
     ]) {
       assert.ok(
@@ -215,6 +231,46 @@ describe('scaffold base template', () => {
     assert.ok(fs.existsSync(path.join(tmpDir, '.agents', 'plan', 'PDCA.md')));
   });
 
+  it('generates a general Definition of Done', () => {
+    const dod = fs.readFileSync(
+      path.join(tmpDir, '.agents', 'plan', 'DoD.md'),
+      'utf8'
+    );
+    // Ours rotted by accumulating per-round checklists. The shipped one says
+    // not to, and that instruction is the point of the file.
+    assert.match(dod, /Round-specific criteria belong in that round/);
+    assert.ok(!/Round \d/.test(dod), 'the shipped DoD must not name a round');
+  });
+
+  it('generates a copyable round template beside the cycles', () => {
+    // PDCA.md points at this file instead of inlining the format; a broken
+    // pointer leaves the round format documented nowhere.
+    const readOut = (/** @type {string} */ rel) =>
+      fs.readFileSync(path.join(tmpDir, rel), 'utf8');
+
+    const tpl = readOut('.agents/plan/cycles/_TEMPLATE.md');
+    assert.match(tpl, /^# Round NNN:/m);
+    assert.match(tpl, /three\*{2} digits/);
+
+    const pdca = readOut('.agents/plan/PDCA.md');
+    assert.ok(
+      pdca.includes('cycles/_TEMPLATE.md'),
+      'PDCA.md should point at the copyable template'
+    );
+    assert.ok(
+      !pdca.includes('**Status**: Planning | In Progress'),
+      'PDCA.md should not carry a second copy of the round format'
+    );
+  });
+
+  it('ships the compaction prompt, which PDCA.md tells users to run', () => {
+    assert.ok(
+      fs.existsSync(
+        path.join(tmpDir, '.agents', 'prompts', 'compact-content.prompt.md')
+      )
+    );
+  });
+
   it('generates .agents/plan/promotions.md', () => {
     assert.ok(
       fs.existsSync(path.join(tmpDir, '.agents', 'plan', 'promotions.md'))
@@ -255,6 +311,142 @@ describe('scaffold base template', () => {
     assert.match(content, /^## Authority$/m);
     assert.match(content, /^## Write policy$/m);
     assert.ok(content.includes('.agents/'));
+  });
+});
+
+describe('scaffold base template (opt-in planning surface)', () => {
+  /**
+   * `plan.decisions` is off by default: `.agents/decisions/` is real surface,
+   * and a repo that has not felt cross-round drift does not need it. The flag
+   * has to move three things together — the directory, the knowledge base's
+   * map and authority table, and the permission rules that back that table.
+   * A flag that moves only some of them is worse than no flag.
+   */
+  /** @param {boolean} decisions */
+  const render = async (decisions) => {
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2s-decisions-'));
+    await scaffold({
+      templateName: 'scaffold/base',
+      outputDir: outDir,
+      overrides: { plan: { decisions } },
+    });
+    return outDir;
+  };
+
+  it('omits decisions/ by default', async () => {
+    const outDir = await render(false);
+    try {
+      assert.equal(
+        fs.existsSync(path.join(outDir, '.agents/decisions')),
+        false
+      );
+
+      const kb = fs.readFileSync(
+        path.join(outDir, '.agents/AGENTS.md'),
+        'utf8'
+      );
+      assert.ok(!kb.includes('decisions/'));
+
+      const settings = JSON.parse(
+        fs.readFileSync(path.join(outDir, '.claude/settings.json'), 'utf8')
+      );
+      assert.ok(
+        !settings.permissions.ask.includes('Edit(/.agents/decisions/**)')
+      );
+    } finally {
+      fs.rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('omits programs/ by default and generates it when enabled', async () => {
+    const off = await render(false);
+    try {
+      assert.equal(
+        fs.existsSync(path.join(off, '.agents/plan/programs')),
+        false
+      );
+    } finally {
+      fs.rmSync(off, { recursive: true, force: true });
+    }
+
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2s-programs-'));
+    try {
+      await scaffold({
+        templateName: 'scaffold/base',
+        outputDir: outDir,
+        overrides: { plan: { programs: true } },
+      });
+      for (const file of ['README.md', '_TEMPLATE.md']) {
+        assert.ok(
+          fs.existsSync(path.join(outDir, '.agents/plan/programs', file)),
+          `.agents/plan/programs/${file} should be generated`
+        );
+      }
+      const kb = fs.readFileSync(
+        path.join(outDir, '.agents/AGENTS.md'),
+        'utf8'
+      );
+      assert.match(kb, /^ {4}programs\//m, 'directory map should list it');
+      assert.ok(
+        kb.split('\n').length < 100,
+        'knowledge base must stay under budget'
+      );
+    } finally {
+      fs.rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('links a round to its program through the Part of header', async () => {
+    // The header is the only link between cycles/ and programs/; without it a
+    // round is an orphan and cross-round drift becomes invisible.
+    const outDir = await render(false);
+    try {
+      const roundTpl = fs.readFileSync(
+        path.join(outDir, '.agents/plan/cycles/_TEMPLATE.md'),
+        'utf8'
+      );
+      assert.match(roundTpl, /^\*\*Part of\*\*:/m);
+    } finally {
+      fs.rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
+  it('generates decisions/ and its governance when enabled', async () => {
+    const outDir = await render(true);
+    try {
+      for (const file of ['README.md', '_TEMPLATE.md']) {
+        assert.ok(
+          fs.existsSync(path.join(outDir, '.agents/decisions', file)),
+          `.agents/decisions/${file} should be generated`
+        );
+      }
+
+      const kb = fs.readFileSync(
+        path.join(outDir, '.agents/AGENTS.md'),
+        'utf8'
+      );
+      assert.match(kb, /^ {2}decisions\//m, 'directory map should list it');
+      assert.match(
+        kb,
+        /`decisions\/`.*READ ONLY/,
+        'authority table should cover it'
+      );
+      assert.ok(
+        kb.split('\n').length < 100,
+        'knowledge base must stay under budget with the flag on'
+      );
+
+      // The template renders JSON by string interpolation, so a badly placed
+      // conditional produces a trailing comma and a file no harness can read.
+      const settings = JSON.parse(
+        fs.readFileSync(path.join(outDir, '.claude/settings.json'), 'utf8')
+      );
+      assert.ok(
+        settings.permissions.ask.includes('Edit(/.agents/decisions/**)')
+      );
+    } finally {
+      fs.rmSync(outDir, { recursive: true, force: true });
+    }
   });
 });
 

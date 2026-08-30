@@ -37,6 +37,12 @@ by habit. Loading everything is a cost, not thoroughness.
   prompts/       # Scanning & generation prompts — invoked, not auto-loaded
   skills/        # Reusable procedures (Agent Skills spec)
   plan/          # PDCA.md, promotions.md, cycles/
+{{#if plan.programs}}
+    programs/    # Multi-round work — see plan/programs/README.md
+{{/if}}
+{{#if plan.decisions}}
+  decisions/     # Cross-round commitments — see decisions/README.md
+{{/if}}
 ```
 
 ---
@@ -45,7 +51,7 @@ by habit. Loading everything is a cost, not thoroughness.
 
 | Path                                                                          | Agents may                        |
 | ----------------------------------------------------------------------------- | --------------------------------- |
-| `AGENTS.md`, `reference/`, `context/`, `prompts/`, `skills/` | ❌ READ ONLY                       |
+| `AGENTS.md`, `reference/`, `context/`, `prompts/`, `skills/`{{#if plan.decisions}}, `decisions/`{{/if}} | ❌ READ ONLY                       |
 | `memory/`                                                                     | ✅ READ + WRITE                   |
 | `plan/`                                                                       | ⚠️ APPEND-ONLY to `promotions.md` |
 
@@ -89,7 +95,6 @@ Agents MUST NOT:
 | [reference/root-files.md](reference/root-files.md)   | Editing `CLAUDE.md`, `AGENTS.md` or any harness stub |
 | [reference/mechanisms.md](reference/mechanisms.md)   | Choosing between a rule, skill, hook or sub-agent    |
 | [reference/skills.md](reference/skills.md)           | Authoring or fixing a `SKILL.md`                     |
-| [reference/docs-agents.md](reference/docs-agents.md) | Adding anything under `docs/agents/`                 |
 | [context/harness-behaviour.md](context/harness-behaviour.md) | Relying on how a harness loads, enforces or budgets  |
 | [context/memory-placement.md](context/memory-placement.md) | Saving a memory, and unsure which system it goes in |
 | [context/philosophy.md](context/philosophy.md)       | A judgement call the rules above do not cover        |

@@ -93,6 +93,52 @@ describe('re-scaffolding an existing project', () => {
     assert.ok(seen.includes('CLAUDE.md'));
   });
 
+  it('lets the author rename the title and keep it', async () => {
+    // The H1 names the file by default (`CLAUDE.md — my-project`), which is
+    // the least useful thing it could say to a model reading it at launch.
+    // It sits outside the managed region so a project can name itself.
+    const claudeMd = path.join(tmpDir, 'CLAUDE.md');
+    const renamed = "# AI-Cowork — the owner's daily work & life base";
+    fs.writeFileSync(
+      claudeMd,
+      fs.readFileSync(claudeMd, 'utf8').replace(/^# .*$/m, renamed)
+    );
+
+    await scaffold({ templateName: TEMPLATE, outputDir: tmpDir });
+
+    const after = fs.readFileSync(claudeMd, 'utf8');
+    assert.match(after, /^# AI-Cowork/m);
+    assert.ok(
+      after.includes('a2scaffold:start'),
+      'the generated block should still be regenerated'
+    );
+  });
+
+  it('keeps edited philosophy principles across a re-scaffold', async () => {
+    // The stub ships placeholder principles and context/philosophy.md tells
+    // the user to replace them. While the summary lived inside the managed
+    // region, doing so guaranteed it would be silently reverted.
+    const claudeMd = path.join(tmpDir, 'CLAUDE.md');
+    fs.writeFileSync(
+      claudeMd,
+      fs
+        .readFileSync(claudeMd, 'utf8')
+        .replace(
+          /1\. \*\*Ask before assuming\.\*\*/,
+          '1. **A personal tool that might generalise.**'
+        )
+    );
+
+    await scaffold({ templateName: TEMPLATE, outputDir: tmpDir });
+
+    const after = fs.readFileSync(claudeMd, 'utf8');
+    assert.match(after, /A personal tool that might generalise/);
+    assert.ok(
+      !after.includes('1. **Ask before assuming.**'),
+      'the placeholder principle should not have been restored'
+    );
+  });
+
   it('preserves author content outside the managed region', async () => {
     const claudeMd = path.join(tmpDir, 'CLAUDE.md');
     fs.appendFileSync(claudeMd, '\n## Mine\n\nhand-written\n');

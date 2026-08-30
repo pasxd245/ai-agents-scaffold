@@ -89,12 +89,14 @@ Dry run — template "base" would generate:
     - .agents/context/philosophy.md
     - .agents/memory/_TEMPLATE.md
     - .agents/memory/.gitkeep
+    - .agents/plan/cycles/_TEMPLATE.md
     - .agents/plan/cycles/.gitkeep
+    - .agents/plan/DoD.md
     - .agents/plan/PDCA.md
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
+    - .agents/prompts/compact-content.prompt.md
     - .agents/prompts/reflect-agents.prompt.md
-    - .agents/reference/docs-agents.md
     - .agents/reference/mechanisms.md
     - .agents/reference/memory-and-promotion.md
     - .agents/reference/root-files.md
@@ -202,7 +204,6 @@ The `base` template generates:
   .gitignore             # Keeps placeholder files trackable
   AGENTS.md              # The heart — every stub points here
   reference/             # Topic docs, each with its own trigger
-    docs-agents.md
     mechanisms.md
     memory-and-promotion.md
     root-files.md
@@ -216,12 +217,15 @@ The `base` template generates:
     .gitkeep
     _TEMPLATE.md         # Copy this for a new memory entry
   plan/
+    DoD.md               # Standing bar every round clears
     PDCA.md              # PDCA methodology guide
     promotions.md        # Promotion log for validated learnings
     cycles/              # Individual PDCA cycle records
       .gitkeep
+      _TEMPLATE.md       # Copy this for a new round
   prompts/               # Scanning & generation prompts
     .gitkeep
+    compact-content.prompt.md
     reflect-agents.prompt.md
   skills/                # Reusable agent procedures
     .gitkeep
@@ -232,6 +236,72 @@ CLAUDE.md                # Stub for Claude Code (@.agents/AGENTS.md)
 .github/
   copilot-instructions.md  # Stub for Copilot — restates it (cannot import)
 ```
+
+### Opt-in: `.agents/decisions/`
+
+Off by default. Set `plan.decisions: true` to also generate:
+
+```text
+.agents/
+  decisions/             # Cross-round commitments
+    README.md            # What belongs here, and what does not
+    _TEMPLATE.md         # Copy this for a new decision
+```
+
+A decision file holds a promise that outlives the round that made it — _"we
+agreed not to build X until Y"_. Round docs are round-scoped and `context/` is
+canon an agent must follow; neither holds this. Enabling the flag also adds
+`decisions/` to the knowledge base's authority table and to the permission
+rules in `.claude/settings.json`, so it is protected like the rest of canon.
+
+It stays off by default because it is real surface, and a repo that has not
+yet felt cross-round drift does not need it.
+
+### Opt-in: `.agents/plan/programs/`
+
+Off by default. Set `plan.programs: true` to also generate:
+
+```text
+.agents/
+  plan/
+    programs/            # Multi-round work
+      README.md          # When a program is warranted
+      _TEMPLATE.md       # Copy this for a new program
+```
+
+A round in `cycles/` is one unit of execution; a program is the goal above it —
+the phase order and the gate each phase clears. Open one when the work will not
+fit in a single round **and** the phases depend on each other. Independent work
+does not need a program, it needs several rounds.
+
+Each round names its program in its `**Part of**` header; that header is the
+only link between the two. `programs/` sits under `plan/`, so the existing
+authority rule and permission entry already cover it.
+
+### A convention we suggest, but do not generate: `docs/agents/`
+
+The scaffold stops at `.agents/`, on a deliberate line:
+
+> `.agents/` is what an **agent** must read to do the next task.
+> `docs/agents/` is what a **human** reads to understand the project.
+
+An agent may draft either; the audience decides where it lands. Because the
+second is human-facing, the tool has no opinion it can enforce there — so it
+generates nothing and charges you nothing for it.
+
+If you want the convention, it looks like this:
+
+```text
+docs/agents/
+  workflows/                  # End-to-end flows this repo supports
+    <name>.workflow.md
+  plan/                       # Co-planning docs — human and agent, together
+    <yyyyMMdd>-<name>.plan.md
+```
+
+Read on demand, never auto-loaded, and `.agents/context/` wins any conflict.
+A plan doc that kicks off real work hands off to `.agents/plan/` — either a
+single round in `cycles/`, or a program (see below) when it spans several.
 
 ## Re-running the scaffold
 
@@ -251,9 +321,16 @@ markers:
 ## Anything you write here is yours
 ```
 
-Re-running `a2scaffold` replaces **only** the fenced block. Edits outside it,
-including changes to the title, survive. Those files are therefore not
-reported as conflicts, and updating them needs no `--force`.
+Re-running `a2scaffold` replaces **only** the fenced block. Edits outside it
+survive, and those files are therefore not reported as conflicts — updating
+them needs no `--force`.
+
+Two parts of every stub are deliberately outside the block:
+
+| Outside the block          | Why                                                                                                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The title**              | `# CLAUDE.md — my-project` names the file, which is the least useful thing it can tell a model reading it at launch. Rename it to name the _project_: `# AI-Cowork — the owner's daily work & life base`. It will survive every re-scaffold. |
+| **The philosophy summary** | It ships as five placeholders, and `.agents/context/philosophy.md` tells you to replace them. Inside the block, doing so would be silently reverted on the next run. Keep it in step with the canonical list.                                |
 
 Everything under `.agents/` has no managed region on purpose. It is canonical
 knowledge you are expected to edit freely, so overwriting it is destructive

@@ -63,3 +63,22 @@ copilot:
 # Requires the matching harness flag above (claude).
 guardrails:
   claude: true # .claude/settings.json — ask before writing to canon
+
+# Optional planning surface.
+#
+#   decisions  .agents/decisions/ — cross-round commitments ("we agreed not to
+#              build X until Y"). Round docs are round-scoped and `context/` is
+#              canon an agent must follow; neither holds a promise that spans
+#              rounds. Off by default: it is real surface, and a repo that has
+#              not yet felt the drift does not need it.
+#
+# Observed in a repo after 15 months of use, where it was invented by hand.
+#
+#   programs   .agents/plan/programs/ — multi-round work. A round in `cycles/`
+#              is one unit of execution; a program is the goal above it, so a
+#              cold agent picking up round 5 of 9 knows what it is executing.
+#              Off by default: a repo whose work fits in single rounds does not
+#              need it.
+plan:
+  decisions: false
+  programs: false
