@@ -28,7 +28,7 @@ docs/agents/
 | `.agents/plan/cycles/` | Per-phase implementation verification (PDCA rounds) | Append-only; one file per round |
 
 When a plan in `docs/agents/plan/` kicks off work, each executed phase
-records a verification cycle in `.agents/plan/cycles/Round_XX.md`.
+records a verification cycle in `.agents/plan/cycles/Round_NNN.md`.
 
 **Load policy:**
 

@@ -28,7 +28,8 @@ OWASP Top 10 for Agentic Applications 2026, and Snyk's ToxicSkills audit.
 - [x] Turn `skill validate` into a conformance scorer
 - [x] Add supply-chain screening for skills
 - [x] Re-aim the README on the governance model
-- [ ] Emit path-scoped rules from `.agents/context/` — **blocked, see Check**
+- [ ] Emit path-scoped rules from `.agents/context/` — unblocked 2026-08-29
+      (optional `paths:` frontmatter approved); emitter not built
 - [x] Cut `AGENTS.md` to <100 lines and fix what the Load Order mandates
 
 ## Do
@@ -82,6 +83,32 @@ one non-duplicated rule (Transparency section last in README) moved to
 table. `.gitignore` was excluding that file; it now excludes
 `.claude/settings.local.json` instead, so the rules actually reach the team.
 
+### Follow-up session — 2026-08-29 (backlog burn-down)
+
+Uncommitted at time of writing; `pnpm check` green, 134 tests (was 126).
+
+- **`templates/skills/a2scaffold/`** — the built-in pool advertised
+  `skill add <name>` and shipped nothing, while `context/philosophy.md` cited
+  `templates/skills/planning/master-plan/` as a worked example of a path that
+  does not exist. First occupant is a skill that teaches an agent to drive the
+  CLI instead of hand-writing `.agents/`. A test holds every pool skill to
+  100/100 conformance and a clean audit.
+- **`docs/agents/` left the scaffold.** The template shipped a 50-line
+  `reference/docs-agents.md` governing a directory it never creates, linked
+  from the KB table. Redrawn on audience — `.agents/` is what an agent must
+  read to do the next task; `docs/agents/` is what a human reads to understand
+  the project — and demoted to a recommendation in `docs/usage.md`.
+- **Opt-in `plan.decisions` and `plan.programs`**, plus a general `plan/DoD.md`,
+  a copyable `plan/cycles/_TEMPLATE.md` with a `**Part of**` lineage header,
+  and `prompts/compact-content.prompt.md` (which `PDCA.md` told users to run
+  without shipping it).
+- **Dogfood findings rescued** from gitignored `.agents/tmp/` into
+  `memory/2026-08-29-dogfood-my-dynamic-dashboard.md`.
+
+Governance note: canon was modified under the explicit-instruction exception —
+warned, confirmed, and logged in
+[promotions.md](../promotions.md).
+
 ## Check
 
 - [x] `pnpm check` green at each commit — 99 tests
@@ -110,6 +137,10 @@ table. `.gitignore` was excluding that file; it now excludes
 `paths:` glob per context file. The glob cannot be derived — it has to be
 authored, which means adding frontmatter to canonical human-owned files. That is
 a governance change and needs a human decision before any code.
+
+**Resolved 2026-08-29**: optional `paths:` frontmatter approved. A context file
+without it is not emitted as a scoped rule, so existing repos are unaffected.
+The emitter is unbuilt but no longer blocked.
 
 ## Act
 
@@ -149,8 +180,11 @@ landable.
 
 ### Needs a decision
 
-1. **Path-scoped rules emitter** — see Blocked above. Requires agreeing a
-   frontmatter convention for `.agents/context/`.
+1. ~~**Path-scoped rules emitter — the governance question**~~ — decided
+   2026-08-29: `paths:` frontmatter on `.agents/context/` files is **optional**.
+   A file without it is simply not emitted as a scoped rule, so nothing breaks
+   for existing repos. The emitter itself is still to build; it moved to
+   *Ready to build* below.
 2. ~~**Memory provenance and staleness**~~ — done. `Source` and `Review-by` are
    in `memory/_TEMPLATE.md`, with guidance on setting the date from what the
    finding depends on rather than a fixed interval; `context/memory-placement.md`
@@ -161,7 +195,9 @@ landable.
 
 ### Found by dogfooding `my-dynamic-dashboard` (2026-08-29)
 
-Full findings in `.agents/tmp/20260829-dogfood-my-dynamic-dashboard.md` (local).
+Durable record: [`memory/2026-08-29-dogfood-my-dynamic-dashboard.md`](../../memory/2026-08-29-dogfood-my-dynamic-dashboard.md).
+The original long-form report was written to `.agents/tmp/`, which is
+gitignored — citing it here was a mistake this file used to make.
 
 - [x] Load Order named *our* `context/` filenames in a template meant for every
       repo. Now gated on task relevance instead.
@@ -181,11 +217,17 @@ Full findings in `.agents/tmp/20260829-dogfood-my-dynamic-dashboard.md` (local).
       compared against the output dir, so the marker segment never matched.
       Output paths are now resolved against the view; dry-run is accurate for
       the first time as a side effect.
-- [ ] `decisions/` directory for cross-round commitments — a real gap.
+- [x] `decisions/` directory for cross-round commitments. Shipped as the
+      opt-in `plan.decisions` flag rather than base-template surface — the flag
+      moves the directory, the authority table and the permission rules
+      together.
 - [x] `plan/cycles/` numbering breaks at 100. Now three digits.
 - [x] Compaction guidance for `plan/cycles/` — when, how, and what to drop.
 
 ### Ready to build
+
+3b. **Path-scoped rules emitter** — the frontmatter convention is agreed (see
+    above); what remains is reading `paths:` and emitting `.claude/rules/`.
 
 4. **`a2scaffold sync`** — regenerate stubs from `.agents/` without a full
    scaffold. Prerequisite for items 1 and 3.

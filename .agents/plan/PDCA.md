@@ -80,7 +80,8 @@ can find the round that mattered.
 **When to compact**: when the count passes roughly 20, or when you stop being
 able to answer "which round decided X?" without grepping.
 
-**How**:
+**How**: [`prompts/compact-content.prompt.md`](../prompts/compact-content.prompt.md)
+drives the condensing. The steps below are what it has to preserve.
 
 1. Write `ROUNDS_<first>-<last>_compacted.md` — per round, keep the goal in a
    line, what shipped, the decisions worth remembering, and the learnings.
@@ -98,43 +99,9 @@ into the file is what a reader six months out actually needs.
 
 ## Round Template
 
-```markdown
-# Round XX: [Title]
-
-**Status**: Planning | In Progress | Review | Complete
-**Date started**: YYYY-MM-DD
-**Date completed**: YYYY-MM-DD
-
-## Goal
-
-[1-2 sentences: what we're building/fixing and why]
-
-## Plan
-
-- [ ] Step 1
-- [ ] Step 2
-- [ ] ...
-
-## Do
-
-[Progress log — update as work proceeds]
-
-## Check
-
-- [ ] Verification item 1
-- [ ] Verification item 2
-
-## Act
-
-**Learnings**:
-
-- ...
-
-**Promotions**:
-
-- [ ] → context/ : [topic]
-- [ ] → skills/ : [topic]
-```
+The format lives in [`cycles/_TEMPLATE.md`](cycles/_TEMPLATE.md) — copy that
+file rather than reproducing it here. Two copies of a format drift, and the
+copyable one wins.
 
 ---
 

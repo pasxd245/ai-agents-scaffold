@@ -80,6 +80,32 @@ Source: Claude Code skills docs; agentskills.io spec. Verified 2026-08-29.
 
 ---
 
+## A skills directory is exactly one level
+
+- Claude Code discovers `<skills-dir>/<skill-name>/SKILL.md` and nothing
+  deeper. A subdirectory inside `.claude/skills/` is read as a skill named
+  after that directory, so `.claude/skills/group/name/SKILL.md` is never found.
+- The nesting Claude Code _does_ support is a separate `.claude/` directory
+  elsewhere in the tree — `apps/web/.claude/skills/deploy/`, invoked as
+  `/apps/web:deploy`. That is a different mechanism, not grouping.
+- Namespacing exists only for plugins: `plugin-name:skill-name`.
+- The agentskills.io spec requires `name` to match the **parent directory**
+  name, which a grouped skill still satisfies. So the file is spec-valid while
+  the layout is undiscoverable, and `skill validate` cannot catch it.
+
+Verified empirically on 2026-08-29: a skill at
+`.claude/skills/planning/master-plan/` did not appear in a live Claude Code
+session's skill list; the same skill at `.claude/skills/master-plan/` appeared
+immediately, without a restart.
+
+Consequence for this tool: `skill add group/name` may nest inside `.agents/`,
+but anything `skill ref` projects into a harness directory must be flat.
+
+Source: Claude Code skills docs, "Where skills live"; agentskills.io
+specification. Verified 2026-08-29.
+
+---
+
 ## Each harness reads a different file
 
 `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md` — and
