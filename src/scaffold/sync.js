@@ -7,6 +7,7 @@ import { ENFORCEMENT_FILES } from '../constants.js';
 import { missingEnforcement } from './enforcement.js';
 import { resolveScaffoldConfig } from './index.js';
 import {
+  classifyRegion,
   hasManagedRegion,
   mergeManagedRegion,
   adoptManagedRegion,
@@ -46,6 +47,7 @@ import {
  * @param {boolean} [options.dryRun] - Report without writing.
  * @returns {Promise<{ created: string[], updated: string[], unchanged: string[],
  *   adopted: string[], unmanaged: string[],
+ *   ambiguous: Array<{ file: string, reason: string }>,
  *   drifted: Array<{ file: string, missing: string[] }> }>}
  */
 export async function sync({
@@ -74,6 +76,7 @@ export async function sync({
       unchanged: [],
       adopted: [],
       unmanaged: [],
+      ambiguous: [],
       drifted: [],
     };
 
@@ -115,7 +118,16 @@ export async function sync({
           return;
         }
 
-        // The template owns a region here but the file has none.
+        // The template owns a region here and the file's markers do not
+        // form one. Which way they fail decides what may happen next: no
+        // markers at all is adoptable; markers that are duplicated, inverted
+        // or unclosed are not, because adding a block beside a broken pair
+        // leaves the file just as unmergeable and harder to repair by hand.
+        const state = classifyRegion(existing);
+        if (state.kind === 'ambiguous') {
+          result.ambiguous.push({ file: rel, reason: state.reason });
+          return;
+        }
         if (adopt) {
           const wrapped = adoptManagedRegion(existing, incoming);
           if (wrapped !== null) {

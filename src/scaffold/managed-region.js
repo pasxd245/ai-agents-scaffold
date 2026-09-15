@@ -24,14 +24,42 @@ export const REGION_END = '<!-- a2scaffold:end -->';
 // inline — `<!-- a2scaffold:start -->` inside backticks, as this repo's own
 // reference docs do — must not turn that file into a managed one, or a merge
 // would splice it at the wrong boundaries.
-const START_LINE_RE = /^[ \t]*<!--\s*a2scaffold:start[^>]*-->[ \t]*$/;
-const END_LINE_RE = /^[ \t]*<!--\s*a2scaffold:end[^>]*-->[ \t]*$/;
+//
+// At most three leading spaces, the same bound the fence parser below uses.
+// Four spaces or a tab is an indented code block in CommonMark, and a marker
+// inside one is an example, not a region — a merge was found replacing exactly
+// such an example, with no flag asked for, because the old pattern accepted
+// any amount of indentation.
+const START_LINE_RE = /^ {0,3}<!--\s*a2scaffold:start[^>]*-->[ \t]*$/;
+const END_LINE_RE = /^ {0,3}<!--\s*a2scaffold:end[^>]*-->[ \t]*$/;
 
 /** A fence opener: ``` or ~~~ (three or more), indented up to three spaces. */
 const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 
 /**
- * Locate the file's one managed region, or report that it has none.
+ * What a file's markers amount to.
+ *
+ * - `none` — no marker outside a code block. The file predates the tool, or
+ *   is canon that never had a region; adoption is the only thing that applies.
+ * - `valid` — exactly one start followed by exactly one end. The only state a
+ *   merge is allowed to act on.
+ * - `ambiguous` — markers are present but do not form one region: a pair
+ *   duplicated, an end before a start, a start with no end. Nothing applies.
+ *   Adopting would add a second block to a file that already has a broken
+ *   one, and merging would have to guess a boundary. The file is reported
+ *   for a human to repair.
+ *
+ * The three are kept apart because the first and third used to share a
+ * `null`, and adoption read that `null` as "marker-less" — so `--adopt` on a
+ * file with duplicated markers reported success and left a third pair behind.
+ *
+ * @typedef {{ kind: 'none' }
+ *   | { kind: 'valid', start: number, end: number }
+ *   | { kind: 'ambiguous', reason: string }} RegionState
+ */
+
+/**
+ * Classify the file's markers; see {@link RegionState}.
  *
  * Own-line matching is not enough on its own. A fenced Markdown example that
  * *shows* what a generated stub looks like puts real markers on real lines:
@@ -46,19 +74,14 @@ const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
  *
  * Treating that as a managed region would let a merge overwrite the author's
  * example — the one thing the region exists to prevent. So markers inside a
- * fenced code block do not count.
- *
- * This fails closed. Zero markers, duplicates, a pair the wrong way round, a
- * start with no end — all of them return `null` rather than a best guess, and
- * the caller falls back to its ordinary rules, which refuse to destroy
- * anything without an explicit permission. Being unsure is a reason to leave
- * a file alone, not a reason to pick a boundary.
+ * fenced code block do not count, and neither do markers indented four spaces
+ * or more, which CommonMark reads as an indented code block.
  *
  * @param {string} text
- * @returns {{ start: number, end: number } | null} offsets into `text`, where
- *   `end` is just past the closing marker
+ * @returns {RegionState} offsets, when `valid`, index into `text`, with `end`
+ *   just past the closing marker
  */
-function findRegion(text) {
+export function classifyRegion(text) {
   /** @type {number[]} */
   const starts = [];
   /** @type {number[]} */
@@ -89,14 +112,44 @@ function findRegion(text) {
     offset += line.length + 1;
   }
 
-  if (starts.length !== 1 || ends.length !== 1) return null;
-  if (ends[0] <= starts[0]) return null;
-  return { start: starts[0], end: ends[0] };
+  if (starts.length === 0 && ends.length === 0) return { kind: 'none' };
+  if (starts.length > 1 || ends.length > 1) {
+    return { kind: 'ambiguous', reason: 'more than one marker pair' };
+  }
+  if (starts.length !== ends.length) {
+    return {
+      kind: 'ambiguous',
+      reason: starts.length
+        ? 'start marker with no end'
+        : 'end marker with no start',
+    };
+  }
+  if (ends[0] <= starts[0]) {
+    return { kind: 'ambiguous', reason: 'end marker before start marker' };
+  }
+  return { kind: 'valid', start: starts[0], end: ends[0] };
+}
+
+/**
+ * Offsets of the one valid region, or `null` for anything else.
+ *
+ * This fails closed. Zero markers, duplicates, a pair the wrong way round, a
+ * start with no end — all of them return `null` rather than a best guess, and
+ * the caller falls back to its ordinary rules, which refuse to destroy
+ * anything without an explicit permission. Being unsure is a reason to leave
+ * a file alone, not a reason to pick a boundary.
+ *
+ * @param {string} text
+ * @returns {{ start: number, end: number } | null}
+ */
+function findRegion(text) {
+  const state = classifyRegion(text);
+  return state.kind === 'valid' ? { start: state.start, end: state.end } : null;
 }
 
 /**
  * Whether a file carries exactly one complete, correctly ordered managed
- * region outside any fenced code block.
+ * region outside any code block.
  *
  * @param {string} text
  * @returns {boolean}
@@ -143,8 +196,11 @@ export function mergeManagedRegion(existing, incoming) {
  *
  * Returns `null` when adoption does not apply, so the caller can fall back to
  * its normal rules:
- * - the incoming render has no managed region (`.agents/` canon), or
- * - the existing file already has one (that is `mergeManagedRegion`'s job).
+ * - the incoming render has no managed region (`.agents/` canon),
+ * - the existing file already has one (that is `mergeManagedRegion`'s job), or
+ * - the existing file has markers that do not form a region. Inserting a
+ *   block next to a broken pair would leave the file just as unmergeable and
+ *   harder to repair, so an `ambiguous` file is never adopted — only reported.
  *
  * @param {string} existing - Current file contents, written by a human
  * @param {string} incoming - Freshly rendered contents
@@ -153,7 +209,7 @@ export function mergeManagedRegion(existing, incoming) {
 export function adoptManagedRegion(existing, incoming) {
   const source = findRegion(incoming);
   if (!source) return null;
-  if (findRegion(existing)) return null;
+  if (classifyRegion(existing).kind !== 'none') return null;
 
   const generated = incoming.slice(source.start, source.end);
 

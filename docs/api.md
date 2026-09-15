@@ -5,6 +5,7 @@
 ```javascript
 import {
   scaffold,
+  ScaffoldRefusal,
   sync,
   listTemplates,
   resolveTemplatePath,
@@ -13,6 +14,7 @@ import {
   classifyConflicts,
   listOutputPaths,
   hasManagedRegion,
+  classifyRegion,
   validateSkill,
   scoreConformance,
   auditSkill,
@@ -58,19 +60,38 @@ Rewriting a file with byte-identical content needs no permission. Without the
 permission it needs, `scaffold()` **throws before writing anything**, so the
 target is left exactly as it was.
 
+A file whose markers are broken — a duplicated pair, an end before a start, a
+start with no end — is not adoptable: adding a block beside a broken pair would
+leave it just as unmergeable. It lands under `force`, because replacement is
+the only thing a run could do to it. See [`classifyRegion()`](#classifyregiontext).
+
+**Throws:** `ScaffoldRefusal` when a permission is missing. It is exported, so
+`instanceof` works, and it carries the two lists apart because they are two
+different questions to put to a human:
+
+| Field        | Type       | Meaning                                              |
+| ------------ | ---------- | ---------------------------------------------------- |
+| `needsAdopt` | `string[]` | Marker-less stubs; adoption would keep their content |
+| `needsForce` | `string[]` | Files a render would replace wholesale, edits lost   |
+
 **Example:**
 
 ```javascript
-import { scaffold } from 'a2scaffold';
+import { scaffold, ScaffoldRefusal } from 'a2scaffold';
 
-const result = await scaffold({
-  templateName: 'scaffold/base',
-  outputDir: './my-project',
-  overrides: { project: { name: 'my-project' } },
-});
-
-console.log(result.outputDir); // "/absolute/path/to/my-project"
-console.log(result.template); // "scaffold/base"
+try {
+  const result = await scaffold({
+    templateName: 'scaffold/base',
+    outputDir: './my-project',
+    overrides: { project: { name: 'my-project' } },
+  });
+  console.log(result.outputDir); // "/absolute/path/to/my-project"
+  console.log(result.template); // "scaffold/base"
+} catch (err) {
+  if (!(err instanceof ScaffoldRefusal)) throw err;
+  console.error('would adopt:', err.needsAdopt);
+  console.error('would replace:', err.needsForce);
+}
 ```
 
 #### How overrides work
@@ -253,19 +274,28 @@ duplicated, fenced inside an example or out of order is reported, not merged.
 | `options.adopt`        | `boolean` | No       | Insert markers into a stub that has none         |
 | `options.dryRun`       | `boolean` | No       | Report without writing                           |
 
-**Returns:** `Promise<{ created, updated, unchanged, adopted, unmanaged, drifted }>`
+**Returns:** `Promise<{ created, updated, unchanged, adopted, unmanaged, ambiguous, drifted }>`
 
-| Property    | Type                                         | Meaning                                                |
-| ----------- | -------------------------------------------- | ------------------------------------------------------ |
-| `created`   | `string[]`                                   | Absent from the repo, written fresh                    |
-| `updated`   | `string[]`                                   | Managed region refreshed                               |
-| `unchanged` | `string[]`                                   | Managed region already current                         |
-| `adopted`   | `string[]`                                   | Brought under management this run                      |
-| `unmanaged` | `string[]`                                   | The template owns a region here, this file has none    |
-| `drifted`   | `Array<{ file: string, missing: string[] }>` | Enforcement files missing a rule the template requires |
+| Property    | Type                                         | Meaning                                                              |
+| ----------- | -------------------------------------------- | -------------------------------------------------------------------- |
+| `created`   | `string[]`                                   | Absent from the repo, written fresh                                  |
+| `updated`   | `string[]`                                   | Managed region refreshed                                             |
+| `unchanged` | `string[]`                                   | Managed region already current                                       |
+| `adopted`   | `string[]`                                   | Brought under management this run                                    |
+| `unmanaged` | `string[]`                                   | The template owns a region here, this file has none                  |
+| `ambiguous` | `Array<{ file: string, reason: string }>`    | Markers present but not forming one region; left untouched to repair |
+| `drifted`   | `Array<{ file: string, missing: string[] }>` | Enforcement files where a required rule is not present verbatim      |
 
-`drifted` names the missing rules, not every textual difference: reformatting
-the file and adding rules of your own are not drift.
+`ambiguous` is never adopted, even with `adopt` on: inserting a block beside a
+duplicated or inverted pair would leave the file just as unmergeable and harder
+to repair. The `reason` says which shape was found.
+
+`drifted` names the rules, not every textual difference: reformatting the file
+and adding rules of your own are not drift. The comparison is **verbatim** —
+the same string in the same permission list. It does not evaluate what a
+pattern matches, so a broader rule of your own that covers a required one still
+reports the required one; that is a limit stated on purpose, not a claim that
+your rule is insufficient.
 
 **Example:**
 
@@ -283,6 +313,39 @@ for (const { file, missing } of plan.drifted) {
   console.warn(`${file} is missing: ${missing.join(', ')}`);
 }
 ```
+
+---
+
+### `hasManagedRegion(text)`
+
+Whether a file carries exactly one complete, correctly ordered managed region
+outside any code block. A thin wrapper over [`classifyRegion()`](#classifyregiontext);
+`true` only for the `valid` state.
+
+---
+
+### `classifyRegion(text)`
+
+Classify a file's `<!-- a2scaffold:start -->` / `<!-- a2scaffold:end -->`
+markers. This is what `scaffold()` and `sync()` consult before touching a file.
+
+**Returns:** one of
+
+| Shape                           | When                                                       |
+| ------------------------------- | ---------------------------------------------------------- |
+| `{ kind: 'none' }`              | No marker outside a code block                             |
+| `{ kind: 'valid', start, end }` | Exactly one start followed by one end; offsets into `text` |
+| `{ kind: 'ambiguous', reason }` | Markers present but not forming one region                 |
+
+A marker counts only on its own line, indented at most three spaces, and
+outside a fenced (` ``` ` or `~~~`) or indented code block — so a document that
+shows the markers as an example is `none`, not a region.
+
+The three states are kept apart because callers act differently on each:
+merge needs `valid` on both sides, adoption accepts only `none`, and
+`ambiguous` is reported for a human to repair. Collapsing `none` and
+`ambiguous` was how `--adopt` once added a third marker pair to a file that
+already had two.
 
 ---
 

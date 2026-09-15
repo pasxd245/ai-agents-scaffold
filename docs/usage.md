@@ -349,19 +349,29 @@ Synced "base" into /path/to/repo
   Updated — managed region refreshed:
     - CLAUDE.md
 
-  Behind the template — review and merge by hand:
+  Enforcement rules not present verbatim — confirm by hand:
     - .claude/settings.json
+        permissions.ask: Edit(/.agents/reference/**)
 ```
 
-Two reports need action from you:
+Three reports need action from you:
 
 - **Not managed** — the template owns a block in that file and your copy has no
   markers. `--adopt` inserts them, but read the warning it prints first: a stub
   generated _before_ markers existed already contains a copy of the block, so
   adoption duplicates it rather than replacing it. For those, place the markers
   by hand.
-- **Behind the template** — `.claude/settings.json` carries permission rules,
-  and falling behind means canon the harness is no longer protecting. It is
+- **Ambiguous markers** — the file has markers, but they do not form one
+  region: a duplicated pair, an end before a start, a start with no end. Sync
+  cannot tell where the generated block ends and your content begins, so it
+  writes nothing and says which shape it found. `--adopt` does not apply here
+  either; adding a block beside a broken pair would only make the repair
+  harder. Leave exactly one start and one end marker, in that order.
+- **Enforcement rules not present verbatim** — `.claude/settings.json` carries
+  permission rules, and a required rule that has gone missing means canon the
+  harness is no longer protecting. The comparison is by string, in the same
+  permission list: if a broader rule of your own already covers a required one,
+  nothing is wrong, and sync says so rather than pretending to know. The file is
   never overwritten, because you may have added rules of your own.
 
 On a repo that has never been scaffolded, `sync` does the whole install

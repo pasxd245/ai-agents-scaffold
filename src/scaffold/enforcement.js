@@ -12,9 +12,18 @@
  * A warning that is usually wrong is a warning people learn to skip past,
  * which is exactly the protection the message claims to be defending.
  *
- * So the question asked here is the one the message actually means: is every
- * rule the template requires still present? Additions are fine. Formatting is
- * fine. A missing rule is the finding.
+ * So the question asked here is narrower than "has it changed": is every rule
+ * the template requires still present, **verbatim**? Additions are fine.
+ * Formatting is fine. A required rule that does not appear as the same string
+ * in the same list is the finding.
+ *
+ * Verbatim is a deliberate limit, and the report says so. The check does not
+ * evaluate glob coverage, so a repo that consolidated the template's rules
+ * into one broader `Edit(/.agents/**)` of its own is told the narrower rules
+ * are not present — which is true — and left to confirm that its broader rule
+ * covers them. Reasoning about which of two permission patterns subsumes the
+ * other is the harness's job, and getting it subtly wrong here would turn a
+ * warning into false reassurance about protection.
  */
 
 /**
@@ -23,8 +32,8 @@
  * @param {string} rel - Output-relative path, POSIX-separated
  * @param {string} existing - The repository's copy
  * @param {string} incoming - The freshly rendered copy
- * @returns {string[]} required rules absent from `existing`; empty when the
- *   file carries everything the template asks for
+ * @returns {string[]} required rules not present verbatim in `existing`; empty
+ *   when the file carries every rule the template asks for, as written
  */
 export function missingEnforcement(rel, existing, incoming) {
   if (rel === '.claude/settings.json') {
@@ -36,7 +45,8 @@ export function missingEnforcement(rel, existing, incoming) {
 }
 
 /**
- * Rules in `incoming`'s permission lists that `existing` does not carry.
+ * Rules in `incoming`'s permission lists that `existing` does not carry as the
+ * same string in the same list.
  *
  * @param {string} existing
  * @param {string} incoming

@@ -81,16 +81,30 @@ export async function runSync(argv) {
     );
   }
 
+  if (result.ambiguous.length > 0) {
+    console.log('  Ambiguous markers — repair by hand:');
+    for (const { file, reason } of result.ambiguous) {
+      console.log(`    - ${file} (${reason})`);
+    }
+    console.log(
+      '\n    The markers here do not form one region, so sync cannot tell where\n' +
+        '    the generated block ends and your content begins. Nothing was\n' +
+        '    written. Leave exactly one start and one end marker, in that order.\n'
+    );
+  }
+
   if (result.drifted.length > 0) {
-    console.log('  Missing enforcement rules — add these by hand:');
+    console.log('  Enforcement rules not present verbatim — confirm by hand:');
     for (const { file, missing } of result.drifted) {
       console.log(`    - ${file}`);
       for (const rule of missing) console.log(`        ${rule}`);
     }
     console.log(
-      '\n    A rule the template requires is absent here, so it is canon the\n' +
-        '    harness is no longer protecting. Never overwritten: rules you\n' +
-        '    added yourself, and your formatting, are left exactly as they are.\n'
+      '\n    The template requires these rules and they do not appear here as\n' +
+        '    written. If a broader rule of your own already covers them, nothing\n' +
+        '    is wrong; sync compares strings, not what a pattern matches. If not,\n' +
+        '    this is canon the harness is no longer protecting. The file is never\n' +
+        '    overwritten: your own rules and formatting stay as they are.\n'
     );
   }
 
@@ -99,6 +113,7 @@ export async function runSync(argv) {
   if (
     touched === 0 &&
     result.unmanaged.length === 0 &&
+    result.ambiguous.length === 0 &&
     result.drifted.length === 0
   ) {
     console.log('  Everything up to date.\n');

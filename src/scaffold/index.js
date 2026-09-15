@@ -10,6 +10,7 @@ export { checkExistingFiles, classifyConflicts } from './conflicts.js';
 export { sync } from './sync.js';
 export { listOutputPaths, resolveOutputPath } from './output-paths.js';
 export {
+  classifyRegion,
   hasManagedRegion,
   mergeManagedRegion,
   adoptManagedRegion,
@@ -196,7 +197,10 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
     }
 
     // Computed either way: with `adopt` it is the gentler outcome, without it
-    // it is what tells a refusal which of the two questions to ask.
+    // it is what tells a refusal which of the two questions to ask. A file
+    // whose markers are broken — duplicated, inverted, unclosed — is not
+    // adoptable, so it lands under `needsForce`: replacing it is the only
+    // thing a run could do, and that needs the destructive permission.
     const wrapped = adoptManagedRegion(existing, incoming);
     if (adopt && wrapped !== null) {
       plan.push({ rel, content: wrapped });

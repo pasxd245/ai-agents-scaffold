@@ -914,6 +914,85 @@ describe('auditSkill', () => {
   });
 });
 
+describe('installSkill (symlinked SKILL.md)', () => {
+  /** @type {string} */
+  let root;
+  /** @type {string} */
+  let source;
+  /** @type {string} */
+  let target;
+
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-linky-src-'));
+    target = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-linky-dst-'));
+    source = path.join(root, 'linky');
+    fs.mkdirSync(source);
+    fs.writeFileSync(
+      path.join(source, 'real.md'),
+      '---\nname: linky\ndescription: ' +
+        'A skill whose SKILL.md is a symbolic link to a real file.\n' +
+        '---\n\nBody.\n'
+    );
+    fs.symlinkSync('real.md', path.join(source, 'SKILL.md'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(target, { recursive: true, force: true });
+  });
+
+  it('refuses the source rather than installing a skill with no SKILL.md', () => {
+    // Validation followed the link and passed; the copy filter then dropped
+    // it. The install reported success and the destination held `real.md`
+    // and nothing else — an invalid skill, delivered with a green message.
+    assert.throws(
+      () => installSkill(source, target),
+      /SKILL\.md is a symbolic link/
+    );
+    assert.equal(
+      fs.existsSync(path.join(target, 'linky')),
+      false,
+      'nothing may land'
+    );
+  });
+
+  it('leaves an existing installation intact when the replacement fails', () => {
+    // The old sequence removed the destination before copying, so a source
+    // that failed after that point took the previous install with it. The
+    // filtered copy is now built beside the destination and swapped in whole.
+    const existing = path.join(target, 'linky');
+    fs.mkdirSync(existing);
+    fs.writeFileSync(
+      path.join(existing, 'SKILL.md'),
+      '---\nname: linky\ndescription: The installed version.\n---\n\nOld.\n'
+    );
+
+    assert.throws(() => installSkill(source, target, { force: true }));
+
+    assert.ok(fs.existsSync(path.join(existing, 'SKILL.md')));
+    assert.match(
+      fs.readFileSync(path.join(existing, 'SKILL.md'), 'utf8'),
+      /Old\./
+    );
+    // And no staging directory is left behind next to it.
+    assert.deepEqual(fs.readdirSync(target), ['linky']);
+  });
+
+  it('validates what survived the filter, not only the source', () => {
+    // The pre-check is on the source; the post-check is on the staged copy.
+    // A source with an ordinary SKILL.md whose only sibling is a symlink
+    // still installs, and the link is left out.
+    fs.rmSync(path.join(source, 'SKILL.md'));
+    fs.renameSync(path.join(source, 'real.md'), path.join(source, 'SKILL.md'));
+    fs.symlinkSync('/home/someone/.ssh/id_rsa', path.join(source, 'k.md'));
+
+    const { path: installed } = installSkill(source, target);
+    const check = validateSkill(installed);
+    assert.equal(check.valid, true, check.errors.join('; '));
+    assert.equal(fs.existsSync(path.join(installed, 'k.md')), false);
+  });
+});
+
 // ── auditSkill — calibration against real-world skills ──────────────
 //
 // Every finding below was a false positive found by running the audit over a

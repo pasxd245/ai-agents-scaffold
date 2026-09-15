@@ -9,6 +9,7 @@ import {
   checkExistingFiles,
   classifyConflicts,
   listOutputPaths,
+  classifyRegion,
   hasManagedRegion,
   mergeManagedRegion,
   adoptManagedRegion,
@@ -132,6 +133,56 @@ describe('adoptManagedRegion', () => {
 
   it('declines when the existing file already has a region', () => {
     assert.equal(adoptManagedRegion(incoming, incoming), null);
+  });
+
+  it('declines when the existing markers are broken, rather than adding more', () => {
+    // The parser returned `null` for "no markers" and for "broken markers"
+    // alike, and adoption read both as marker-less. `--adopt` on a file with a
+    // duplicated pair reported success and left a third pair behind — a file
+    // that was still unmergeable, and now harder to repair by hand.
+    const dup =
+      '# T\n<!-- a2scaffold:start -->\na\n<!-- a2scaffold:end -->\n' +
+      '<!-- a2scaffold:start -->\nb\n<!-- a2scaffold:end -->\n';
+    const inverted =
+      '# T\n<!-- a2scaffold:end -->\nx\n<!-- a2scaffold:start -->\n';
+    const unclosed = '# T\n<!-- a2scaffold:start -->\nx\n';
+    for (const broken of [dup, inverted, unclosed]) {
+      assert.equal(adoptManagedRegion(broken, incoming), null);
+    }
+  });
+});
+
+// ── classifyRegion: the three states callers must keep apart ────────
+
+describe('classifyRegion', () => {
+  const S = '<!-- a2scaffold:start -->';
+  const E = '<!-- a2scaffold:end -->';
+
+  it('reports none for a file without markers', () => {
+    assert.deepEqual(classifyRegion('# mine\n\nprose\n'), { kind: 'none' });
+  });
+
+  it('reports valid with offsets for exactly one ordered pair', () => {
+    const state = classifyRegion(`# T\n\n${S}\nbody\n${E}\n`);
+    assert.equal(state.kind, 'valid');
+    if (state.kind === 'valid') {
+      assert.equal(state.start, '# T\n\n'.length);
+      assert.equal(state.end, `# T\n\n${S}\nbody\n${E}`.length);
+    }
+  });
+
+  it('names the reason for each ambiguous shape', () => {
+    const cases = [
+      [`${S}\na\n${E}\n${S}\nb\n${E}\n`, /more than one/],
+      [`${E}\nx\n${S}\n`, /before start/],
+      [`${S}\nx\n`, /no end/],
+      [`x\n${E}\n`, /no start/],
+    ];
+    for (const [text, reason] of cases) {
+      const state = classifyRegion(text);
+      assert.equal(state.kind, 'ambiguous', text);
+      if (state.kind === 'ambiguous') assert.match(state.reason, reason);
+    }
   });
 });
 
@@ -333,6 +384,33 @@ describe('hasManagedRegion (markers that are not a region)', () => {
       false
     );
   });
+
+  it('ignores markers inside an indented code example', () => {
+    // CommonMark has a second kind of code block: four spaces or a tab. The
+    // fence fix left this one open, and a merge was reproduced replacing the
+    // author's indented example with the generated block, no flag asked for.
+    const spaced = [
+      '# Marker example',
+      '',
+      '    <!-- a2scaffold:start -->',
+      '    example generated content',
+      '    <!-- a2scaffold:end -->',
+    ].join('\n');
+    const tabbed = spaced.replace(/^ {4}/gm, '\t');
+    for (const doc of [spaced, tabbed]) {
+      assert.equal(hasManagedRegion(doc), false);
+      assert.equal(mergeManagedRegion(doc, wrapped('new')), null);
+      assert.deepEqual(classifyRegion(doc), { kind: 'none' });
+    }
+  });
+
+  it('still reads a marker indented up to three spaces', () => {
+    // Three spaces is still a paragraph in CommonMark, and the same bound the
+    // fence parser uses; the two must not disagree about where code begins.
+    const doc =
+      '# T\n\n   <!-- a2scaffold:start -->\nbody\n   <!-- a2scaffold:end -->\n';
+    assert.equal(hasManagedRegion(doc), true);
+  });
 });
 
 // ── end-to-end: adopting a repo that predates the tool ──────────────
@@ -410,6 +488,40 @@ describe('scaffolding a repo that already has agent files', () => {
     await scaffold({ templateName: TEMPLATE, outputDir: tmpDir, force: true });
     const after = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
     assert.ok(!after.includes('Monorepo for data processing.'));
+  });
+
+  it('refuses a stub with broken markers even when adopt is given', async () => {
+    // Adopting a file that already has a broken pair would add a second
+    // block to it. Replacement is the only thing a run could do to such a
+    // file, and that is the destructive permission — so it is asked for.
+    const broken =
+      '# p-01\n\n<!-- a2scaffold:start -->\nold\n<!-- a2scaffold:end -->\n' +
+      '\n<!-- a2scaffold:start -->\nold again\n<!-- a2scaffold:end -->\n';
+    fs.writeFileSync(path.join(tmpDir, 'AGENTS.md'), broken);
+
+    const { templateDir } = resolveTemplatePath(TEMPLATE);
+    const { adopt, overwrite } = classifyConflicts(
+      templateDir,
+      tmpDir,
+      view({ agents: { agentsmd: true, claude: true } })
+    );
+    assert.ok(!adopt.includes('AGENTS.md'), 'must not be offered adoption');
+    assert.ok(overwrite.includes('AGENTS.md'));
+
+    await assert.rejects(
+      () =>
+        scaffold({ templateName: TEMPLATE, outputDir: tmpDir, adopt: true }),
+      (/** @type {any} */ err) => {
+        assert.equal(err.name, 'ScaffoldRefusal');
+        assert.deepEqual(err.needsAdopt, []);
+        assert.deepEqual(err.needsForce, ['AGENTS.md']);
+        return true;
+      }
+    );
+    assert.equal(
+      fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8'),
+      broken
+    );
   });
 
   it('takes the ordinary merge path on the next run', async () => {

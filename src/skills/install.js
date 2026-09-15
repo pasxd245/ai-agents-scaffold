@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { validateSkill } from './validate.js';
+import { isSkillRef } from './list.js';
 import { auditSkill } from './audit.js';
 import { resolveSkillSource } from './resolve.js';
 import { sparseCloneGitHub } from '../utils/download.js';
@@ -116,6 +117,20 @@ function installFromLocal(sourcePath, targetDir, options) {
     throw new Error(`Source path does not exist: ${sourcePath}`);
   }
 
+  // Validation follows a link; the copy filter drops it. A source whose
+  // SKILL.md is a symlink therefore passed validation and installed as a
+  // directory with no SKILL.md in it, reported as a success. The one file a
+  // skill cannot be without has to be a real file, before anything else runs.
+  const sourceSkillFile = path.join(sourcePath, SKILL_FILE);
+  if (
+    fs.existsSync(sourceSkillFile) &&
+    fs.lstatSync(sourceSkillFile).isSymbolicLink()
+  ) {
+    throw new Error(
+      `Source skill is invalid:\n  - ${SKILL_FILE} is a symbolic link; it must be a regular file`
+    );
+  }
+
   const preCheck = validateSkill(sourcePath);
   if (!preCheck.valid) {
     throw new Error(
@@ -134,14 +149,39 @@ function installFromLocal(sourcePath, targetDir, options) {
 
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
 
-  if (fs.existsSync(destPath)) {
-    fs.rmSync(destPath, { recursive: true });
-  }
+  // Build the filtered copy beside the destination, check that what survived
+  // the filter is still a skill, and only then swap it in. Staging next to the
+  // destination keeps the final move a rename on one filesystem, so an
+  // existing installation is replaced whole or not at all — never left as
+  // the half of a copy that a failure got through.
+  const staging = fs.mkdtempSync(
+    path.join(path.dirname(destPath), '.a2scaffold-install-')
+  );
+  try {
+    const staged = path.join(staging, path.basename(destPath));
+    fs.cpSync(sourcePath, staged, { recursive: true, filter: isInstallable });
 
-  fs.cpSync(sourcePath, destPath, {
-    recursive: true,
-    filter: isInstallable,
-  });
+    // A skill-ref resolves its pointer relative to its own directory, so it
+    // cannot be judged from the staging path; its source was already walked.
+    const postCheck = isSkillRef(staged)
+      ? { valid: fs.existsSync(path.join(staged, SKILL_FILE)), errors: [] }
+      : validateSkill(staged);
+    if (!postCheck.valid) {
+      const detail = postCheck.errors.length
+        ? `\n  - ${postCheck.errors.join('\n  - ')}`
+        : '';
+      throw new Error(
+        `Skill "${skillName}" is not valid once excluded files are removed:${detail}`
+      );
+    }
+
+    if (fs.existsSync(destPath)) {
+      fs.rmSync(destPath, { recursive: true });
+    }
+    fs.renameSync(staged, destPath);
+  } finally {
+    fs.rmSync(staging, { recursive: true, force: true });
+  }
 
   return { name: skillName, path: destPath };
 }

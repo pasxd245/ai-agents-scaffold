@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { TEMPLATE_EXT } from '../constants.js';
 import { listOutputPaths } from './output-paths.js';
-import { hasManagedRegion } from './managed-region.js';
+import { classifyRegion, hasManagedRegion } from './managed-region.js';
 
 /**
  * Check which output files already exist and would lose content.
@@ -85,9 +85,13 @@ export function classifyConflicts(templateDir, outDir, view, extname) {
       path.join(templateDir, templateRel),
       'utf8'
     );
-    // The existing file has no region — checkExistingFiles already excluded
-    // any file that does — so the template having one is the whole test.
-    (hasManagedRegion(template) ? adopt : overwrite).push(outputRel);
+    // checkExistingFiles already excluded every file with a valid region, so
+    // what is left is either marker-less — adoptable, if the template owns a
+    // region — or carries broken markers, which only replacement can fix.
+    const existing = fs.readFileSync(path.join(outDir, outputRel), 'utf8');
+    const adoptable =
+      hasManagedRegion(template) && classifyRegion(existing).kind === 'none';
+    (adoptable ? adopt : overwrite).push(outputRel);
   }
 
   return { adopt, overwrite };

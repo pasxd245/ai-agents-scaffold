@@ -99,6 +99,36 @@ describe('sync', () => {
     assert.ok(read('AGENTS.md').includes('a2scaffold:start'));
   });
 
+  it('reports broken markers instead of adopting around them', async () => {
+    // A duplicated or inverted pair used to look like "no markers" to adopt,
+    // which then inserted a third pair and called it a success. Broken markers
+    // are reported with the reason and the file is not written, even with
+    // adopt on — the docs promised exactly that and the code did not do it.
+    const dup =
+      '# p-01\n<!-- a2scaffold:start -->\na\n<!-- a2scaffold:end -->\n' +
+      '<!-- a2scaffold:start -->\nb\n<!-- a2scaffold:end -->\n';
+    const inverted =
+      '# p-01\n<!-- a2scaffold:end -->\nx\n<!-- a2scaffold:start -->\n';
+    write('AGENTS.md', dup);
+    write('CLAUDE.md', inverted);
+
+    const result = await sync({
+      templateName: TEMPLATE,
+      outputDir: dir,
+      adopt: true,
+    });
+
+    assert.deepEqual(result.adopted, []);
+    assert.ok(!result.unmanaged.includes('AGENTS.md'));
+    const files = Object.fromEntries(
+      result.ambiguous.map(({ file, reason }) => [file, reason])
+    );
+    assert.match(files['AGENTS.md'], /more than one/);
+    assert.match(files['CLAUDE.md'], /before start/);
+    assert.equal(read('AGENTS.md'), dup, 'must not be touched');
+    assert.equal(read('CLAUDE.md'), inverted, 'must not be touched');
+  });
+
   it('reports a missing enforcement rule, and names it', async () => {
     await scaffold({ templateName: TEMPLATE, outputDir: dir });
     const trimmed = JSON.stringify(
