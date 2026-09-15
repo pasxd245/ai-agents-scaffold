@@ -143,21 +143,31 @@ export class ScaffoldRefusal extends Error {
  * leaves the target exactly as it was, and its lists are the authoritative
  * account of what a run would touch.
  *
+ * With `dryRun`, the same plan is built and reported but nothing is written
+ * and nothing throws: the caller gets every list, including the two refusal
+ * lists, so a preview shows the split the real run would stop on.
+ *
  * @param {string} stagingDir - Freshly rendered tree
  * @param {string} outDir - Destination
- * @param {{ adopt?: boolean, force?: boolean }} [permissions]
- * @returns {{ preserved: string[], adopted: string[] }} output-relative paths
+ * @param {{ adopt?: boolean, force?: boolean, dryRun?: boolean }} [permissions]
+ * @returns {MergeReport} output-relative paths
  * @throws {ScaffoldRefusal} when a file needs a permission that was not given
  */
 function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
-  const { adopt = false, force = false } = permissions;
+  const { adopt = false, force = false, dryRun = false } = permissions;
 
   /** @type {Array<{ rel: string, content: string | null }>} */
   const plan = [];
   /** @type {string[]} */
+  const created = [];
+  /** @type {string[]} */
   const preserved = [];
   /** @type {string[]} */
   const adopted = [];
+  /** @type {string[]} */
+  const replaced = [];
+  /** @type {string[]} */
+  const unchanged = [];
   /** @type {string[]} */
   const needsAdopt = [];
   /** @type {string[]} */
@@ -176,6 +186,7 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
     const dest = path.join(outDir, rel);
     if (!fs.existsSync(dest)) {
       plan.push({ rel, content: null });
+      created.push(rel);
       return;
     }
 
@@ -198,10 +209,14 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
       return;
     }
 
-    if (existing === incoming) return;
+    if (existing === incoming) {
+      unchanged.push(rel);
+      return;
+    }
 
     if (force) {
       plan.push({ rel, content: null });
+      replaced.push(rel);
       return;
     }
 
@@ -209,6 +224,18 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
   };
 
   walk('');
+
+  const report = {
+    created,
+    preserved,
+    adopted,
+    replaced,
+    unchanged,
+    needsAdopt,
+    needsForce,
+  };
+
+  if (dryRun) return report;
 
   if (needsAdopt.length > 0 || needsForce.length > 0) {
     throw new ScaffoldRefusal(needsAdopt, needsForce);
@@ -224,8 +251,19 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
     }
   }
 
-  return { preserved, adopted };
+  return report;
 }
+
+/**
+ * @typedef {object} MergeReport
+ * @property {string[]} created    - Did not exist; written fresh
+ * @property {string[]} preserved  - Managed region refreshed, edits kept
+ * @property {string[]} adopted    - Marker-less stub given the block below its title
+ * @property {string[]} replaced   - Replaced wholesale under `force`; edits lost
+ * @property {string[]} unchanged  - Already identical to the render
+ * @property {string[]} needsAdopt - Would be adopted, but `adopt` was not given
+ * @property {string[]} needsForce - Would be replaced, but `force` was not given
+ */
 
 /**
  * Scaffold a template to the output directory.
@@ -245,8 +283,10 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
  *   existing file that has no managed region, instead of replacing it.
  * @param {boolean} [options.force] - Replace an existing file wholesale when
  *   neither merge nor adoption applies. Without it, such a file aborts the run.
- * @returns {Promise<{ outputDir: string, template: string, preserved: string[],
- *   adopted: string[] }>}
+ * @param {boolean} [options.dryRun] - Build and report the plan; write nothing
+ *   and never throw a refusal. The report's `needsAdopt`/`needsForce` say what
+ *   a real run would stop on.
+ * @returns {Promise<{ outputDir: string, template: string } & MergeReport>}
  */
 export async function scaffold({
   templateName,
@@ -254,6 +294,7 @@ export async function scaffold({
   overrides = {},
   adopt = false,
   force = false,
+  dryRun = false,
 }) {
   const { config } = resolveScaffoldConfig({
     templateName,
@@ -268,11 +309,12 @@ export async function scaffold({
   try {
     config.outDir = stagingDir;
     await renderDirectory(config);
-    const { preserved, adopted } = mergeRenderedTree(stagingDir, outDir, {
+    const report = mergeRenderedTree(stagingDir, outDir, {
       adopt,
       force,
+      dryRun,
     });
-    return { outputDir: outDir, template: templateName, preserved, adopted };
+    return { outputDir: outDir, template: templateName, ...report };
   } finally {
     fs.rmSync(stagingDir, { recursive: true, force: true });
   }

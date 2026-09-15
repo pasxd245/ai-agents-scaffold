@@ -318,6 +318,43 @@ describe('re-scaffolding an existing project', () => {
     );
   });
 
+  it('names the canon files --force replaced', async () => {
+    // `--force` used to report only the stubs it kept; the files it destroyed
+    // were never listed, so the success banner read as a clean run.
+    const canon = path.join(tmpDir, '.agents', 'AGENTS.md');
+    fs.appendFileSync(canon, '\nMY EDIT\n');
+
+    const result = await scaffold({
+      templateName: TEMPLATE,
+      outputDir: tmpDir,
+      force: true,
+    });
+
+    assert.deepEqual(result.replaced, ['.agents/AGENTS.md']);
+    assert.ok(!fs.readFileSync(canon, 'utf8').includes('MY EDIT'));
+  });
+
+  it('dry-run reports the conflict split and writes nothing', async () => {
+    const canon = path.join(tmpDir, '.agents', 'AGENTS.md');
+    fs.appendFileSync(canon, '\nMY EDIT\n');
+    const stub = path.join(tmpDir, 'GEMINI.md');
+    fs.writeFileSync(stub, '# hand-written, no markers\n');
+    const before = fs.readFileSync(canon, 'utf8');
+
+    const plan = await scaffold({
+      templateName: TEMPLATE,
+      outputDir: tmpDir,
+      overrides: { agents: { gemini: true } },
+      dryRun: true,
+    });
+
+    assert.deepEqual(plan.needsForce, ['.agents/AGENTS.md']);
+    assert.deepEqual(plan.needsAdopt, ['GEMINI.md']);
+    assert.ok(plan.unchanged.length > 0);
+    assert.equal(fs.readFileSync(canon, 'utf8'), before, 'dry-run wrote');
+    assert.equal(fs.readFileSync(stub, 'utf8'), '# hand-written, no markers\n');
+  });
+
   it('preserves author content outside the managed region', async () => {
     const claudeMd = path.join(tmpDir, 'CLAUDE.md');
     fs.appendFileSync(claudeMd, '\n## Mine\n\nhand-written\n');

@@ -82,7 +82,8 @@ Dry run — template "base" would generate:
   Output directory: /home/user/my-project
   Project name: my-project
 
-  Files:
+  Created — new files:
+
     - .agents/.gitignore
     - .agents/AGENTS.md
     - .agents/context/.gitkeep
@@ -110,10 +111,14 @@ Dry run — template "base" would generate:
     - CLAUDE.md
 ```
 
-Dry-run evaluates conditional paths against the resolved values, so the list
-is what you will actually get. Files gated on a disabled harness — `GEMINI.md`
-and `.codex/` above, with `agents.gemini` and `agents.codex` off — are omitted
-rather than shown with their `$if{...}` marker.
+Dry-run renders the template to a temporary directory and compares it with the
+target file by file, so it reports the same split the real run acts on:
+created, updated in place, adopted, replaced, and — when a flag is missing —
+`Needs --adopt` or `Needs --force`. A repo with existing files therefore sees
+its conflicts in the preview, not only in the refusal. Files gated on a
+disabled harness — `GEMINI.md` and `.codex/` above, with `agents.gemini` and
+`agents.codex` off — are omitted rather than shown with their `$if{...}`
+marker.
 
 ### List available templates
 

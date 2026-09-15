@@ -43,9 +43,11 @@ Render a template to the output directory.
 | `options.adopt`        | `boolean` | No       | Insert the generated block into an existing file that has no managed region, keeping its content |
 | `options.force`        | `boolean` | No       | Replace an existing file wholesale when neither merge nor adoption applies                       |
 
-**Returns:** `Promise<{ outputDir: string, template: string, preserved: string[], adopted: string[] }>`
+**Returns:** `Promise<{ outputDir: string, template: string, created: string[], preserved: string[], adopted: string[], replaced: string[], unchanged: string[], needsAdopt: string[], needsForce: string[] }>`
 
-`preserved` lists files whose managed region was refreshed in place; `adopted`
+Pass `dryRun: true` to get the same report without writing a byte; a real run throws `ScaffoldRefusal` when `needsAdopt` or `needsForce` is non-empty, a dry run returns them.
+
+`created` lists new files; `replaced` lists files `force` overwrote wholesale; `preserved` lists files whose managed region was refreshed in place; `adopted`
 lists files that gained a region for the first time. Both are output-relative.
 
 **Existing files are never replaced silently.** Three cases, three outcomes:
