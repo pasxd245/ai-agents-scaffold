@@ -34,7 +34,7 @@ OWASP Top 10 for Agentic Applications 2026, and Snyk's ToxicSkills audit.
 
 ## Do
 
-Landed on `feat/restructure-agent-instructions`, 32 commits, each green.
+Landed on `feat/restructure-agent-instructions`, 39 commits, each green.
 Grouped by area rather than by date, because that is how a reviewer reads it:
 
 | Area                                   | Commits                                                                 |
@@ -44,6 +44,7 @@ Grouped by area rather than by date, because that is how a reviewer reads it:
 | Non-destructive scaffold and adoption  | `ac5c006` `eff7752` `74b0bb8` `b3ff47d` `6568095` `89e35be`             |
 | `sync`                                 | `78680ba`                                                               |
 | Release prep, 2026-09-15               | `56d728e` `a1da44e` `fb5cf93` `348e525` `7e3a85e` + round record + bump |
+| Pre-release review fixes, 2026-09-16   | `66b1641` `e28bff7` `5747ad5` `e68b58a`                                  |
 | Pre-review fixes                       | `85bcf5c` `68e8474`                                                     |
 | Round record and research baseline     | `cfcb5e8` `b83d57e`                                                     |
 
@@ -357,6 +358,23 @@ gitignored — citing it here was a mistake this file used to make.
     the "type-paths are not rc-configurable" decision in
     `docs/agents/plan/ecosystem-ideas.draft.md`, so it needs a human yes
     first. Not in v0.2.0.
+
+### Found by the pre-release adversarial review (2026-09-16)
+
+Three independent passes — premise, CLI as a stranger, security — before the
+tag. Data-loss and messaging defects were fixed the same day; the rest is
+Round 14 material. Durable record, with the approach questions in order:
+[`memory/2026-09-16-pre-release-adversarial-review.md`](../../memory/2026-09-16-pre-release-adversarial-review.md).
+
+- [x] `--adopt` de-indented content; CRLF markers unrecognised (`66b1641`)
+- [x] `process.env` rendered into templates (`e28bff7`)
+- [x] `--dry-run` hid conflicts; `--force` did not name replaced files (`5747ad5`)
+- [x] Audit and permission-layer claims reworded to what ships (`e68b58a`)
+- [ ] Approach: KB budget, second AGENTS.md, Edit-only enforcement, opt-in
+      PDCA, seeded-canon updates, naming — decide before Round 14 builds
+- [ ] Hardening batch: ref atomicity and nested warning, orphan report in
+      `sync`, exit codes, list/validate naming, audit gate on any finding,
+      registry SHA pinning
 
 ### Standing
 
