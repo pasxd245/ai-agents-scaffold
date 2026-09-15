@@ -34,13 +34,20 @@ OWASP Top 10 for Agentic Applications 2026, and Snyk's ToxicSkills audit.
 
 ## Do
 
-Landed on `feat/restructure-agent-instructions` in three commits, each green:
+Landed on `feat/restructure-agent-instructions`, 22 commits, each green.
+Grouped by area rather than by date, because that is how a reviewer reads it:
 
-| Commit    | Scope                                                  |
-| --------- | ------------------------------------------------------ |
-| `765ac08` | Instruction-file model, philosophy, KB split, guardrails |
-| `80c7a84` | `skill validate` conformance scoring                   |
-| `fb6d5e7` | `skill audit` supply-chain screening                   |
+| Area                                   | Commits                                                                 |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| Instruction-file model, KB, guardrails | `765ac08` `d28aff4` `967faa8` `80b399c` `096ef3a` `8f18a00`             |
+| Skill conformance and supply chain     | `80c7a84` `fb6d5e7` `38594dc` `0fc5c54` `a2111ce`                       |
+| Non-destructive scaffold and adoption  | `ac5c006` `eff7752` `74b0bb8` `b3ff47d` `6568095` `89e35be`             |
+| `sync`                                 | `78680ba`                                                               |
+| Pre-review fixes                       | `85bcf5c` `68e8474`                                                     |
+| Round record and research baseline     | `cfcb5e8` `b83d57e`                                                     |
+
+The first three rows were the plan. `sync` and the two review commits were
+found on the way; see the sections below.
 
 ### The root-file model changed twice
 
@@ -156,18 +163,70 @@ Governance note: canon was modified under the explicit-instruction exception —
 warned, confirmed, and logged in
 [promotions.md](../promotions.md).
 
+### `sync` — 2026-08-30
+
+Backlog item 4, pulled forward because adoption exposed the gap: with real
+curated canon, refreshing a stub meant `--force`, and `--force` also replaces
+`.agents/` wholesale. `sync` separates **managed** files (a fenced region the
+template owns; only the region is replaced) from **seeded** files (written
+once, then the human's; created when absent, never touched when present). No
+`--force`, no conflict list. Enforcement files are the one seeded exception:
+`.claude/settings.json` is compared and reported, never overwritten. Both
+commands now read project values from the `--output` target, not the caller.
+
+### Pre-review loop — 2026-08-30 to 2026-09-15
+
+Two review passes were commissioned before opening the PR, each written as a
+standalone document, each verified against the code before anything changed.
+The full record — both reviews, the resolution, what was downgraded and what
+was deliberately deviated from — is kept as a case study under
+[`docs/agents/case-studies/`](../../../docs/agents/case-studies/20260830-pr-review-loop.md).
+
+First pass, resolved in `85bcf5c`: three P1s (`$ifn{}` bypassing conflict
+detection, `sync --output` reading the caller's values, symlinks invisible to
+the audit) and eight P2s across safety, governance and docs. Two things the
+review did not name were found while fixing: `mergeRenderedTree` trusted the
+CLI preflight completely, so any prediction drift was silent data loss — it now
+builds its own plan and throws `ScaffoldRefusal` before writing — and the
+`--force` prompt listed every canon file as a conflict when one had changed.
+
+Second pass, resolved in `68e8474`: markers indented four spaces still counted
+as a region (an indented code block, and a real data-loss case), adoption could
+not tell "no markers" from "broken markers" and added a third pair, a symlinked
+`SKILL.md` installed as a skill with no `SKILL.md`, `ScaffoldRefusal` was
+documented but not exported, and the enforcement check was verbatim while the
+wording said semantic. The last was resolved by narrowing the claim, not
+widening the code.
+
+Left open by both passes, on purpose: `sync` has no migration story for seeded
+files that change upstream, and the branch is one PR where a reviewer would
+prefer five.
+
 ## Check
 
-- [x] `pnpm check` green at each commit — 99 tests
+- [x] `pnpm check` green at each commit — 99 tests at `fb6d5e7`, 219 at
+      `68e8474`
 - [x] Template renders correctly for all four harnesses, and with
       `agents.agentsmd` both on and off
 - [x] Every markdown link and `@` import in changed files resolves
 - [x] Dry-run listing in [usage.md](../../../docs/usage.md) matches CLI output
-- [x] Audit detects all four categories on a hostile fixture; the crawler skill
+- [x] Audit detects all five categories on a hostile fixture; the crawler skill
       flags medium-only, so signal-to-noise holds
+- [x] Output-path prediction pinned against the installed renderer, `$ifn{}`
+      and error cases included
+- [x] Every finding in both review passes reproduced on the prior commit
+      before it was changed, and every accepted fix carries a regression test
+- [x] Adoption verified on a real unscaffolded repo: zero lines lost, second
+      run merges
+- [x] `sync` is idempotent and a dry run writes nothing
 - [ ] Not verified: whether the permission rules behave as intended in a live
       session. They are declarative and syntactically checked, but untested
-      against a real Claude Code run.
+      against a real Claude Code run. One data point since: an agent editing
+      this file under the `Edit(/.agents/plan/**)` rule was let through in an
+      auto-approve mode, which is the mode doing what it says, not the rule
+      failing — but it means the rule protects only sessions that ask.
+- [ ] Not verified: `sync` against a repo scaffolded by v0.1.0 in the field.
+      Tested on this repo and on scratch copies only.
 
 ### Corrections found during the round
 
@@ -236,9 +295,9 @@ landable.
    in `memory/_TEMPLATE.md`, with guidance on setting the date from what the
    finding depends on rather than a fixed interval; `context/memory-placement.md`
    covers the two-systems question.
-3. **Root `AGENTS.md` for tools with no import support** — Copilot's stub
-   restates content, which drifts. Decide whether re-scaffolding is enough or
-   whether it needs a `sync` command.
+3. ~~**Root `AGENTS.md` for tools with no import support**~~ — answered by
+   `sync` (2026-08-30): the Copilot stub's restated block is a managed region,
+   so `sync` refreshes it without touching anything the author wrote.
 
 ### Found by dogfooding `my-dynamic-dashboard` (2026-08-29)
 
@@ -276,8 +335,9 @@ gitignored — citing it here was a mistake this file used to make.
 3b. **Path-scoped rules emitter** — the frontmatter convention is agreed (see
     above); what remains is reading `paths:` and emitting `.claude/rules/`.
 
-4. **`a2scaffold sync`** — regenerate stubs from `.agents/` without a full
-   scaffold. Prerequisite for items 1 and 3.
+4. ~~**`a2scaffold sync`**~~ — built 2026-08-30 (`78680ba`). What it does not
+   do, recorded in the review loop above: carry an upstream change to a seeded
+   file into an existing repo. That migration story is the next decision.
 5. **Skill-ref refresh** — refs are generated once; nothing re-points them when
    the source moves.
 6. **Golden snapshot tests per template** — currently each template change is
