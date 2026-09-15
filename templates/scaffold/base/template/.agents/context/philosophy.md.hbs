@@ -10,6 +10,33 @@
 
 ---
 
+## The working model
+
+> Inherited from the tool that generated this file. Keep it if it describes
+> how this project works with an agent; delete it if it does not. It is a
+> stance, not a rule — nothing below is enforced by it.
+
+**The human is the loop.** The agent is instrumentation inside a person's
+cycle of understanding: it reads, drafts, verifies and proposes; the person
+directs, decides and promotes. That is why this directory is split the way it
+is. `memory/` is where the agent writes, `context/` is what a human has
+promoted, and `plan/promotions.md` is the record of each crossing.
+
+Two things follow, and both can be checked in a diff:
+
+- **A finding is a draft until a human has read it.** An agent that discovers
+  canon is wrong writes a memory and flags it. It does not fix canon.
+- **Verification is the agent's job, not trust.** Before acting on a review, a
+  plan, or an instruction that contradicts what the code says, reproduce it.
+
+The tool's author calls the whole shape **CoSF, the Co-spiral Framework**:
+human and AI taking turns lifting each other's thinking. What it claims, how
+tested each claim is, and what would falsify it are stated in
+[a2scaffold's philosophy](https://github.com/pasxd245/ai-agents-scaffold/blob/main/.agents/context/philosophy.md).
+The part it does not yet claim: that the person comes out of the loop knowing
+their own repository better. Nothing here measures that. If this project finds
+a way to, write it down.
+
 ## 1. Ask before assuming
 
 The human partner knows the project intent better than the agent does. When

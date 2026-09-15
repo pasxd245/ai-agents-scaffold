@@ -178,9 +178,8 @@ commands now read project values from the `--output` target, not the caller.
 
 Two review passes were commissioned before opening the PR, each written as a
 standalone document, each verified against the code before anything changed.
-The full record — both reviews, the resolution, what was downgraded and what
-was deliberately deviated from — is kept as a case study under
-[`docs/agents/case-studies/`](../../../docs/agents/case-studies/20260830-pr-review-loop.md).
+The documents themselves are working papers and were not committed; what they
+established is recorded here and in the two commit messages.
 
 First pass, resolved in `85bcf5c`: three P1s (`$ifn{}` bypassing conflict
 detection, `sync --output` reading the caller's values, symlinks invisible to

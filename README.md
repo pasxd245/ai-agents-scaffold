@@ -18,6 +18,25 @@ is what surrounds the files:
 - **Verification cycles** — each shipped phase records what was checked, so
   the guidance stays tied to evidence.
 
+## The working model
+
+The layout above is not a filing system. It is the shape of a way of working
+with an agent that the author calls **CoSF, the Co-spiral Framework**: human
+and AI take turns lifting each other's thinking, one revolution at a time.
+Three claims, each labelled with how tested it is, because a claim without
+that label is marketing:
+
+| Claim                                                                                                                                                                              | Status                        |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| **The human is the loop.** The agent is instrumentation inside a person's cycle of understanding, not the other way round. Canon is human-promoted; agents draft, verify, propose. | Stance, one recorded instance |
+| **HI × AI, not HI + AI.** Each side scales the other, and the product can be smaller than either factor. A scaffold can make an agent worse; an agent can make a human worse.      | Untested, falsifiable         |
+| **A scaffold is a specialization layer.** A frontier model arrives generally capable and specifically ignorant; `.agents/` is what closes that gap fast.                           | Sourced, by analogy           |
+
+The full statement, with what would falsify each claim, is in
+[philosophy.md](.agents/context/philosophy.md). The repository runs the model
+on itself: [Round 13](.agents/plan/cycles/Round_13.md) records the review loop
+this branch went through before its own PR, including what each pass missed.
+
 ## Quick Start
 
 ```bash
