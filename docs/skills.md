@@ -30,7 +30,7 @@ Install a skill into `.agents/skills/`.
 
 | Format        | Example                                                 |
 | ------------- | ------------------------------------------------------- |
-| Built-in name | `my-skill`, `planning/master-plan`                      |
+| Built-in name | `my-skill`, `group/my-skill`                            |
 | Local path    | `./my-skill`, `../shared/code-review`, `/absolute/path` |
 | GitHub URL    | `https://github.com/owner/repo/tree/main/path/to/skill` |
 
@@ -51,11 +51,11 @@ Built-in names resolve under `templates/skills/`.
 # Bare name — installs templates/skills/<name>/
 a2scaffold skill add a2scaffold
 
-# Nested name — preserves the path under skills/
-a2scaffold skill add planning/master-plan
+# Nested name — preserves the path under skills/ (no built-in ships nested today)
+a2scaffold skill add group/my-skill
 ```
 
-Bare and nested names preserve the requested path: `skill add planning/master-plan` lands at `.agents/skills/planning/master-plan/`. Explicit paths and URLs use the source's basename instead.
+Bare and nested names preserve the requested path: `skill add group/my-skill` lands at `.agents/skills/group/my-skill/`. Explicit paths and URLs use the source's basename instead.
 
 `skill list`, `skill validate` and `skill audit` all recurse, so a nested skill is reported under its full name (`group/name`).
 
@@ -201,7 +201,7 @@ are excluded.
 
 ### `a2scaffold skill audit [name]`
 
-Screen installed skills for supply-chain risks before you trust them.
+Surface a few obvious risky patterns in installed skills. It is a prompt to read them, never a safety verdict.
 
 ```bash
 # Audit all installed skills

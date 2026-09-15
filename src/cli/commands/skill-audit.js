@@ -68,5 +68,14 @@ export function runSkillAudit(targetName, agentsDir) {
         'not proof of anything: read the flagged lines before trusting a skill ' +
         'you did not write. Skills run with your agent’s full permissions.'
     );
+  } else {
+    // The dangerous case is the quiet one. The screen matches a fixed set of
+    // patterns and a paraphrase walks past it, so a clean result must not
+    // read as a verdict.
+    console.log(
+      '\nNothing flagged is not a safety verdict: the screen matches a fixed ' +
+        'set of patterns and a reworded instruction evades it. Read any skill ' +
+        'you did not write before an agent loads it.'
+    );
   }
 }

@@ -10,9 +10,9 @@ single source. `a2scaffold` does that too, but it is not the point. The point
 is what surrounds the files:
 
 - **Authority separation** — `.agents/context/` is human-owned canon;
-  `.agents/memory/` is where agents write. The split is backed by permission
-  rules, not just prose, because instruction files are context an agent can
-  ignore rather than configuration it cannot.
+  `.agents/memory/` is where agents write. Claude Code is configured to ask
+  before it edits canon. That rule covers the `Edit` tool in interactive
+  sessions — a speed bump in the loop, not a wall; the docs say where it stops.
 - **A promotion path** — findings start as drafts, get reviewed, and are
   promoted into canon with a logged rationale. Knowledge earns its place.
 - **Verification cycles** — each shipped phase records what was checked, so
@@ -62,7 +62,7 @@ This generates the base AI agent setup in your current directory:
     PDCA.md                    # PDCA methodology
     promotions.md              # Promotion log
     cycles/                    # Individual PDCA rounds
-.claude/settings.json          # Ask before edits to canon — enforces the rules
+.claude/settings.json          # Ask before Edit() on canon — interactive only
 AGENTS.md                      # Stub for Codex & the AGENTS.md convention
 CLAUDE.md                      # Stub for Claude Code — @.agents/AGENTS.md
 .github/copilot-instructions.md  # Stub for Copilot — restates it (cannot import)
@@ -118,8 +118,12 @@ a2scaffold --output ./my-repo
 # Use a specific template
 a2scaffold --use base
 
-# Preview what would be generated
+# Preview what would be generated, including files that need --adopt or --force
 a2scaffold --dry-run
+
+# Bring an existing repo up to date without touching anything you wrote
+a2scaffold sync
+a2scaffold sync --dry-run
 
 # List available templates
 a2scaffold --list

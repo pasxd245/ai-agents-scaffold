@@ -52,8 +52,8 @@ by habit. Loading everything is a cost, not thoroughness.
 Closing a round, editing a closed one and compacting `cycles/` are human calls — see [plan/PDCA.md](plan/PDCA.md).
 
 Backed by permission rules in `.claude/settings.json` that make Claude Code
-**ask** before any edit under `.agents/`. Instruction files are context an
-agent can ignore; a permission layer is not — see
+**ask** before an `Edit` under `.agents/`. A speed bump, not a wall: it covers
+one tool in interactive sessions, and shell writes bypass it — see
 [context/harness-behaviour.md](context/harness-behaviour.md).
 
 **A human may still authorise a change** — warn first, wait for confirmation,

@@ -549,7 +549,7 @@ Install a skill from a source into a target directory.
 | ---------------------- | ------------------------------------------------------- | --------------------------------------------- |
 | Explicit local path    | `./my-skill`, `/absolute/path`                          | Copies that directory                         |
 | Full GitHub tree URL   | `https://github.com/owner/repo/tree/main/path/to/skill` | Sparse-checks out that skill directory        |
-| Built-in name          | `my-skill`, `planning/master-plan`                      | Resolves under `templates/skills/`            |
+| Built-in name          | `my-skill`, `group/my-skill`                            | Resolves under `templates/skills/`            |
 | Registry name + `from` | `pdf` with `{ from: 'anthropics' }`                     | Resolves through `options.rc.registries.from` |
 
 **Returns:** `{ name: string, path: string }`

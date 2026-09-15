@@ -353,3 +353,21 @@ whole-repo skill review procedure, the `-d .` layout note, and a correction:
 per-repo values live in `.a2scaffold/values.*`, not in the rc file).
 
 **Promoted by**: Vien Pham (plan approved in session; drafted by Claude Code)
+
+## 2026-09-16: pre-release review → `.agents/` canon (authorised write)
+
+**Source**: an adversarial review of v0.2.0 run in session (three independent
+passes: premise, CLI, security). Durable record:
+`memory/2026-09-16-pre-release-adversarial-review.md`.
+
+**Rationale**: `AGENTS.md` claimed "a permission layer is not [ignorable]".
+The layer this tool ships is an `ask` rule on the `Edit` tool, interactive
+only; Bash, Write and git bypass it, and in this very session canon under
+`.agents/` was edited through a shell with no prompt. The sentence was false
+for the layer we ship, and a reader who trusted it would under-review exactly
+the inputs that carry risk. Reworded at the template first, then here, same
+line count so the knowledge-base budget test holds.
+
+Touched under the read-only path: `AGENTS.md` (authority paragraph).
+
+**Promoted by**: Vien Pham (review requested in session; drafted by Claude Code)

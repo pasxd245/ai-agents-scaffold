@@ -48,7 +48,7 @@ Skill Commands:
   skill add <source> [options]              Install a skill into .agents/skills
   skill list [options]                      List installed skills
   skill validate [name] [options]           Validate one skill, or all skills
-  skill audit [name] [options]              Screen skills for supply-chain risks
+  skill audit [name] [options]              Flag risky patterns in skills
   skill ref --skill <name|all> --to <dir>   Create lightweight skill references
 
 skill add — install a skill
@@ -73,7 +73,7 @@ skill validate [name] — validate skill frontmatter
   Options:
     -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
 
-skill audit [name] — screen skills for supply-chain risks
+skill audit [name] — flag risky patterns in skills (heuristic, never a verdict)
   Args:
     name                    Optional skill directory name; omit to audit all
   Options:
@@ -90,11 +90,9 @@ Examples:
   npx a2scaffold
   npx a2scaffold init
   npx a2scaffold --use base --name my-project
-  npx a2scaffold --use shared/research-setup
   npx a2scaffold sync
   npx a2scaffold sync --dry-run
   npx a2scaffold skill add my-skill
-  npx a2scaffold skill add planning/master-plan
   npx a2scaffold skill add ./my-skill
   npx a2scaffold skill add code-review --from main
   npx a2scaffold skill validate -d .             # skills/ kept at the repo root
