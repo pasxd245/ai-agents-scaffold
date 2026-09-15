@@ -330,3 +330,23 @@ Three files touched under the read-only path: `AGENTS.md` (authority table),
 (reinstalled from the pool after the `--adopt`/`--force` split).
 
 **Promoted by**: Vien Pham (authorised in session after warning; drafted by Claude Code)
+
+## 2026-09-15: v0.2.0 release prep → `.agents/` canon (authorised write)
+
+**Source**: the v0.2.0 release plan, approved in session. Prompted by a real
+case: a repo that keeps its skills at `<root>/skills` rather than
+`.agents/skills`.
+
+**Rationale**: `skill ref` anchored its pointer at the _parent_ of the source
+agents dir and embedded that dir's basename in `skillPath`. When the source dir
+is the project root (`--from .`), the pointer became
+`../../<repo-folder>/skills/<name>`: correct on the author's machine, broken on
+any clone under another folder name. The anchor is now the deepest directory
+containing both source and destination, which is byte-identical for the
+sibling layout the tool generates and portable for the root-level one.
+`context/skill-refs.md` stated the old formula, so it is updated to the new one
+in the same commit; the field meanings are unchanged.
+
+Touched under the read-only path: `context/skill-refs.md` (path computation).
+
+**Promoted by**: Vien Pham (plan approved in session; drafted by Claude Code)

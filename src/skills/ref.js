@@ -48,6 +48,22 @@ function leafName(name) {
 }
 
 /**
+ * Deepest directory that contains both absolute paths.
+ *
+ * @param {string} a
+ * @param {string} b
+ */
+function commonAncestor(a, b) {
+  let dir = a;
+  while (b !== dir && !b.startsWith(dir + path.sep)) {
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return dir;
+}
+
+/**
  * Check destination for conflicts before writing a skill ref.
  * Throws if a real skill exists or if a ref exists without --force.
  *
@@ -116,11 +132,14 @@ export async function installSkillRef({ from, to, skill, force = false }) {
       continue;
     }
 
-    // Compute paths for the template
-    const sourceRoot = path.resolve(resolvedFrom, '..');
-    const agentsDirName = path.basename(resolvedFrom);
+    // The pointer is anchored at the deepest directory holding both sides,
+    // so it never climbs above the project. Anchoring at the parent of the
+    // source dir instead breaks when the source *is* the project root
+    // (`--from .` for a repo keeping `skills/` at top level): the ref then
+    // reads `../../<repo-folder>/skills/<name>` and dies on clone or rename.
+    const sourceRoot = commonAncestor(resolvedFrom, resolvedTo);
     const rootPath = path.relative(destSkillDir, sourceRoot);
-    const sourceDir = path.join(agentsDirName, SKILLS_DIRNAME, name);
+    const sourceDir = path.relative(sourceRoot, skillDir);
 
     await scaffold({
       templateName: SKILL_REF,

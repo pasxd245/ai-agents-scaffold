@@ -16,6 +16,7 @@ import {
   discoverSkills,
   installSkillRef,
 } from '../src/skills/index.js';
+import { walkRefChain } from '../src/skills/ref-chain.js';
 import { BUILTIN_SKILLS_DIR } from '../src/templates/index.js';
 import yaml from 'js-yaml';
 
@@ -599,6 +600,51 @@ describe('installSkillRef', () => {
     const expected = path.relative(destSkillDir, sourceRoot);
 
     assert.equal(frontmatter.metadata.rootPath, expected);
+  });
+
+  it('anchors the pointer inside the project when the source dir is the project root', async () => {
+    // A repo that keeps `skills/` at its top level has no `.agents/`; its
+    // "agents dir" is the project root. Anchoring at the parent of the source
+    // produced `../../<repo-folder>/skills/<name>`, which resolved on the
+    // author's machine and broke on any clone under a different folder name.
+    const project = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-root-'));
+    try {
+      const skillDir = path.join(project, 'skills', 'root-skill');
+      fs.mkdirSync(skillDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(skillDir, 'SKILL.md'),
+        '---\nname: root-skill\ndescription: At the root.\n---\n'
+      );
+      const dest = path.join(project, '.claude');
+
+      await installSkillRef({ from: project, to: dest, skill: 'root-skill' });
+
+      const destSkillDir = path.join(dest, 'skills', 'root-skill');
+      const output = fs.readFileSync(
+        path.join(destSkillDir, 'SKILL.md'),
+        'utf8'
+      );
+      const frontmatter = yaml.load(
+        output.match(/^---\r?\n([\s\S]*?)\r?\n---/)[1]
+      );
+
+      // dest is <project>/.claude/skills/root-skill: three levels below root
+      assert.equal(frontmatter.metadata.rootPath, path.join('..', '..', '..'));
+      assert.equal(
+        frontmatter.metadata.skillPath,
+        path.join('..', '..', '..', 'skills', 'root-skill')
+      );
+      assert.ok(
+        !frontmatter.metadata.skillPath.includes(path.basename(project)),
+        'pointer must not depend on the project folder name'
+      );
+
+      const walk = walkRefChain(destSkillDir);
+      assert.equal(walk.ok, true);
+      assert.equal(walk.terminalDir, skillDir);
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+    }
   });
 
   it('creates a ref for a nested skill (path-style name)', async () => {
