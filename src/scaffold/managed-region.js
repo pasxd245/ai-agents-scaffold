@@ -1,17 +1,10 @@
 /**
  * Managed regions.
  *
- * A generated stub is meant to be edited. People add harness-specific notes
- * below it, and re-running the scaffold used to overwrite the file wholesale
- * and take those edits with it — observed in a real project whose `CLAUDE.md`
- * had accumulated a generated block and hand-written sections side by side.
- *
- * So generated content is fenced. On a re-scaffold only the fenced region is
- * replaced; everything outside it is the author's and survives untouched.
- *
- * The markers are HTML comments: invisible in rendered markdown, and stripped
- * by harnesses that strip comments before injecting the file, so they cost
- * nothing at read time.
+ * Generated stubs fence their generated content between two markers. A
+ * re-scaffold or sync replaces only the fenced region; everything outside it
+ * is the author's. The markers are HTML comments, so they are invisible in
+ * rendered markdown and cost nothing at read time.
  */
 
 /** Opening marker. Trailing prose after the tag is allowed and ignored. */
@@ -20,16 +13,9 @@ export const REGION_START = '<!-- a2scaffold:start -->';
 /** Closing marker. */
 export const REGION_END = '<!-- a2scaffold:end -->';
 
-// A marker must occupy its own line. Documentation that mentions the markers
-// inline — `<!-- a2scaffold:start -->` inside backticks, as this repo's own
-// reference docs do — must not turn that file into a managed one, or a merge
-// would splice it at the wrong boundaries.
-//
-// At most three leading spaces, the same bound the fence parser below uses.
-// Four spaces or a tab is an indented code block in CommonMark, and a marker
-// inside one is an example, not a region — a merge was found replacing exactly
-// such an example, with no flag asked for, because the old pattern accepted
-// any amount of indentation.
+// A marker counts only on its own line, indented at most three spaces — the
+// same bound as the fence parser. Four spaces or a tab is an indented code
+// block in CommonMark, and a marker inside one is an example, not a region.
 const START_LINE_RE = /^ {0,3}<!--\s*a2scaffold:start[^>]*-->[ \t]*$/;
 const END_LINE_RE = /^ {0,3}<!--\s*a2scaffold:end[^>]*-->[ \t]*$/;
 
@@ -39,19 +25,12 @@ const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 /**
  * What a file's markers amount to.
  *
- * - `none` — no marker outside a code block. The file predates the tool, or
- *   is canon that never had a region; adoption is the only thing that applies.
- * - `valid` — exactly one start followed by exactly one end. The only state a
- *   merge is allowed to act on.
- * - `ambiguous` — markers are present but do not form one region: a pair
- *   duplicated, an end before a start, a start with no end. Nothing applies.
- *   Adopting would add a second block to a file that already has a broken
- *   one, and merging would have to guess a boundary. The file is reported
- *   for a human to repair.
- *
- * The three are kept apart because the first and third used to share a
- * `null`, and adoption read that `null` as "marker-less" — so `--adopt` on a
- * file with duplicated markers reported success and left a third pair behind.
+ * - `none` — no marker outside a code block. Adoptable.
+ * - `valid` — exactly one start followed by one end. The only state a merge
+ *   acts on.
+ * - `ambiguous` — markers that do not form one region. Reported, never
+ *   adopted or merged: inserting beside a broken pair makes repair harder, and
+ *   merging would have to guess a boundary.
  *
  * @typedef {{ kind: 'none' }
  *   | { kind: 'valid', start: number, end: number }
@@ -61,21 +40,9 @@ const FENCE_RE = /^ {0,3}(`{3,}|~{3,})/;
 /**
  * Classify the file's markers; see {@link RegionState}.
  *
- * Own-line matching is not enough on its own. A fenced Markdown example that
- * *shows* what a generated stub looks like puts real markers on real lines:
- *
- * ````markdown
- * ```markdown
- * <!-- a2scaffold:start -->
- * example
- * <!-- a2scaffold:end -->
- * ```
- * ````
- *
- * Treating that as a managed region would let a merge overwrite the author's
- * example — the one thing the region exists to prevent. So markers inside a
- * fenced code block do not count, and neither do markers indented four spaces
- * or more, which CommonMark reads as an indented code block.
+ * Markers inside a fenced (``` or ~~~) or indented code block do not count.
+ * A doc that shows the markers as an example must not read as a region, or a
+ * merge would overwrite the example.
  *
  * @param {string} text
  * @returns {RegionState} offsets, when `valid`, index into `text`, with `end`
@@ -131,13 +98,8 @@ export function classifyRegion(text) {
 }
 
 /**
- * Offsets of the one valid region, or `null` for anything else.
- *
- * This fails closed. Zero markers, duplicates, a pair the wrong way round, a
- * start with no end — all of them return `null` rather than a best guess, and
- * the caller falls back to its ordinary rules, which refuse to destroy
- * anything without an explicit permission. Being unsure is a reason to leave
- * a file alone, not a reason to pick a boundary.
+ * Offsets of the one valid region, or `null` for anything else. Fails closed:
+ * being unsure is a reason to leave a file alone, not to pick a boundary.
  *
  * @param {string} text
  * @returns {{ start: number, end: number } | null}
@@ -182,25 +144,14 @@ export function mergeManagedRegion(existing, incoming) {
 }
 
 /**
- * Adopt an existing file that predates the tool.
+ * Adopt an existing file that predates the tool: insert the generated block
+ * below its title and keep everything else. The file carries markers from
+ * then on, so later runs take the ordinary merge path.
  *
- * The merge above needs a managed region on *both* sides, so it cannot help
- * the one moment every adopter passes through: the first scaffold of a repo
- * that already has a hand-written `AGENTS.md` or `CLAUDE.md`. Before this,
- * `--force` deleted that file's content outright.
- *
- * Adoption inserts the generated block into the file and leaves everything
- * else exactly where it was. The author's content ends up below the end
- * marker, which is where user content belongs anyway, and the file carries
- * markers from then on — so every later run takes the ordinary merge path.
- *
- * Returns `null` when adoption does not apply, so the caller can fall back to
- * its normal rules:
- * - the incoming render has no managed region (`.agents/` canon),
- * - the existing file already has one (that is `mergeManagedRegion`'s job), or
- * - the existing file has markers that do not form a region. Inserting a
- *   block next to a broken pair would leave the file just as unmergeable and
- *   harder to repair, so an `ambiguous` file is never adopted — only reported.
+ * Returns `null` when adoption does not apply: the incoming render has no
+ * region (`.agents/` canon), or the existing file's markers are anything but
+ * `none` — a valid region is `mergeManagedRegion`'s job, and an ambiguous one
+ * is reported rather than added to.
  *
  * @param {string} existing - Current file contents, written by a human
  * @param {string} incoming - Freshly rendered contents
@@ -226,11 +177,9 @@ export function adoptManagedRegion(existing, incoming) {
 }
 
 /**
- * Where the generated block goes in a file the tool did not write.
- *
- * Below the title, so the file still opens with the author's own heading —
- * the same reason the rendered stubs keep their `# ` line outside the region.
- * Frontmatter, if any, stays first; some harnesses require it there.
+ * Where the generated block goes in a file the tool did not write: after
+ * frontmatter, if any, and below the title, so the file still opens with the
+ * author's own heading.
  *
  * @param {string} text
  * @returns {number} character offset to insert at

@@ -9,15 +9,12 @@ import { classifyRegion, hasManagedRegion } from './managed-region.js';
  * Check which output files already exist and would lose content.
  *
  * A file whose template and existing copy both carry a managed region is not
- * a conflict: the render replaces only the fenced block and leaves the
- * author's surrounding edits alone.
+ * a conflict: only the fenced block is replaced.
  *
- * **This is a prediction, not the verdict.** It compares the *unrendered*
- * template against the target, so it cannot tell a file that would change from
- * one the render would rewrite byte-identically, and it reports both. Only
- * `scaffold()` knows the difference, and it refuses with the true list — which
- * is why the CLI reports that refusal rather than calling this first. Use this
- * to warn ahead of time; do not use it to decide what a run will destroy.
+ * This is a prediction, not the verdict. It compares the *unrendered*
+ * template against the target, so it also reports files the render would
+ * rewrite byte-identically. `scaffold()` refuses with the true list; use this
+ * to warn ahead of time.
  *
  * @param {string} templateDir - Path to template/ directory
  * @param {string} outDir - Target output directory
@@ -48,13 +45,8 @@ export function checkExistingFiles(
 }
 
 /**
- * Split the conflicts into the two things `--force` would actually do.
- *
- * "Would be overwritten" stopped being true for every conflict once `--force`
- * learned to adopt a stub: a hand-written `AGENTS.md` keeps its content and
- * gains a managed region, while `.agents/` canon is still replaced wholesale.
- * Those are different enough that a user deciding whether to type `--force`
- * needs them apart.
+ * Split the conflicts into the two things `--force` would do: adopt a
+ * marker-less stub, keeping its content, or replace a file wholesale.
  *
  * @param {string} templateDir - Path to template/ directory
  * @param {string} outDir - Target output directory
@@ -85,9 +77,8 @@ export function classifyConflicts(templateDir, outDir, view, extname) {
       path.join(templateDir, templateRel),
       'utf8'
     );
-    // checkExistingFiles already excluded every file with a valid region, so
-    // what is left is either marker-less — adoptable, if the template owns a
-    // region — or carries broken markers, which only replacement can fix.
+    // Valid regions were already excluded; what is left is marker-less
+    // (adoptable if the template owns a region) or broken (replace only).
     const existing = fs.readFileSync(path.join(outDir, outputRel), 'utf8');
     const adoptable =
       hasManagedRegion(template) && classifyRegion(existing).kind === 'none';

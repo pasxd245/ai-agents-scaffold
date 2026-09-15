@@ -11,13 +11,8 @@ import { SKILL_FILE } from '../constants.js';
 /** @typedef {import('../config/rc.js').A2ScaffoldRc} A2ScaffoldRc */
 
 /**
- * Build and VCS artefacts that must never be copied into an installed skill.
- *
- * A source skill is a working directory, so it accumulates caches its own repo
- * gitignores. `fs.cpSync` copies what is on disk, not what is tracked, so
- * without this a `__pycache__` follows the skill into every project that
- * installs it — first noticed when `skill audit` flagged three `.pyc` files in
- * a skill whose repo ignores them.
+ * Build and VCS artefacts never copied into an installed skill. `fs.cpSync`
+ * copies what is on disk, not what is tracked.
  */
 const EXCLUDED_NAMES = new Set([
   '.git',
@@ -38,12 +33,9 @@ const EXCLUDED_EXTENSIONS = new Set(['.pyc', '.pyo', '.pyd']);
 /**
  * Decide whether a path should be copied into the installed skill.
  *
- * Symbolic links never are. `fs.cpSync` does not dereference by default, so a
- * link is copied as a link and keeps pointing wherever it pointed — out of the
- * skill, and out of the project. A skill shipping `notes.md -> ~/.ssh/id_rsa`
- * then reads as an ordinary file to the agent told to open it. The audit
- * reports links as high-severity ({@link auditSkill}); dropping them here is
- * the half that holds even when someone passes `--force`.
+ * Symbolic links never are: `fs.cpSync` copies a link as a link, so it would
+ * keep pointing outside the skill. The audit reports links as high-severity;
+ * dropping them here holds even under `--force`.
  *
  * @param {string} src - Absolute source path offered by `fs.cpSync`
  * @returns {boolean} true to copy
@@ -117,10 +109,8 @@ function installFromLocal(sourcePath, targetDir, options) {
     throw new Error(`Source path does not exist: ${sourcePath}`);
   }
 
-  // Validation follows a link; the copy filter drops it. A source whose
-  // SKILL.md is a symlink therefore passed validation and installed as a
-  // directory with no SKILL.md in it, reported as a success. The one file a
-  // skill cannot be without has to be a real file, before anything else runs.
+  // Validation follows a link but the copy filter drops it, so a symlinked
+  // SKILL.md would install as a skill with no SKILL.md. Refuse it here.
   const sourceSkillFile = path.join(sourcePath, SKILL_FILE);
   if (
     fs.existsSync(sourceSkillFile) &&
@@ -149,11 +139,9 @@ function installFromLocal(sourcePath, targetDir, options) {
 
   fs.mkdirSync(path.dirname(destPath), { recursive: true });
 
-  // Build the filtered copy beside the destination, check that what survived
-  // the filter is still a skill, and only then swap it in. Staging next to the
-  // destination keeps the final move a rename on one filesystem, so an
-  // existing installation is replaced whole or not at all — never left as
-  // the half of a copy that a failure got through.
+  // Stage the filtered copy beside the destination, validate what survived
+  // the filter, then rename it in: an existing install is replaced whole or
+  // not at all.
   const staging = fs.mkdtempSync(
     path.join(path.dirname(destPath), '.a2scaffold-install-')
   );

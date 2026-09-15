@@ -1,29 +1,15 @@
 /**
  * Enforcement drift.
  *
- * `.claude/settings.json` is seeded like the rest of the scaffold, but falling
- * behind it has a cost a stale doc does not: an `ask` rule protecting a new
- * directory is canon the harness is no longer guarding. So sync reports it.
+ * `.claude/settings.json` is seeded, but a required `ask` rule that has gone
+ * missing is canon the harness no longer guards, so sync reports it. Byte
+ * comparison would flag every reformat and every rule the user added, and a
+ * warning that is usually wrong gets skipped; so the question is whether each
+ * required rule is present **verbatim** — same string, same list.
  *
- * Reporting it on *any* byte difference does not work. The file is the user's
- * to extend — their own rules, their own key order, whatever their formatter
- * does to it — and every one of those differences would raise the same
- * "behind the template" warning, forever, on a file that is missing nothing.
- * A warning that is usually wrong is a warning people learn to skip past,
- * which is exactly the protection the message claims to be defending.
- *
- * So the question asked here is narrower than "has it changed": is every rule
- * the template requires still present, **verbatim**? Additions are fine.
- * Formatting is fine. A required rule that does not appear as the same string
- * in the same list is the finding.
- *
- * Verbatim is a deliberate limit, and the report says so. The check does not
- * evaluate glob coverage, so a repo that consolidated the template's rules
- * into one broader `Edit(/.agents/**)` of its own is told the narrower rules
- * are not present — which is true — and left to confirm that its broader rule
- * covers them. Reasoning about which of two permission patterns subsumes the
- * other is the harness's job, and getting it subtly wrong here would turn a
- * warning into false reassurance about protection.
+ * Verbatim is a deliberate limit and the report says so. Deciding whether a
+ * broader user rule subsumes a required one is the harness's grammar, and
+ * getting it subtly wrong would turn a warning into false reassurance.
  */
 
 /**

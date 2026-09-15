@@ -89,10 +89,9 @@ export function resolveScaffoldConfig({
 /**
  * A render stopped because a file needed a permission it was not given.
  *
- * Carries the two lists apart, because they are two different questions to put
- * to a human: "may I keep your file and add a block to it?" and "may I delete
- * what is in this file?". Answering the first should never require answering
- * the second.
+ * The two lists are kept apart because they are two different questions to
+ * put to a human: "may I add a block to your file?" and "may I delete what is
+ * in it?".
  */
 export class ScaffoldRefusal extends Error {
   /**
@@ -125,30 +124,19 @@ export class ScaffoldRefusal extends Error {
 /**
  * Copy a rendered tree onto the target, preserving managed-region surroundings.
  *
- * This is the last thing standing between a render and someone's file, so it
- * decides for itself what it is allowed to destroy rather than trusting the
- * CLI's preflight. The preflight predicts output paths, and a prediction that
- * drifts from the renderer used to turn straight into silent data loss here —
- * an unguarded `copyFileSync` on a file no conflict list had ever mentioned.
+ * This is the last thing between a render and someone's file, so it decides
+ * for itself what it may destroy rather than trusting a preflight. Three
+ * permissions, deliberately separate:
  *
- * Three permissions, deliberately separate:
- *
- * - **Merge** — both sides carry a managed region. Always allowed; only the
- *   fenced block changes and nothing outside it can be lost.
- * - **Adopt** — the template owns a region, the existing file has none. Needs
- *   `adopt`: the author's content survives, but their file is still edited.
+ * - **Merge** — both sides carry a managed region. Always allowed.
+ * - **Adopt** — the template owns a region, the existing file has none.
+ *   Needs `adopt`.
  * - **Replace** — everything else, `.agents/` canon included. Needs `force`.
  *
- * Rewriting a file with byte-identical content is none of the three: it
- * destroys nothing, so a re-scaffold that changes nothing needs no permission
- * and never appears in a refusal. A conflict list padded with files that are
- * already correct is how a `--force` prompt gets typed past without reading.
- *
- * The plan is built in full before a single byte is written, so a refusal
- * leaves the target exactly as it was rather than half-updated. That also
- * makes the refusal the authoritative account of what a run would destroy —
- * the CLI reports {@link ScaffoldRefusal}'s lists rather than predicting its
- * own, so there is one answer to the question and not two.
+ * A byte-identical rewrite needs no permission and never appears in a
+ * refusal. The whole plan is built before anything is written, so a refusal
+ * leaves the target exactly as it was, and its lists are the authoritative
+ * account of what a run would touch.
  *
  * @param {string} stagingDir - Freshly rendered tree
  * @param {string} outDir - Destination
@@ -196,11 +184,8 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
       return;
     }
 
-    // Computed either way: with `adopt` it is the gentler outcome, without it
-    // it is what tells a refusal which of the two questions to ask. A file
-    // whose markers are broken — duplicated, inverted, unclosed — is not
-    // adoptable, so it lands under `needsForce`: replacing it is the only
-    // thing a run could do, and that needs the destructive permission.
+    // Computed even without `adopt`: it decides which list a refusal uses.
+    // Broken markers are not adoptable, so they fall through to `force`.
     const wrapped = adoptManagedRegion(existing, incoming);
     if (adopt && wrapped !== null) {
       plan.push({ rel, content: wrapped });
@@ -210,7 +195,6 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
 
     if (existing === incoming) return;
 
-    // `force` is the stronger permission and means what it says: replace.
     if (force) {
       plan.push({ rel, content: null });
       return;
@@ -273,9 +257,8 @@ export async function scaffold({
   });
   const outDir = config.outDir;
 
-  // Render to a staging directory first, then merge. Rendering straight into
-  // the target would clobber a file before its managed region could be read
-  // back, and a failure mid-render would leave the target half-written.
+  // Render to staging, then merge; rendering in place would clobber a file
+  // before its region could be read back.
   const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2scaffold-'));
   try {
     config.outDir = stagingDir;
