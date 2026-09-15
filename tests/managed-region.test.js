@@ -125,6 +125,26 @@ describe('adoptManagedRegion', () => {
     assert.ok(out.includes('just prose'));
   });
 
+  it('keeps the indentation of the first line after the title', () => {
+    // A hand-written CLAUDE.md often opens with an indented code block. The
+    // adopter used to strip all leading whitespace, not just blank lines, so
+    // the block's first line lost its indent while the rest kept it.
+    const existing = '# T\n\n    code line 1\n    code line 2\n\nprose\n';
+    const out = adoptManagedRegion(existing, incoming);
+    assert.ok(out.includes('\n    code line 1\n    code line 2\n'), out);
+    assert.ok(out.endsWith('\n\nprose\n'), out);
+  });
+
+  it('does not turn an indented example marker into a live one', () => {
+    // Four spaces is an indented code block; a marker shown there is an
+    // example. De-indenting it created a second live pair that `sync` then
+    // refused forever.
+    const existing =
+      '# T\n\n    <!-- a2scaffold:start -->\n    <!-- a2scaffold:end -->\n';
+    const out = adoptManagedRegion(existing, incoming);
+    assert.equal(classifyRegion(out).kind, 'valid', out);
+  });
+
   it('declines when the incoming render has no region', () => {
     // `.agents/` canon has no managed region on purpose, so --force must keep
     // meaning "replace" there rather than quietly prepending a block.
@@ -169,6 +189,24 @@ describe('classifyRegion', () => {
       assert.equal(state.start, '# T\n\n'.length);
       assert.equal(state.end, `# T\n\n${S}\nbody\n${E}`.length);
     }
+  });
+
+  it('recognises markers in a file with CRLF line endings', () => {
+    const crlf =
+      '# T\r\n\r\n<!-- a2scaffold:start -->\r\nOLDBODY\r\n<!-- a2scaffold:end -->\r\n\r\nmine\r\n';
+    const state = classifyRegion(crlf);
+    assert.equal(state.kind, 'valid', JSON.stringify(state));
+    const merged = mergeManagedRegion(
+      crlf,
+      '<!-- a2scaffold:start -->\nNEWBODY\n<!-- a2scaffold:end -->\n'
+    );
+    assert.ok(
+      merged !== null,
+      'CRLF file must merge, not fall through to adopt'
+    );
+    assert.ok(merged.includes('NEWBODY'));
+    assert.ok(!merged.includes('OLDBODY'));
+    assert.ok(merged.endsWith('\r\n\r\nmine\r\n'), JSON.stringify(merged));
   });
 
   it('names the reason for each ambiguous shape', () => {

@@ -59,20 +59,23 @@ export function classifyRegion(text) {
   let offset = 0;
 
   for (const line of text.split('\n')) {
-    const opener = FENCE_RE.exec(line);
+    // Match on the line without its `\r`: a CRLF file otherwise classifies as
+    // having no region at all, and the next run adopts a second block into it.
+    const bare = line.replace(/\r$/, '');
+    const opener = FENCE_RE.exec(bare);
     if (fence === null) {
       if (opener) {
         fence = opener[1];
-      } else if (START_LINE_RE.test(line)) {
+      } else if (START_LINE_RE.test(bare)) {
         starts.push(offset);
-      } else if (END_LINE_RE.test(line)) {
-        ends.push(offset + line.replace(/\r$/, '').length);
+      } else if (END_LINE_RE.test(bare)) {
+        ends.push(offset + bare.length);
       }
     } else if (
       opener &&
       opener[1][0] === fence[0] &&
       opener[1].length >= fence.length &&
-      line.slice(opener[0].length).trim() === ''
+      bare.slice(opener[0].length).trim() === ''
     ) {
       fence = null;
     }
@@ -166,7 +169,10 @@ export function adoptManagedRegion(existing, incoming) {
 
   const at = insertionPoint(existing);
   const before = existing.slice(0, at).replace(/\s*$/, '');
-  const after = existing.slice(at).replace(/^\s*/, '');
+  // Drop only whole blank lines. Stripping every leading whitespace character
+  // de-indented the first line of the author's content — a code block under
+  // the title came out broken, and the tool reported the content as kept.
+  const after = existing.slice(at).replace(/^(?:[ \t]*\r?\n)*/, '');
 
   return [
     before,
