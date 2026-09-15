@@ -226,6 +226,25 @@ describe('classifyRegion', () => {
 
 // ── end-to-end: re-scaffolding is non-destructive ───────────────────
 
+describe('resolveScaffoldConfig', () => {
+  it('does not expose the process environment to templates', () => {
+    // `env: process.env` was merged into every view, so a template could
+    // render a token into a committed file. Nothing shipped used it.
+    process.env.A2SCAFFOLD_TEST_SECRET = 'leak-me';
+    try {
+      const { view } = resolveScaffoldConfig({
+        templateName: TEMPLATE,
+        outputDir: '.',
+        overrides: {},
+      });
+      assert.equal(view.env?.A2SCAFFOLD_TEST_SECRET, undefined);
+      assert.equal(view.env?.PATH, undefined);
+    } finally {
+      delete process.env.A2SCAFFOLD_TEST_SECRET;
+    }
+  });
+});
+
 describe('re-scaffolding an existing project', () => {
   /** @type {string} */
   let tmpDir;

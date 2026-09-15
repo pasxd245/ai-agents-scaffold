@@ -500,6 +500,10 @@ you may have edited.
    anything under `.agents/`. The non-destructive path for a stub that has no
    markers is the new `--adopt`. Read the CLI's adopt/overwrite split before
    passing either.
+7. **Templates no longer see the environment.** `{{ env.X }}` rendered any
+   process variable into generated files, secrets included; it now renders
+   empty. Custom `--use` templates that relied on it should take the value
+   from `values.yaml` instead.
 
 Skills are unaffected. `skill validate` now prints a conformance score next to
 its verdict, and `skill audit` is new; see the [Skills Guide](skills.md).

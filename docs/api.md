@@ -118,7 +118,7 @@ await scaffold({
 });
 ```
 
-All merged values (plus `process.env` as `env`) are available in Handlebars templates as `{{ project.name }}`, `{{ env.HOME }}`, etc.
+All merged values are available in Handlebars templates as `{{ project.name }}`, etc. The process environment is **not** exposed to templates: a `{{ env.X }}` in a template renders empty. Pass what a template needs through `values.yaml` or `overrides`, where it is visible.
 
 ---
 

@@ -82,7 +82,12 @@ export function resolveScaffoldConfig({
     paths.templateRoot
   );
 
-  config.view = deepMerge(config.view, { ...overrides, env: process.env });
+  // Values and CLI overrides only. The whole process environment used to be
+  // merged in as `env`, so any template — including one passed with `--use` —
+  // could render a token into a file the user then commits. Nothing shipped
+  // here ever read it. A template that needs an environment value asks for it
+  // through `values.yaml`, where the key is visible.
+  config.view = deepMerge(config.view, overrides);
   return { config, view: config.view, paths };
 }
 
