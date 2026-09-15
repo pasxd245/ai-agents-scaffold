@@ -164,6 +164,7 @@ await scaffold({
 ## Documentation
 
 - [CLI Usage Guide](docs/usage.md) — scaffolding options, workflows, and examples
+- [Upgrading from 0.1.x](docs/usage.md#upgrading-from-01x) — the two file moves v0.2.0 asks of an existing repo
 - [Skills Guide](docs/skills.md) — install, list, validate, audit, and reference agent skills
 - [API Reference](docs/api.md) — programmatic API for custom tooling
 

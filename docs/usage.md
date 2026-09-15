@@ -472,6 +472,38 @@ The following files already exist:
     - .agents/AGENTS.md
 ```
 
+## Upgrading from 0.1.x
+
+Version 0.2.0 changes where the generated instruction files live. A repo
+scaffolded by 0.1.x keeps working, but it carries both layouts until you do the
+moves below. Nothing here is automated, on purpose: each step touches a file
+you may have edited.
+
+1. **Preview, then sync.** `npx a2scaffold sync --dry-run`, then
+   `npx a2scaffold sync`. It creates the root `CLAUDE.md` and `AGENTS.md` and
+   leaves every existing file alone — including the old `.claude/CLAUDE.md`.
+2. **Move your `.claude/CLAUDE.md` content up.** Anything you wrote there goes
+   below the `<!-- a2scaffold:end -->` marker in the root `CLAUDE.md`. Then
+   delete `.claude/CLAUDE.md`. Claude Code reads both locations, so keeping
+   both loads your instructions twice.
+3. **Root `AGENTS.md` is now on by default** (`agents.agentsmd: true`). Set it
+   to `false` in `.a2scaffold/values.yaml` if you do not want one, and re-run
+   `sync`.
+4. **`claude.kb_path` changed.** If your values file overrides it, replace
+   `../.agents/AGENTS.md` with `.agents/AGENTS.md`; the stub now sits at the
+   root, so the path is relative to the root.
+5. **Track `.claude/settings.json`.** It carries the permission rules that
+   back the `.agents/` authority table, so it belongs in git. If your
+   `.gitignore` lists it, swap that line for `.claude/settings.local.json`.
+6. **`--force` means replace.** It used to mean "overwrite the files the
+   scaffold owns"; it now replaces every conflicting file wholesale, including
+   anything under `.agents/`. The non-destructive path for a stub that has no
+   markers is the new `--adopt`. Read the CLI's adopt/overwrite split before
+   passing either.
+
+Skills are unaffected. `skill validate` now prints a conformance score next to
+its verdict, and `skill audit` is new; see the [Skills Guide](skills.md).
+
 ## Skills management
 
 a2scaffold includes a `skill` subcommand for installing, listing,
