@@ -1,6 +1,6 @@
 ---
 name: a2scaffold
-description: Operate the a2scaffold CLI on the user's behalf — scaffold or re-scaffold agent instruction files, install and screen skills, and create skill refs. Use whenever the user asks to set up, re-generate, update, or repair .agents/ and the harness stubs (CLAUDE.md, AGENTS.md, GEMINI.md, copilot-instructions.md), or to add, validate, or audit a skill.
+description: Operate the a2scaffold CLI on the user's behalf — scaffold or re-scaffold agent instruction files, install and screen skills, and create skill refs. Use whenever the user asks to set up, re-generate, update, or repair .agents/ and the harness stubs (CLAUDE.md, AGENTS.md, GEMINI.md, copilot-instructions.md), or to add, validate, or audit a skill, or to review every skill a repo already has.
 metadata:
   author: a2scaffold
   version: '1.0'
@@ -11,7 +11,7 @@ metadata:
 Activate this skill when the user asks to:
 
 - Set up agent instruction files in a repo, or re-generate them after an upgrade
-- Add, install, validate, or audit a skill
+- Add, install, validate, or audit a skill, or review every skill in a repo
 - Share skills with another agents directory
 - Repair `.agents/` or a harness stub that has drifted
 
@@ -159,6 +159,33 @@ score does not block an install; it means the skill will trigger unreliably.
 The usual causes are a description under ~30 words, or one that says what the
 skill does without saying _when_ to use it.
 
+### Reviewing every skill in a repo
+
+```bash
+npx a2scaffold skill validate            # spec + conformance, all skills
+npx a2scaffold skill audit               # supply-chain screen, all skills
+npx a2scaffold skill validate -d .       # skills/ kept at the repo root
+```
+
+Both commands read `<dir>/skills/`, and `-d` names `<dir>`. A repo that keeps
+its skills outside `.agents/` needs no migration: point at the directory that
+holds `skills/`. Do not move or copy skills to make the tool happy;
+`skill add ./skills/<name>` is for a user who wants `.agents/` to own a copy.
+
+Report in three buckets and keep them apart:
+
+- **Spec errors** (`✘`) — the skill is invalid and will not install. Block.
+- **Conformance warnings** (`!`) — valid, but will trigger unreliably. Advice.
+- **Audit findings** — read the flagged lines and say what they actually do.
+  The severity label is where to look, not the verdict.
+
+Then say what the tools did not look at, because the user will otherwise assume
+they did: whether the instructions are correct or safe to follow, whether the
+files a skill links to exist, and whether a skill under a harness directory is
+flat. The last one you check by eye — `.claude/skills/group/name/` validates
+and is never loaded. The full list is in the Skills Guide under _What validate
+and audit do not check_.
+
 ### Sharing across directories
 
 ```bash
@@ -168,6 +195,10 @@ npx a2scaffold skill ref --skill all --from .agents --to .github
 `skill ref` writes lightweight pointers, not copies — use it to expose the same
 skills to a second harness. Use `skill add` when the destination needs its own
 editable copy.
+
+For a repo whose skills sit at the root, `--from .` works: the pointer is
+anchored inside the repo, so it survives a clone under another name. Ref into a
+harness directory one skill at a time; those directories must stay flat.
 
 ## Governance
 
@@ -190,3 +221,4 @@ this file.
 | `skill 'x' not found locally`      | Name is not in the pool, and no `--from` | Use the printed suggestion; do not guess a registry         |
 | Conditional file did not appear    | Its `agents.*` flag is false             | Set the flag in values, then re-run                         |
 | Skill installed but never triggers | Weak description                         | `skill validate <name>`, fix what it reports                |
+| Skills live in `<root>/skills/`    | Layout predates `.agents/`               | `-d .` on validate, audit and ref; do not migrate           |

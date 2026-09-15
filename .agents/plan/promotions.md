@@ -347,6 +347,8 @@ sibling layout the tool generates and portable for the root-level one.
 `context/skill-refs.md` stated the old formula, so it is updated to the new one
 in the same commit; the field meanings are unchanged.
 
-Touched under the read-only path: `context/skill-refs.md` (path computation).
+Touched under the read-only path: `context/skill-refs.md` (path computation),
+and `skills/a2scaffold/SKILL.md` (reinstalled from the pool after it gained a
+whole-repo skill review procedure and the `-d .` layout note).
 
 **Promoted by**: Vien Pham (plan approved in session; drafted by Claude Code)
