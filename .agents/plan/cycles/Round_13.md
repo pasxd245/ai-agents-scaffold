@@ -34,7 +34,7 @@ OWASP Top 10 for Agentic Applications 2026, and Snyk's ToxicSkills audit.
 
 ## Do
 
-Landed on `feat/restructure-agent-instructions`, 22 commits, each green.
+Landed on `feat/restructure-agent-instructions`, 32 commits, each green.
 Grouped by area rather than by date, because that is how a reviewer reads it:
 
 | Area                                   | Commits                                                                 |
@@ -43,6 +43,7 @@ Grouped by area rather than by date, because that is how a reviewer reads it:
 | Skill conformance and supply chain     | `80c7a84` `fb6d5e7` `38594dc` `0fc5c54` `a2111ce`                       |
 | Non-destructive scaffold and adoption  | `ac5c006` `eff7752` `74b0bb8` `b3ff47d` `6568095` `89e35be`             |
 | `sync`                                 | `78680ba`                                                               |
+| Release prep, 2026-09-15               | `56d728e` `a1da44e` `fb5cf93` `348e525` `7e3a85e` + round record + bump |
 | Pre-review fixes                       | `85bcf5c` `68e8474`                                                     |
 | Round record and research baseline     | `cfcb5e8` `b83d57e`                                                     |
 
@@ -343,6 +344,11 @@ gitignored — citing it here was a mistake this file used to make.
    verified by hand plus a dry-run diff.
 7. **`--values-file` / `--values-dir` flags** — the only way to test a non-default
    `values.yaml` today is to edit it in place, which this round did repeatedly.
+7b. **`validate` warning for grouped skills in a harness dir** — when `-d`
+    resolves to `.claude`, `.codex`, `.gemini` or `.github` and a discovered
+    name contains `/`, warn `nested-in-harness-dir`. Evidence: one live sighting
+    (2026-08-29). Needs a hard-coded list of harness names, so it ships only if
+    a second repo hits it; until then the a2scaffold skill checks by eye.
 
 ### Standing
 
@@ -354,7 +360,21 @@ gitignored — citing it here was a mistake this file used to make.
 
 8. **CHANGELOG for v0.2.0** — the instruction-file change is breaking for
    existing scaffolded projects.
+   _2026-09-15_: left to `release.yml`, which regenerates the file with
+   git-cliff at tag time. Merge the PR with a merge commit; a squash drops the
+   `!` marker from `765ac08` and collapses the log to one line.
 9. **Migration note** — `.claude/CLAUDE.md` → `CLAUDE.md`, and the new root
    `AGENTS.md`. Consider a `migrate` command, or document the two moves.
+   _2026-09-15_: documented as "Upgrading from 0.1.x" in `docs/usage.md`
+   (`348e525`). No `migrate` command: nobody has needed one yet, and each
+   step touches a file the user may have edited.
 10. **Decide the version bump** — breaking changes pre-1.0; per Q5 of the repo
     refactor plan, the bump is a human decision per release.
+    _2026-09-15_: **v0.2.0**, decided in session. `765ac08` carries a
+    `BREAKING CHANGE:` footer and `--force` changed meaning; pre-1.0 SemVer
+    puts that on the minor. A 0.1.1 would mislabel a layout change.
+11. **Root-level `skills/` layouts** — a real repo kept its skills at
+    `<root>/skills`. Decided 2026-09-15: adopt, do not migrate. `-d .` already
+    covered validate/audit; `skill ref --from .` produced a pointer anchored
+    above the repo and is fixed (`56d728e`). Record:
+    [`memory/2026-09-15-root-level-skills-adopt-not-migrate.md`](../../memory/2026-09-15-root-level-skills-adopt-not-migrate.md).
