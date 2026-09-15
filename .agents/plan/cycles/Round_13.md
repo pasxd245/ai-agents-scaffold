@@ -350,6 +350,14 @@ gitignored — citing it here was a mistake this file used to make.
     (2026-08-29). Needs a hard-coded list of harness names, so it ships only if
     a second repo hits it; until then the a2scaffold skill checks by eye.
 
+7c. **`skillsDir` in the rc file — v0.2.x, TBD.** Requested 2026-09-15 for a
+    repo that keeps skills at `<root>/skills`: a default for `-d` so the flag
+    is not typed on every call. Shape if built: one key, read by
+    `parseSkillArgs` as the default for `-d`; the flag always wins. Reopens
+    the "type-paths are not rc-configurable" decision in
+    `docs/agents/plan/ecosystem-ideas.draft.md`, so it needs a human yes
+    first. Not in v0.2.0.
+
 ### Standing
 
 11. **Re-run the practice survey** — due 2027-02-28, or earlier on a trigger
