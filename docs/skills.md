@@ -161,6 +161,7 @@ Checks each skill's `SKILL.md` for:
 - Required `name` field (1-64 chars, lowercase alphanumeric + hyphens, matches directory name)
 - Required `description` field (1-1024 chars)
 - Optional field constraints (`compatibility` max 500 chars)
+- Skill-ref chains resolve: the target exists, there is no cycle, and the chain is at most 5 hops deep
 
 Exits with code 1 if any skill is invalid. Output for each skill is shown as `✔ <name> [skill|skill-ref] — valid` or `✘ <name> [type] — invalid` followed by error details.
 
@@ -239,6 +240,28 @@ Skills fetched over the network are screened automatically: `skill add` with
 Pass `--force` to install anyway once you have reviewed the source. Local
 installs are not screened — you already have the files.
 
+### What `validate` and `audit` do not check
+
+Both commands are narrow on purpose, and neither certifies a skill. Know the
+gaps before you rely on a green run:
+
+- **`validate` does no security screening.** A spec-valid, 100/100 skill can
+  still exfiltrate your keys. That is `audit`'s job, and only its job.
+- **Neither checks harness discoverability.** Claude Code reads
+  `<skills-dir>/<name>/SKILL.md` and nothing deeper, so a grouped skill at
+  `.claude/skills/group/name/` is spec-valid and never loaded. Grouping is fine
+  inside `.agents/`; a harness directory must be flat.
+- **No file-existence check.** Links to `scripts/`, `references/` or
+  `assets/` are not followed; a missing file is found at run time.
+- **No name-uniqueness check.** Two skills named `research` at different
+  nesting levels both validate.
+- **No judgement of the instructions themselves.** Nothing decides whether a
+  procedure is correct, complete or safe to follow, and nothing is executed in
+  a sandbox to find out.
+- **`audit` is pattern matching.** It reads text with regular expressions and
+  can be evaded by anything it does not name. Local `skill add` is not
+  screened at all — you already have the files, so read them.
+
 ### `a2scaffold skill ref --skill <name|all> --to <dir>`
 
 Create lightweight **skill-ref** pointers in a destination agents directory that resolve back to skills installed in a source agents directory. Skill refs let multiple agent directories (`.claude`, `.github`, `.gemini`, …) share a single canonical skill source without duplicating files.
@@ -266,11 +289,33 @@ A skill-ref is a `SKILL.md` whose frontmatter `metadata.type` is `skill-ref` and
 
 `-d, --agents-dir <dir>` (default `.agents`) applies to `skill add`, `skill list`, `skill validate`, and `skill audit`. `skill ref` uses `--from` and `--to` instead.
 
-| Flag                 | Short | Default   | Applies to                 | Description                                               |
-| -------------------- | ----- | --------- | -------------------------- | --------------------------------------------------------- |
-| `--agents-dir <dir>` | `-d`  | `.agents` | add, list, validate, audit | Target agents directory (e.g. `.agents`, `.claude`, etc.) |
-| `--from <name>`      |       |           | add                        | Fetch from a registry defined in `.a2scaffoldrc.json`     |
-| `--force`            | `-f`  |           | add, ref                   | Overwrite an existing skill or skill-ref                  |
+| Flag                 | Short | Default   | Applies to                 | Description                                                     |
+| -------------------- | ----- | --------- | -------------------------- | --------------------------------------------------------------- |
+| `--agents-dir <dir>` | `-d`  | `.agents` | add, list, validate, audit | Directory that holds `skills/` (e.g. `.agents`, `.claude`, `.`) |
+| `--from <name>`      |       |           | add                        | Fetch from a registry defined in `.a2scaffoldrc.json`           |
+| `--force`            | `-f`  |           | add, ref                   | Overwrite an existing skill or skill-ref                        |
+
+### Skills kept outside `.agents/`
+
+Every skill command reads `<dir>/skills/`, and `-d` names `<dir>`. A repo
+that keeps its skills at the top level — `<root>/skills/<name>/SKILL.md`, the
+layout of most published skill collections — is one flag away:
+
+```bash
+a2scaffold skill validate -d .                        # validate ./skills/*
+a2scaffold skill audit -d .                           # screen them
+a2scaffold skill ref --skill pdf --from . --to .claude   # expose one to a harness
+```
+
+Nothing is moved or rewritten. `skill ref` writes a pointer under
+`.claude/skills/` whose path stays inside the repo, so it survives a clone
+under another folder name. Ref skills into a harness directory one at a time:
+harness skill directories are one level deep, and `--skill all` would also
+project any grouped skill, which the harness never finds.
+
+If you would rather have `.agents/` own a copy, `skill add ./skills/<name>`
+copies the skill in. That is a choice, not a requirement; the tool does not
+migrate layouts on its own.
 
 ## Skill format reference
 

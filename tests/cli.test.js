@@ -217,3 +217,52 @@ describe('CLI skill commands (nested skills)', () => {
     assert.ok(!out.includes('not a skill directory'), out);
   });
 });
+
+describe('CLI skill commands (skills/ outside .agents)', () => {
+  // Some repos keep their skills at `<root>/skills/` with no `.agents/` at
+  // all. Every skill command reads `<dir>/skills/`, so `-d <root>` covers that
+  // layout without moving anything. This pins it as a contract rather than an
+  // accident of how the path is joined.
+  let tmpDir;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2s-root-skills-'));
+    const skillDir = path.join(tmpDir, 'skills', 'demo');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.copyFileSync(
+      path.join(__dirname, 'fixtures', 'valid-skill', 'SKILL.md'),
+      path.join(skillDir, 'SKILL.md')
+    );
+    // The fixture is named for its own directory; rename it for this one.
+    const file = path.join(skillDir, 'SKILL.md');
+    fs.writeFileSync(
+      file,
+      fs.readFileSync(file, 'utf8').replace('name: valid-skill', 'name: demo')
+    );
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('validates skills kept at the repo root via -d <root>', () => {
+    const out = execFileSync(
+      'node',
+      [CLI_PATH, 'skill', 'validate', '-d', tmpDir],
+      { encoding: 'utf8' }
+    );
+    assert.match(out, /demo \[skill\] — valid/);
+  });
+
+  it('audits skills kept at the repo root via -d <root>', () => {
+    const out = execFileSync(
+      'node',
+      [CLI_PATH, 'skill', 'audit', '-d', tmpDir],
+      {
+        encoding: 'utf8',
+      }
+    );
+    assert.match(out, /demo/);
+    assert.ok(!out.includes('No skills directory found'), out);
+  });
+});

@@ -58,32 +58,32 @@ skill add — install a skill
     ./path/to/skill         Local directory
     https://github.com/...  GitHub tree URL to one skill directory
   Options:
-    -d, --agents-dir <dir>  Target agents directory (default: ".agents")
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
         --from <registry>   Fetch from a named registry in .a2scaffoldrc.json
     -f, --force             Install despite a high-severity audit finding,
                             and replace an existing skill of the same name
 
 skill list — show installed skills
   Options:
-    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
 
 skill validate [name] — validate skill frontmatter
   Args:
     name                    Optional skill directory name; omit to validate all
   Options:
-    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
 
 skill audit [name] — screen skills for supply-chain risks
   Args:
     name                    Optional skill directory name; omit to audit all
   Options:
-    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
 
 skill ref — create lightweight pointers to skills in another agents dir
   Options:
         --skill <name|all>  Skill name, or "all" to ref every skill (required)
-        --from <dir>        Source agents directory (default: ".agents")
-        --to <dir>          Destination agents directory (required)
+        --from <dir>        Source directory that holds skills/ (default: ".agents")
+        --to <dir>          Destination directory that holds skills/ (required)
     -f, --force             Overwrite existing skill refs at the destination
 
 Examples:
@@ -97,6 +97,7 @@ Examples:
   npx a2scaffold skill add planning/master-plan
   npx a2scaffold skill add ./my-skill
   npx a2scaffold skill add code-review --from main
+  npx a2scaffold skill validate -d .             # skills/ kept at the repo root
   npx a2scaffold skill list
   npx a2scaffold skill validate
   npx a2scaffold skill ref --skill all --from .agents --to .github
