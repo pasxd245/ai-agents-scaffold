@@ -349,6 +349,7 @@ in the same commit; the field meanings are unchanged.
 
 Touched under the read-only path: `context/skill-refs.md` (path computation),
 and `skills/a2scaffold/SKILL.md` (reinstalled from the pool after it gained a
-whole-repo skill review procedure and the `-d .` layout note).
+whole-repo skill review procedure, the `-d .` layout note, and a correction:
+per-repo values live in `.a2scaffold/values.*`, not in the rc file).
 
 **Promoted by**: Vien Pham (plan approved in session; drafted by Claude Code)

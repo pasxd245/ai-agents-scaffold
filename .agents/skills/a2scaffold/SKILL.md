@@ -57,7 +57,8 @@ flag and re-run; do not `mkdir` them by hand, or they arrive without the README,
 template, and permission rules the flag brings with them.
 
 Values come from the template's `values.yaml`, overridable per repo through
-`.a2scaffold/.a2scaffoldrc.{json,yaml,yml}`.
+`.a2scaffold/values.{json,yaml,yml}`. The rc file
+(`.a2scaffold/.a2scaffoldrc.*`) holds skill registries only.
 
 ### Updating an existing repo — reach for `sync` first
 
