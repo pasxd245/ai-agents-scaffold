@@ -69,6 +69,11 @@ function isInstallable(src) {
  */
 export function installSkill(source, targetDir, options = {}) {
   const rc = options.rc ?? {};
+  if (isBareOrNested(source) && hasDotSegment(source)) {
+    throw new Error(
+      `Invalid skill name "${source}": a name may not contain "." or ".." segments.`
+    );
+  }
   const resolved = resolveSkillSource(source, { from: options.from, rc });
 
   // Decide destination name. For bare/nested names that hit the local
@@ -87,6 +92,17 @@ export function installSkill(source, targetDir, options = {}) {
     force: options.force,
     destName,
   });
+}
+
+/**
+ * A bare or nested name is installed at `<skills>/<name>` verbatim, so a
+ * `.` or `..` segment would place it, and a later `--force` removal,
+ * outside the directory the caller named.
+ *
+ * @param {string} name
+ */
+function hasDotSegment(name) {
+  return name.split(/[\\/]/).some((seg) => seg === '.' || seg === '..');
 }
 
 /**
@@ -130,6 +146,10 @@ function installFromLocal(sourcePath, targetDir, options) {
 
   const skillName = options.destName ?? path.basename(sourcePath);
   const destPath = path.join(targetDir, skillName);
+  const inside = path.relative(targetDir, destPath);
+  if (inside.startsWith('..') || path.isAbsolute(inside)) {
+    throw new Error(`Refusing to install "${skillName}" outside ${targetDir}.`);
+  }
 
   if (fs.existsSync(destPath) && !options.force) {
     throw new Error(

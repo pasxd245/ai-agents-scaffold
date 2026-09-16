@@ -329,6 +329,17 @@ describe('installSkill (local)', () => {
     assert.ok(fs.existsSync(path.join(tmpTarget, 'valid-skill', 'SKILL.md')));
   });
 
+  it('refuses a name that climbs out of the skills directory', () => {
+    // The pool lookup joined the name as given, so `..` resolved to a real
+    // directory and the install (and a forced removal) landed outside `-d`.
+    assert.throws(
+      () =>
+        installSkill('research/../../../templates/skills/research', tmpTarget),
+      /may not contain/
+    );
+    assert.deepEqual(fs.readdirSync(tmpTarget), []);
+  });
+
   it('fails when skill already exists without --force', () => {
     const source = path.join(FIXTURES, 'valid-skill');
     installSkill(source, tmpTarget);
@@ -1073,6 +1084,44 @@ describe('installSkill (symlinked SKILL.md)', () => {
 // Every finding below was a false positive found by running the audit over a
 // production .agents/ that was not written with this tool in mind.
 
+describe('a SKILL.md that opens with a UTF-8 BOM', () => {
+  let tmp;
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(FIXTURES, '_tmp-bom-'));
+    const dir = path.join(tmp, 'bom-skill');
+    fs.mkdirSync(dir);
+    fs.writeFileSync(
+      path.join(dir, 'SKILL.md'),
+      '\uFEFF---\nname: bom-skill\ndescription: Saved by an editor that writes a byte-order mark first.\n---\n\n## Procedure\n\n1. Do it\n'
+    );
+  });
+  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+
+  it('still parses as valid', () => {
+    const result = validateSkill(path.join(tmp, 'bom-skill'));
+    assert.deepEqual(result.errors, []);
+    assert.equal(result.valid, true);
+    assert.equal(result.skill.name, 'bom-skill');
+  });
+
+  it('is not reported as hidden text', () => {
+    const { findings } = auditSkill(path.join(tmp, 'bom-skill'));
+    assert.ok(
+      !findings.some((f) => f.message.includes('zero-width')),
+      JSON.stringify(findings)
+    );
+  });
+
+  it('still flags the same code point later in the file', () => {
+    fs.appendFileSync(
+      path.join(tmp, 'bom-skill', 'SKILL.md'),
+      '\nnormal\uFEFFtext\n'
+    );
+    const { findings } = auditSkill(path.join(tmp, 'bom-skill'));
+    assert.ok(findings.some((f) => f.message.includes('zero-width')));
+  });
+});
+
 describe('auditSkill (false-positive calibration)', () => {
   const skill = () => auditSkill(path.join(FIXTURES, 'benign-tooling-skill'));
 
@@ -1118,8 +1167,17 @@ describe('installSkill (excludes build artefacts)', () => {
   it('does not copy caches, compiled files or node_modules', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-junk-'));
     try {
-      installSkill(path.join(FIXTURES, 'junk-skill'), tmp);
-      const dest = path.join(tmp, 'junk-skill');
+      // `node_modules/` is gitignored, so a checked-in copy never reaches a
+      // clean clone and the assertion below would pass vacuously. Build the
+      // junk in a scratch copy of the fixture instead.
+      const source = path.join(tmp, 'src', 'junk-skill');
+      fs.cpSync(path.join(FIXTURES, 'junk-skill'), source, { recursive: true });
+      fs.mkdirSync(path.join(source, 'node_modules'), { recursive: true });
+      fs.writeFileSync(path.join(source, 'node_modules', 'dep.js'), '');
+
+      const out = path.join(tmp, 'out');
+      installSkill(source, out);
+      const dest = path.join(out, 'junk-skill');
 
       // The skill itself arrives intact.
       assert.ok(fs.existsSync(path.join(dest, 'SKILL.md')));
