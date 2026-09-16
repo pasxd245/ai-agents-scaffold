@@ -4,16 +4,84 @@
 project:
   name: 'my-project'
 
-# To enable/disable agents, set to true/false
-# Note: JavaScript falsy values (false, 0, '', null, undefined) will be treated as false
+# Which agent-facing stubs to generate.
+#
+# `.agents/AGENTS.md` is the heart — always generated, and the single place
+# project knowledge lives. Every file below is a stub that points at it, so
+# the flags here are purely about which harnesses you want wired up.
+#
+#   agentsmd  Root AGENTS.md, the cross-tool convention read by Codex, Cursor,
+#             Jules, Devin, Amp, Zed, Windsurf and Aider.
+#   claude    CLAUDE.md — Claude Code reads this name, not AGENTS.md.
+#   gemini    GEMINI.md, plus .gemini/ for skill refs.
+#   copilot   .github/copilot-instructions.md.
+#   codex     .codex/ for skill refs; Codex itself reads root AGENTS.md.
+#
+# Note: JavaScript falsy values (false, 0, '', null, undefined) are treated as false.
 agents:
+  agentsmd: true
   claude: true
   copilot: true
   gemini: false
   codex: false
 
-# Agent-specific configurations
+# Per-stub settings. Every stub points at the same knowledge base; only the
+# relative path and the pointer mechanism differ.
+#
+#   kb_path         Path to .agents/AGENTS.md, relative to the stub.
+#   philosophy_path Path to the canonical philosophy doc, relative to the stub.
+#   kb_import       Emit `@<kb_path>`. Harnesses that expand inline imports
+#                   pull the knowledge base into context at launch; the rest
+#                   read the same line as an ordinary path reference.
+agentsmd:
+  kb_path: '.agents/AGENTS.md'
+  philosophy_path: '.agents/context/philosophy.md'
+  kb_import: true
 claude:
-  kb_path: '../.agents/AGENTS.md'
+  kb_path: '.agents/AGENTS.md'
+  philosophy_path: '.agents/context/philosophy.md'
+  kb_import: true
+gemini:
+  kb_path: '.agents/AGENTS.md'
+  philosophy_path: '.agents/context/philosophy.md'
+  kb_import: true
 copilot:
   kb_path: '../.agents/AGENTS.md'
+  philosophy_path: '../.agents/context/philosophy.md'
+  kb_import: false
+
+# Enforcement.
+#
+# The authority rules in .agents/AGENTS.md are prose, and instruction files are
+# context rather than configuration — an agent can read "READ-ONLY" and write
+# anyway. These emit harness-native permission rules so the rule actually holds.
+#
+# `ask` is used rather than `deny` on purpose: the governance model allows a
+# human to authorise a change after an explicit warning, and `ask` is exactly
+# that handshake. `deny` cannot be overridden in-session.
+#
+# Independent of the harness flags above. `.claude/settings.json` is read by
+# Claude Code whether or not a CLAUDE.md stub exists, so a repo can enforce the
+# authority rules without generating the stub — and turning the stub off is not
+# a request to drop the protection. Set this to false to opt out of that.
+guardrails:
+  claude: true # .claude/settings.json — ask before writing to canon
+
+# Optional planning surface.
+#
+#   decisions  .agents/decisions/ — cross-round commitments ("we agreed not to
+#              build X until Y"). Round docs are round-scoped and `context/` is
+#              canon an agent must follow; neither holds a promise that spans
+#              rounds. Off by default: it is real surface, and a repo that has
+#              not yet felt the drift does not need it.
+#
+# Observed in a repo after 15 months of use, where it was invented by hand.
+#
+#   programs   .agents/plan/programs/ — multi-round work. A round in `cycles/`
+#              is one unit of execution; a program is the goal above it, so a
+#              cold agent picking up round 5 of 9 knows what it is executing.
+#              Off by default: a repo whose work fits in single rounds does not
+#              need it.
+plan:
+  decisions: false
+  programs: false

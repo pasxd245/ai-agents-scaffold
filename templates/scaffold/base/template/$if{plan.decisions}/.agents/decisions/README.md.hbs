@@ -1,0 +1,31 @@
+# Decisions
+
+> The anti-drift anchor for commitments that span multiple rounds and are not
+> owned by any single round doc.
+
+A decision here is a promise: *"we agreed not to build X until Y"*, *"we chose
+A over B and will not revisit before Z"*. Round docs record what happened in
+one round; this records what holds across all of them.
+
+## What goes here
+
+- A commitment that outlives the round that made it
+- A deliberate non-goal, and the condition that would reopen it
+- A choice between two viable designs, with the losing option and why
+
+## What does not
+
+| Instead of here | Put it in | Because |
+| --- | --- | --- |
+| A finding or observation | `memory/` | It is evidence, not a commitment |
+| What happened this round | `plan/cycles/Round_NNN.md` | Round-scoped by definition |
+| A promotion into canon | `plan/promotions.md` | That log has its own format |
+| A rule agents must follow | `context/` | Canon is loaded; this is not |
+
+## Format
+
+Copy [`_TEMPLATE.md`](_TEMPLATE.md). One decision per file, named
+`YYYY-MM-DD-short-topic.md`.
+
+Decisions are **append-only**. Superseding one does not delete it: set its
+status and link forward, so the reason the old choice was made survives.

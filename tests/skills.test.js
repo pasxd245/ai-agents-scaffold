@@ -2,10 +2,13 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import {
   validateSkill,
+  scoreConformance,
+  auditSkill,
   listSkills,
   parseSkillSource,
   installSkill,
@@ -13,6 +16,8 @@ import {
   discoverSkills,
   installSkillRef,
 } from '../src/skills/index.js';
+import { walkRefChain } from '../src/skills/ref-chain.js';
+import { BUILTIN_SKILLS_DIR } from '../src/templates/index.js';
 import yaml from 'js-yaml';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -324,6 +329,17 @@ describe('installSkill (local)', () => {
     assert.ok(fs.existsSync(path.join(tmpTarget, 'valid-skill', 'SKILL.md')));
   });
 
+  it('refuses a name that climbs out of the skills directory', () => {
+    // The pool lookup joined the name as given, so `..` resolved to a real
+    // directory and the install (and a forced removal) landed outside `-d`.
+    assert.throws(
+      () =>
+        installSkill('research/../../../templates/skills/research', tmpTarget),
+      /may not contain/
+    );
+    assert.deepEqual(fs.readdirSync(tmpTarget), []);
+  });
+
   it('fails when skill already exists without --force', () => {
     const source = path.join(FIXTURES, 'valid-skill');
     installSkill(source, tmpTarget);
@@ -572,6 +588,35 @@ describe('installSkillRef', () => {
     assert.equal(results[0].name, 'test-skill');
   });
 
+  it('refreshes a stale pointer with --force', async () => {
+    // The byte-identical case above passes even when `force` is ignored.
+    // A ref whose pointer differs is the case `--force` exists for: a
+    // v0.1.x ref re-anchored after the skillPath formula changed.
+    await installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' });
+    const refFile = path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md');
+    const fresh = fs.readFileSync(refFile, 'utf8');
+    fs.writeFileSync(
+      refFile,
+      fresh.replace(
+        /skillPath: .*/,
+        'skillPath: ../../../old/skills/test-skill'
+      )
+    );
+
+    await assert.rejects(
+      () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' }),
+      /already exists/
+    );
+
+    await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'test-skill',
+      force: true,
+    });
+    assert.equal(fs.readFileSync(refFile, 'utf8'), fresh);
+  });
+
   it('errors when source skill does not exist', async () => {
     await assert.rejects(
       () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'nonexistent' }),
@@ -595,6 +640,51 @@ describe('installSkillRef', () => {
     const expected = path.relative(destSkillDir, sourceRoot);
 
     assert.equal(frontmatter.metadata.rootPath, expected);
+  });
+
+  it('anchors the pointer inside the project when the source dir is the project root', async () => {
+    // A repo that keeps `skills/` at its top level has no `.agents/`; its
+    // "agents dir" is the project root. Anchoring at the parent of the source
+    // produced `../../<repo-folder>/skills/<name>`, which resolved on the
+    // author's machine and broke on any clone under a different folder name.
+    const project = fs.mkdtempSync(path.join(FIXTURES, '_tmp-ref-root-'));
+    try {
+      const skillDir = path.join(project, 'skills', 'root-skill');
+      fs.mkdirSync(skillDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(skillDir, 'SKILL.md'),
+        '---\nname: root-skill\ndescription: At the root.\n---\n'
+      );
+      const dest = path.join(project, '.claude');
+
+      await installSkillRef({ from: project, to: dest, skill: 'root-skill' });
+
+      const destSkillDir = path.join(dest, 'skills', 'root-skill');
+      const output = fs.readFileSync(
+        path.join(destSkillDir, 'SKILL.md'),
+        'utf8'
+      );
+      const frontmatter = yaml.load(
+        output.match(/^---\r?\n([\s\S]*?)\r?\n---/)[1]
+      );
+
+      // dest is <project>/.claude/skills/root-skill: three levels below root
+      assert.equal(frontmatter.metadata.rootPath, path.join('..', '..', '..'));
+      assert.equal(
+        frontmatter.metadata.skillPath,
+        path.join('..', '..', '..', 'skills', 'root-skill')
+      );
+      assert.ok(
+        !frontmatter.metadata.skillPath.includes(path.basename(project)),
+        'pointer must not depend on the project folder name'
+      );
+
+      const walk = walkRefChain(destSkillDir);
+      assert.equal(walk.ok, true);
+      assert.equal(walk.terminalDir, skillDir);
+    } finally {
+      fs.rmSync(project, { recursive: true, force: true });
+    }
   });
 
   it('creates a ref for a nested skill (path-style name)', async () => {
@@ -661,4 +751,632 @@ describe('installSkillRef', () => {
       fs.rmSync(emptyFrom, { recursive: true, force: true });
     }
   });
+});
+
+// ── scoreConformance ────────────────────────────────────────────────
+
+describe('scoreConformance', () => {
+  const GOOD_DESC =
+    'Creates a new scaffold template from an existing directory tree. Use this ' +
+    'when the user asks to add a template, promote a directory into templates/, ' +
+    'or turn an example project into something reusable.';
+
+  it('gives a well-formed skill full marks', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: GOOD_DESC },
+      '## Procedure\n\n1. Do the thing.'
+    );
+    assert.equal(r.score, 100);
+    assert.deepEqual(r.warnings, []);
+  });
+
+  it('penalises a short description in proportion to the shortfall', () => {
+    const near = scoreConformance(
+      {
+        name: 'demo',
+        description: `${GOOD_DESC} extra`.split(' ').slice(0, 29).join(' '),
+      },
+      'body'
+    );
+    const far = scoreConformance(
+      { name: 'demo', description: 'Use this when formatting.' },
+      'body'
+    );
+    assert.ok(
+      far.score < near.score,
+      'a much shorter description must score lower'
+    );
+    assert.ok(near.score > 90, 'one word short should barely move the score');
+  });
+
+  it('flags a description that never says when to use the skill', () => {
+    const r = scoreConformance(
+      {
+        name: 'demo',
+        description:
+          'A comprehensive utility that formats and rewrites project source files ' +
+          'across many languages and configurations with assorted options provided.',
+      },
+      'body'
+    );
+    assert.ok(r.warnings.some((w) => w.code === 'description-no-trigger'));
+  });
+
+  it('flags an oversized body and an empty one', () => {
+    const big = scoreConformance(
+      { name: 'demo', description: GOOD_DESC },
+      'x'.repeat(4 * 5001)
+    );
+    assert.ok(big.warnings.some((w) => w.code === 'body-over-budget'));
+
+    const empty = scoreConformance(
+      { name: 'demo', description: GOOD_DESC },
+      '   '
+    );
+    assert.ok(empty.warnings.some((w) => w.code === 'body-empty'));
+  });
+
+  it('flags unrecognised frontmatter keys', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: GOOD_DESC, 'when-to-use': 'typo' },
+      'body'
+    );
+    assert.ok(
+      r.warnings.some(
+        (w) =>
+          w.code === 'unknown-frontmatter-key' &&
+          w.message.includes('when-to-use')
+      )
+    );
+  });
+
+  it('skips body and description checks for skill-refs', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: 'A reference to a skill.' },
+      '',
+      { isRef: true }
+    );
+    assert.deepEqual(r.warnings, []);
+    assert.equal(r.score, 100);
+  });
+
+  it('warns when description + when_to_use exceed the listing cap', () => {
+    const r = scoreConformance(
+      { name: 'demo', description: GOOD_DESC, when_to_use: 'y'.repeat(1537) },
+      'body'
+    );
+    assert.ok(r.warnings.some((w) => w.code === 'listing-cap-exceeded'));
+  });
+});
+
+// ── validateSkill exposes conformance ───────────────────────────────
+
+describe('scoreConformance (trigger-phrase calibration)', () => {
+  // A description that names the moment to reach for the skill has a trigger,
+  // whatever verb it uses. Penalising "Use before starting a refactor" pushes
+  // authors to reword good descriptions to satisfy a regex, which is the
+  // failure mode the audit already had.
+  const withTrigger = [
+    'Use before starting any multi-step change that will land across several commits.',
+    'Use after a release to reconcile the changelog with what actually shipped.',
+    'Use during an incident to collect the timeline before memory fades.',
+    'Skip for one-shot fixes; reach for it on cross-cutting renames.',
+    'Use when the user asks how a subsystem works.',
+    'Whenever a contributor adds a new template to the repository.',
+  ];
+
+  for (const description of withTrigger) {
+    it(`accepts a trigger phrase: "${description.slice(0, 32)}…"`, () => {
+      const padding = ' word'.repeat(40);
+      const report = scoreConformance(
+        { name: 'x', description: description + padding },
+        'body'
+      );
+      assert.ok(
+        !report.warnings.some((w) => w.code === 'description-no-trigger'),
+        `should read as a trigger: ${description}`
+      );
+    });
+  }
+
+  it('still flags a description that only says what the skill does', () => {
+    const report = scoreConformance(
+      {
+        name: 'x',
+        description:
+          'Decomposes a refactor into numbered phases with acceptance gates and ' +
+          'produces a plan document describing each of the resulting stages in turn.',
+      },
+      'body'
+    );
+    assert.ok(report.warnings.some((w) => w.code === 'description-no-trigger'));
+  });
+});
+
+describe('validateSkill (conformance)', () => {
+  it('reports warnings and a score without affecting validity', () => {
+    const result = validateSkill(path.join(FIXTURES, 'valid-skill'));
+    assert.equal(result.valid, true);
+    assert.ok(Array.isArray(result.warnings));
+    assert.equal(typeof result.score, 'number');
+  });
+});
+
+// ── auditSkill ──────────────────────────────────────────────────────
+
+describe('auditSkill', () => {
+  it('flags injection, credentials, network and execution in a hostile skill', () => {
+    const { findings, clean } = auditSkill(
+      path.join(FIXTURES, 'hostile-skill')
+    );
+    assert.equal(clean, false);
+    const categories = new Set(findings.map((f) => f.category));
+    for (const expected of [
+      'injection',
+      'credentials',
+      'network',
+      'execution',
+    ]) {
+      assert.ok(categories.has(expected), `missing ${expected} finding`);
+    }
+  });
+
+  it('reports the file and line of each finding', () => {
+    const { findings } = auditSkill(path.join(FIXTURES, 'hostile-skill'));
+    const cred = findings.find((f) => f.category === 'credentials');
+    assert.equal(cred.file, path.join('scripts', 'setup.sh'));
+    assert.equal(typeof cred.line, 'number');
+  });
+
+  it('flags a skill that grants itself shell access', () => {
+    const { findings } = auditSkill(path.join(FIXTURES, 'hostile-skill'));
+    assert.ok(
+      findings.some((f) => f.message.includes('allowed-tools')),
+      'should flag Bash in allowed-tools'
+    );
+  });
+
+  it('passes a benign skill', () => {
+    const { clean, scanned } = auditSkill(path.join(FIXTURES, 'valid-skill'));
+    assert.equal(clean, true);
+    assert.ok(scanned > 0);
+  });
+
+  it('rejects a directory that is not a skill', () => {
+    const { clean, findings } = auditSkill(FIXTURES);
+    assert.equal(clean, false);
+    assert.equal(findings[0].category, 'opaque');
+  });
+
+  it('reports a symbolic link instead of walking past it', () => {
+    // A link is neither a directory nor a regular file, so a walk that tests
+    // only those two drops it — and the installer copies links verbatim. That
+    // combination let a skill ship a benignly named pointer at a private key
+    // and still audit `clean: true`.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-symlink-'));
+    try {
+      fs.writeFileSync(
+        path.join(dir, 'SKILL.md'),
+        '---\nname: linky\ndescription: d\n---\n\nBody.\n'
+      );
+      fs.symlinkSync('/home/someone/.ssh/id_rsa', path.join(dir, 'notes.md'));
+
+      const { findings, clean } = auditSkill(dir);
+      assert.equal(clean, false);
+      const link = findings.find((f) => f.file === 'notes.md');
+      assert.ok(link, 'the link should be reported');
+      assert.equal(link.severity, 'high', 'a remote install must abort on it');
+      assert.match(link.message, /symbolic link/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not copy a symbolic link into an installed skill', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-symlink-src-'));
+    const source = path.join(root, 'linky');
+    const target = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-symlink-dst-'));
+    try {
+      fs.mkdirSync(source);
+      fs.writeFileSync(
+        path.join(source, 'SKILL.md'),
+        '---\nname: linky\ndescription: ' +
+          'A skill used for exercising the symlink exclusion in installs.\n' +
+          '---\n\nBody.\n'
+      );
+      fs.symlinkSync('/home/someone/.ssh/id_rsa', path.join(source, 'k.md'));
+
+      const { path: installed } = installSkill(source, target);
+      assert.equal(
+        fs.existsSync(path.join(installed, 'k.md')),
+        false,
+        'the link must not follow the skill into the project'
+      );
+      assert.ok(fs.existsSync(path.join(installed, 'SKILL.md')));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+      fs.rmSync(target, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('installSkill (symlinked SKILL.md)', () => {
+  /** @type {string} */
+  let root;
+  /** @type {string} */
+  let source;
+  /** @type {string} */
+  let target;
+
+  beforeEach(() => {
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-linky-src-'));
+    target = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-linky-dst-'));
+    source = path.join(root, 'linky');
+    fs.mkdirSync(source);
+    fs.writeFileSync(
+      path.join(source, 'real.md'),
+      '---\nname: linky\ndescription: ' +
+        'A skill whose SKILL.md is a symbolic link to a real file.\n' +
+        '---\n\nBody.\n'
+    );
+    fs.symlinkSync('real.md', path.join(source, 'SKILL.md'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(target, { recursive: true, force: true });
+  });
+
+  it('refuses the source rather than installing a skill with no SKILL.md', () => {
+    // Validation followed the link and passed; the copy filter then dropped
+    // it. The install reported success and the destination held `real.md`
+    // and nothing else — an invalid skill, delivered with a green message.
+    assert.throws(
+      () => installSkill(source, target),
+      /SKILL\.md is a symbolic link/
+    );
+    assert.equal(
+      fs.existsSync(path.join(target, 'linky')),
+      false,
+      'nothing may land'
+    );
+  });
+
+  it('leaves an existing installation intact when the replacement fails', () => {
+    // The old sequence removed the destination before copying, so a source
+    // that failed after that point took the previous install with it. The
+    // filtered copy is now built beside the destination and swapped in whole.
+    const existing = path.join(target, 'linky');
+    fs.mkdirSync(existing);
+    fs.writeFileSync(
+      path.join(existing, 'SKILL.md'),
+      '---\nname: linky\ndescription: The installed version.\n---\n\nOld.\n'
+    );
+
+    assert.throws(() => installSkill(source, target, { force: true }));
+
+    assert.ok(fs.existsSync(path.join(existing, 'SKILL.md')));
+    assert.match(
+      fs.readFileSync(path.join(existing, 'SKILL.md'), 'utf8'),
+      /Old\./
+    );
+    // And no staging directory is left behind next to it.
+    assert.deepEqual(fs.readdirSync(target), ['linky']);
+  });
+
+  it('validates what survived the filter, not only the source', () => {
+    // The pre-check is on the source; the post-check is on the staged copy.
+    // A source with an ordinary SKILL.md whose only sibling is a symlink
+    // still installs, and the link is left out.
+    fs.rmSync(path.join(source, 'SKILL.md'));
+    fs.renameSync(path.join(source, 'real.md'), path.join(source, 'SKILL.md'));
+    fs.symlinkSync('/home/someone/.ssh/id_rsa', path.join(source, 'k.md'));
+
+    const { path: installed } = installSkill(source, target);
+    const check = validateSkill(installed);
+    assert.equal(check.valid, true, check.errors.join('; '));
+    assert.equal(fs.existsSync(path.join(installed, 'k.md')), false);
+  });
+});
+
+// ── auditSkill — calibration against real-world skills ──────────────
+//
+// Every finding below was a false positive found by running the audit over a
+// production .agents/ that was not written with this tool in mind.
+
+describe('a SKILL.md that opens with a UTF-8 BOM', () => {
+  let tmp;
+  beforeEach(() => {
+    tmp = fs.mkdtempSync(path.join(FIXTURES, '_tmp-bom-'));
+    const dir = path.join(tmp, 'bom-skill');
+    fs.mkdirSync(dir);
+    fs.writeFileSync(
+      path.join(dir, 'SKILL.md'),
+      '\uFEFF---\nname: bom-skill\ndescription: Saved by an editor that writes a byte-order mark first.\n---\n\n## Procedure\n\n1. Do it\n'
+    );
+  });
+  afterEach(() => fs.rmSync(tmp, { recursive: true, force: true }));
+
+  it('still parses as valid', () => {
+    const result = validateSkill(path.join(tmp, 'bom-skill'));
+    assert.deepEqual(result.errors, []);
+    assert.equal(result.valid, true);
+    assert.equal(result.skill.name, 'bom-skill');
+  });
+
+  it('is not reported as hidden text', () => {
+    const { findings } = auditSkill(path.join(tmp, 'bom-skill'));
+    assert.ok(
+      !findings.some((f) => f.message.includes('zero-width')),
+      JSON.stringify(findings)
+    );
+  });
+
+  it('still flags the same code point later in the file', () => {
+    fs.appendFileSync(
+      path.join(tmp, 'bom-skill', 'SKILL.md'),
+      '\nnormal\uFEFFtext\n'
+    );
+    const { findings } = auditSkill(path.join(tmp, 'bom-skill'));
+    assert.ok(findings.some((f) => f.message.includes('zero-width')));
+  });
+});
+
+describe('auditSkill (false-positive calibration)', () => {
+  const skill = () => auditSkill(path.join(FIXTURES, 'benign-tooling-skill'));
+
+  it('does not flag a scoped Bash grant', () => {
+    // `Bash(git log *)` is least privilege done right and must not score the
+    // same as a bare `Bash`.
+    const { findings } = skill();
+    assert.ok(!findings.some((f) => f.message.includes('allowed-tools')));
+  });
+
+  it('flags an unscoped Bash grant', () => {
+    const { findings } = auditSkill(path.join(FIXTURES, 'hostile-skill'));
+    assert.ok(findings.some((f) => f.message.includes('allowed-tools')));
+  });
+
+  it('does not treat subprocess exception handling as execution', () => {
+    // `except subprocess.CalledProcessError` is error handling.
+    const { findings } = skill();
+    const lines = findings
+      .filter((f) => f.category === 'execution')
+      .map((f) => f.line);
+    assert.ok(!lines.includes(9), 'except clause must not be flagged');
+  });
+
+  it('still flags a real subprocess call', () => {
+    const { findings } = skill();
+    assert.ok(
+      findings.some((f) => f.category === 'execution' && f.line === 7),
+      'subprocess.check_output( is a genuine shell-out'
+    );
+  });
+
+  it('does not treat urllib.parse as network access', () => {
+    // urllib.parse is pure string handling; urllib.request is not.
+    const { findings } = skill();
+    assert.ok(!findings.some((f) => f.category === 'network'));
+  });
+});
+
+// ── installSkill — artefact exclusion ───────────────────────────────
+
+describe('installSkill (excludes build artefacts)', () => {
+  it('does not copy caches, compiled files or node_modules', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-junk-'));
+    try {
+      // `node_modules/` is gitignored, so a checked-in copy never reaches a
+      // clean clone and the assertion below would pass vacuously. Build the
+      // junk in a scratch copy of the fixture instead.
+      const source = path.join(tmp, 'src', 'junk-skill');
+      fs.cpSync(path.join(FIXTURES, 'junk-skill'), source, { recursive: true });
+      fs.mkdirSync(path.join(source, 'node_modules'), { recursive: true });
+      fs.writeFileSync(path.join(source, 'node_modules', 'dep.js'), '');
+
+      const out = path.join(tmp, 'out');
+      installSkill(source, out);
+      const dest = path.join(out, 'junk-skill');
+
+      // The skill itself arrives intact.
+      assert.ok(fs.existsSync(path.join(dest, 'SKILL.md')));
+      assert.ok(fs.existsSync(path.join(dest, 'scripts', 'fmt.py')));
+
+      // Its working detritus does not.
+      for (const junk of [
+        'node_modules',
+        path.join('scripts', '__pycache__'),
+        path.join('scripts', 'fmt.pyc'),
+      ]) {
+        assert.ok(
+          !fs.existsSync(path.join(dest, junk)),
+          `${junk} should not be installed`
+        );
+      }
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
+  });
+});
+
+// ── built-in skill pool ─────────────────────────────────────────────
+
+/**
+ * Medium-severity audit findings the pool ships on purpose, with the reason.
+ * Anything not listed here is a regression.
+ *
+ * @type {Record<string, string[]>}
+ */
+const DECLARED_MEDIUM_FINDINGS = {
+  // `research` documents how to drive crawl4ai; a reference on crawling
+  // necessarily contains network calls. Reviewed 2026-08-29: documentation
+  // only, no executable network access outside the documented crawler.
+  research: [
+    'references/crawl4ai.md: reaches the network',
+    'references/crawl4ai.md: reaches the network',
+    'references/crawl4ai.md: reaches the network',
+  ],
+};
+
+describe('built-in skill pool', () => {
+  /**
+   * Every directory under `templates/skills/` is installable by name via
+   * `skill add <name>`, so the pool is a published surface. A skill that ships
+   * broken is worse than one that does not ship: the user gets it by name and
+   * has no reason to re-check it. Hold the pool to the standard the tool
+   * itself enforces on everyone else.
+   */
+  // `discoverSkills` appends `skills/` itself, and BUILTIN_SKILLS_DIR already
+  // ends in it, so hand it the parent.
+  const poolSkills = discoverSkills(path.dirname(BUILTIN_SKILLS_DIR));
+
+  it('is flat, because a harness skills directory is one level deep', () => {
+    // Claude Code discovers `<skills-dir>/<name>/SKILL.md` and nothing deeper,
+    // so `skill ref` projecting a grouped skill produces one the harness never
+    // finds. The SKILL.md stays spec-valid — `name` matches its parent
+    // directory — so `skill validate` cannot catch it. Verified against a live
+    // session on 2026-08-29; see context/harness-behaviour.md.
+    const grouped = poolSkills
+      .map((s) => s.name)
+      .filter((n) => n.includes('/'));
+    assert.deepEqual(
+      grouped,
+      [],
+      'a grouped pool skill is undiscoverable once projected into .claude/skills/'
+    );
+  });
+
+  it('is not empty', () => {
+    assert.ok(
+      poolSkills.length > 0,
+      'templates/skills/ advertises `skill add <name>` but ships nothing'
+    );
+  });
+
+  for (const { name, skillDir } of poolSkills) {
+    it(`ships ${name} as a valid, fully conformant skill`, () => {
+      const result = validateSkill(skillDir);
+      assert.equal(
+        result.valid,
+        true,
+        `${name} is invalid: ${result.errors.join('; ')}`
+      );
+      assert.equal(
+        result.score,
+        100,
+        `${name} scores ${result.score}: ` +
+          result.warnings.map((w) => w.code).join(', ')
+      );
+    });
+
+    it(`ships ${name} with no parent-relative links`, () => {
+      // `installSkill` copies verbatim, so one file has to serve both
+      // `templates/skills/<name>/` and `.agents/skills/<name>/` at whatever
+      // depth the user installs it. No `../` path resolves in both places, so
+      // a relative link is broken somewhere by construction. Nesting
+      // `master-plan` under `planning/` broke two of them exactly this way.
+      const offenders = [];
+      const walk = (/** @type {string} */ dir) => {
+        for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+          const abs = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            walk(abs);
+          } else if (entry.name.endsWith('.md')) {
+            const text = fs.readFileSync(abs, 'utf8');
+            for (const [, link] of text.matchAll(/]\((\.\.\/[^)]*)\)/g)) {
+              offenders.push(`${path.relative(skillDir, abs)} -> ${link}`);
+            }
+          }
+        }
+      };
+      walk(skillDir);
+      assert.deepEqual(
+        offenders,
+        [],
+        `${name} uses parent-relative links; write the path in backticks instead`
+      );
+    });
+
+    it(`ships ${name} with no high-severity audit finding`, () => {
+      const findings = auditSkill(skillDir).findings;
+      const high = findings.filter((f) => f.severity === 'high');
+      assert.deepEqual(
+        high.map((f) => `${f.file}: ${f.message}`),
+        [],
+        `${name} would trip our own supply-chain screen at high severity`
+      );
+    });
+
+    it(`ships ${name} with every medium finding declared`, () => {
+      // A skill may legitimately reach the network — that is what a crawler
+      // does. What is not acceptable is an undeclared one: if the pool grows a
+      // finding nobody signed off on, this fails and someone has to look.
+      const medium = auditSkill(skillDir)
+        .findings.filter((f) => f.severity === 'medium')
+        .map((f) => `${f.file}: ${f.message}`);
+      assert.deepEqual(
+        medium,
+        DECLARED_MEDIUM_FINDINGS[name] ?? [],
+        `${name} has medium findings that are not declared in the test`
+      );
+    });
+  }
+});
+
+// ── the pool, dogfooded ─────────────────────────────────────────────
+
+describe('this repo installs its own pool skills', () => {
+  /**
+   * `templates/skills/` is the only thing that ships — `.agents/skills/` goes
+   * to nobody. So the pool is canonical and this repo installs from it exactly
+   * as a user would. That leaves two copies on disk, and two copies drift; this
+   * turns the drift into a failing test rather than a surprise for whoever
+   * runs `skill add` next.
+   */
+  const repoRoot = path.dirname(__dirname);
+  const installed = ['a2scaffold', 'master-plan', 'repo-explainer', 'research'];
+
+  /**
+   * Every file under `dir`, relative and sorted.
+   *
+   * @param {string} dir
+   * @param {string} [prefix]
+   * @returns {string[]}
+   */
+  const filesUnder = (dir, prefix = '') =>
+    fs
+      .readdirSync(dir, { withFileTypes: true })
+      .flatMap((entry) => {
+        const rel = prefix ? path.join(prefix, entry.name) : entry.name;
+        return entry.isDirectory()
+          ? filesUnder(path.join(dir, entry.name), rel)
+          : [rel];
+      })
+      .sort();
+
+  for (const name of installed) {
+    it(`keeps .agents/skills/${name} identical to the pool`, () => {
+      const source = path.join(BUILTIN_SKILLS_DIR, name);
+      const dest = path.join(repoRoot, '.agents', 'skills', name);
+
+      assert.ok(
+        fs.existsSync(dest),
+        `${name} should be installed in this repo`
+      );
+      assert.deepEqual(
+        filesUnder(dest),
+        filesUnder(source),
+        `${name} has files the pool does not, or is missing some`
+      );
+
+      for (const file of filesUnder(source)) {
+        assert.equal(
+          fs.readFileSync(path.join(dest, file), 'utf8'),
+          fs.readFileSync(path.join(source, file), 'utf8'),
+          `${name}/${file} has drifted from the pool — edit the pool, then reinstall`
+        );
+      }
+    });
+  }
 });

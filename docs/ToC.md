@@ -7,40 +7,48 @@
 
 ## For users of `a2scaffold`
 
-| Doc                    | What you'll find                                           |
-| ---------------------- | ---------------------------------------------------------- |
-| [usage.md](usage.md)   | CLI reference — flags, commands, quick start               |
-| [skills.md](skills.md) | Skills management — `skill add`, `list`, `validate`, `ref` |
-| [api.md](api.md)       | Programmatic API — `scaffold()`, `installSkill()`, etc.    |
+| Doc                    | What you'll find                                                    |
+| ---------------------- | ------------------------------------------------------------------- |
+| [usage.md](usage.md)   | CLI reference — flags, commands, quick start                        |
+| [skills.md](skills.md) | Skills management — `skill add`, `list`, `validate`, `audit`, `ref` |
+| [api.md](api.md)       | Programmatic API — `scaffold()`, `installSkill()`, etc.             |
 
 ## For contributors & AI agents
 
-| Doc                                                                            | What you'll find                                                              |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| [agents/workflows/scaffold.workflow.md](agents/workflows/scaffold.workflow.md) | End-to-end scaffold flow (diagram + steps)                                    |
-| [agents/workflows/skill.workflow.md](agents/workflows/skill.workflow.md)       | End-to-end skill flow for all subcommands                                     |
-| [agents/plan/](agents/plan/)                                                   | Co-planning docs (human + AI brainstorm). Format: `<yyyyMMdd>-<name>.plan.md` |
+| Doc                                                                                                          | What you'll find                                                              |
+| ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| [agents/workflows/scaffold.workflow.md](agents/workflows/scaffold.workflow.md)                               | End-to-end scaffold flow (diagram + steps)                                    |
+| [agents/workflows/skill.workflow.md](agents/workflows/skill.workflow.md)                                     | End-to-end skill flow for all subcommands                                     |
+| [agents/plan/](agents/plan/)                                                                                 | Co-planning docs (human + AI brainstorm). Format: `<yyyyMMdd>-<name>.plan.md` |
+| [agents/plan/20260829-agent-practice-baseline.plan.md](agents/plan/20260829-agent-practice-baseline.plan.md) | Field baseline (2026-08-29) — re-measure against it, don't edit it            |
 
 ## Agent-operational knowledge (`.agents/`)
 
 These live outside `docs/` but are linked here for discovery. See
 [.agents/AGENTS.md](../.agents/AGENTS.md) for the full authority model.
 
-| Doc                                                                   | What you'll find                                        |
-| --------------------------------------------------------------------- | ------------------------------------------------------- |
-| [.agents/AGENTS.md](../.agents/AGENTS.md)                             | Pair-programming guide, directory authority, load order |
-| [.agents/context/architecture.md](../.agents/context/architecture.md) | Canonical architecture overview                         |
-| [.agents/context/conventions.md](../.agents/context/conventions.md)   | Coding & naming conventions                             |
-| [.agents/context/js-tmpl.md](../.agents/context/js-tmpl.md)           | Handlebars template conventions                         |
-| [.agents/context/skill-refs.md](../.agents/context/skill-refs.md)     | Skill-ref (pointer) file format & rules                 |
-| [.agents/plan/DoD.md](../.agents/plan/DoD.md)                         | Definition of Done                                      |
-| [.agents/plan/PDCA.md](../.agents/plan/PDCA.md)                       | PDCA methodology & templates                            |
-| [.agents/plan/promotions.md](../.agents/plan/promotions.md)           | Append-only promotion log                               |
+| Doc                                                                                       | What you'll find                                        |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| [.agents/AGENTS.md](../.agents/AGENTS.md)                                                 | Pair-programming guide, directory authority, load order |
+| [.agents/reference/memory-and-promotion.md](../.agents/reference/memory-and-promotion.md) | Memory format, promotion, authorised changes            |
+| [.agents/reference/](../.agents/reference/)                                               | On-demand topic docs, each with an explicit trigger     |
+| [.claude/settings.json](../.claude/settings.json)                                         | Permission rules enforcing the authority table          |
+| [.agents/context/philosophy.md](../.agents/context/philosophy.md)                         | Principles that decide close calls (canonical)          |
+| [.agents/context/architecture.md](../.agents/context/architecture.md)                     | Canonical architecture overview                         |
+| [.agents/context/conventions.md](../.agents/context/conventions.md)                       | Coding & naming conventions                             |
+| [.agents/context/js-tmpl.md](../.agents/context/js-tmpl.md)                               | Handlebars template conventions                         |
+| [.agents/context/skill-refs.md](../.agents/context/skill-refs.md)                         | Skill-ref (pointer) file format & rules                 |
+| [.agents/plan/DoD.md](../.agents/plan/DoD.md)                                             | Definition of Done                                      |
+| [.agents/plan/PDCA.md](../.agents/plan/PDCA.md)                                           | PDCA methodology & templates                            |
+| [.agents/plan/promotions.md](../.agents/plan/promotions.md)                               | Append-only promotion log                               |
 
 ## Source entry points (not docs, but useful)
 
 | Path                                   | Role                                       |
 | -------------------------------------- | ------------------------------------------ |
+| [../AGENTS.md](../AGENTS.md)           | Stub — Codex & the AGENTS.md convention    |
+| [../CLAUDE.md](../CLAUDE.md)           | Stub — Claude Code                         |
+| [../GEMINI.md](../GEMINI.md)           | Stub — Gemini CLI                          |
 | [../src/index.js](../src/index.js)     | Public API barrel (re-exports)             |
 | [../src/scaffold/](../src/scaffold/)   | `scaffold()` + conflict detection          |
 | [../src/skills/](../src/skills/)       | Skills management, validation, refs        |

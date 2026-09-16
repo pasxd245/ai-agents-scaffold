@@ -30,3 +30,12 @@ export const CONFIG_EXTS = ['.json', '.yaml', '.yml'];
 
 // Legacy: kept for any external callers; new code should use RC_BASENAME + CONFIG_EXTS.
 export const RC_FILENAME = '.a2scaffoldrc.json';
+
+/**
+ * Generated files whose staleness has a cost beyond documentation drift.
+ *
+ * Sync leaves seeded files alone silently, but a permission rule that has not
+ * caught up with the template means canon the harness is no longer protecting.
+ * Reported, never overwritten — a repo may have added rules of its own.
+ */
+export const ENFORCEMENT_FILES = ['.claude/settings.json'];

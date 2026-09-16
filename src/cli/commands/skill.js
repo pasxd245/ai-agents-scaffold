@@ -3,6 +3,7 @@ import { parseSkillArgs } from '../args.js';
 import { runSkillAdd } from './skill-add.js';
 import { runSkillList } from './skill-list.js';
 import { runSkillValidate } from './skill-validate.js';
+import { runSkillAudit } from './skill-audit.js';
 import { runSkillRef } from './skill-ref.js';
 
 /** @param {string[]} args */
@@ -32,9 +33,12 @@ export async function runSkill(args) {
     case 'validate':
       runSkillValidate(positionals[0], agentsDir);
       return;
+    case 'audit':
+      runSkillAudit(positionals[0], agentsDir);
+      return;
     default:
       console.error(`Unknown skill command: ${subcommand}`);
-      console.error('Available: add, list, ref, validate');
+      console.error('Available: add, audit, list, ref, validate');
       process.exit(1);
   }
 }

@@ -1,229 +1,110 @@
-# AGENTS.md – Pair Programming Guide for AI Agents
+# AGENTS.md — Agent Knowledge Base
 
-> Practical guide for AI agents collaborating on this repository.
+> The heart. Every harness stub points here, so this file is loaded into every
+> session and competes with the task for context. **Keep it under 100 lines.**
+> Detail belongs behind a trigger, not here.
 
 ---
 
-## Agent Base Directory (`.agents/`)
+## Load first
 
-The `.agents/` directory is the **shared knowledge base** for all AI agents.
+1. **This file.**
+2. The files in `context/` that your task touches. Read a `context/` file when
+   the work is in its subject, not because it exists.
+3. Files in `reference/` when their stated trigger fires — each one
+   opens with a **Read this when** line.
 
-It separates stable human-curated knowledge from evolving agent learnings.
+Everything else is **on demand**, including `prompts/`, which are invoked
+deliberately rather than loaded at startup.
+
+Context spent here is context taken from the task, so load by relevance, not
+by habit. Loading everything is a cost, not thoroughness.
+
+**Conflict resolution**: `context/` is authoritative over everything else.
+
+---
+
+## Directory map
 
 ```text
 .agents/
-  context/        # Canonical knowledge (human-curated, authoritative)
-  memory/         # Agent-generated learnings (draft insights)
-  prompts/        # Scanning & generation prompts (human-curated)
-  skills/         # Reusable procedures (human-approved, Agent Skills spec)
-    <skill-name>/
-      SKILL.md        # Required: frontmatter + instructions
-      scripts/        # Optional: executable code
-      references/     # Optional: additional docs
-      assets/         # Optional: templates, data files
-  plan/
-    PDCA.md           # PDCA methodology and templates
-    promotions.md     # Append-only promotion log
-    cycles/           # Individual PDCA rounds
-      Round_01.md
-      Round_02.md
-      Round_XX.md
+  AGENTS.md      # This file — loaded every session
+  reference/     # Topic docs, each with its own trigger
+  context/       # Canonical knowledge (human-curated, authoritative)
+    harness-behaviour.md  # How the harnesses load and enforce (dated)
+    memory-placement.md   # Which memory system a finding belongs in
+  memory/        # Agent-generated learnings (drafts) — see _TEMPLATE.md
+  prompts/       # Scanning & generation prompts — invoked, not auto-loaded
+  skills/        # Reusable procedures (Agent Skills spec)
+  plan/          # PDCA.md, promotions.md, cycles/
+{{#if plan.programs}}
+    programs/    # Multi-round work — see plan/programs/README.md
+{{/if}}
+{{#if plan.decisions}}
+  decisions/     # Cross-round commitments — see decisions/README.md
+{{/if}}
 ```
 
 ---
 
-### Load Order (Mandatory)
+## Authority
 
-At the start of every session, an agent MUST:
+| Path                                                                          | Agents may                        |
+| ----------------------------------------------------------------------------- | --------------------------------- |
+| `AGENTS.md`, `reference/`, `context/`, `prompts/`, `skills/`{{#if plan.decisions}}, `decisions/`{{/if}} | ❌ READ ONLY                       |
+| `memory/`                                                                     | ✅ READ + WRITE                   |
+| `plan/`                                                                       | ⚠️ APPEND to `promotions.md`; edit `Do`/`Check` of an active round |
 
-1. Read **all files recursively** in `.agents/context/`
-2. Read **relevant files** in `.agents/skills/` (based on task)
-3. **Prompt auto-loading**: All `.agents/prompts/*.prompt.md` files are automatically loaded as runtime instructions by supported agent tooling.
-4. Optionally review recent or task-relevant files in `.agents/memory/`
+Closing a round, editing a closed one and compacting `cycles/` are human calls — see [plan/PDCA.md](plan/PDCA.md).
 
-**Conflict resolution**: If any conflict exists between directories, `context/` is authoritative.
+{{#if guardrails.claude}}
+Enforcement is per harness; today only Claude Code has any: `.claude/settings.json`
+makes it **ask** before an `Edit` under `.agents/`. A speed bump, not a wall — one
+tool, interactive only, shell writes bypass it. Codex, Gemini and Copilot read this
+table as text; nothing backs it yet — see [context/harness-behaviour.md](context/harness-behaviour.md).
+{{else}}
+Enforcement is per harness, and this repo generates none: `guardrails.claude` is
+off, so no `.claude/settings.json` ships. Every harness reads this table as text;
+an `Edit` or a shell write under `.agents/` lands with no prompt. Turn the flag on
+to ship the `ask` rules — see [context/harness-behaviour.md](context/harness-behaviour.md).
+{{/if}}
 
----
+**A human may still authorise a change** — warn first, wait for confirmation,
+log it in `plan/promotions.md`. Procedure:
+[reference/memory-and-promotion.md](reference/memory-and-promotion.md).
 
-### Authority Rules
+**If a discovery contradicts `context/`**: do not edit it. Write the finding to
+`memory/` and flag it for human review.
 
-| Directory  | Authority                   | Agent Permissions                    |
-| ---------- | --------------------------- | ------------------------------------ |
-| `context/` | Human-maintained, canonical | ❌ READ-ONLY (No edits, no deletions) |
-| `prompts/` | Human-curated prompts       | ❌ READ-ONLY (No edits, no deletions) |
-| `skills/`  | Human-approved procedures   | ❌ READ-ONLY (No edits, no deletions) |
-| `memory/`  | Agent learnings, drafts     | ✅ READ + WRITE                       |
-| `plan/`    | Promotion logs, decisions   | ⚠️ APPEND-ONLY to promotions.md       |
-
-**If a discovery contradicts `context/`:**
-
-1. Do NOT edit `context/`
-2. Write the finding to `memory/`
-3. Flag for human review in the memory file
-
-**If `memory/` contains information that appears outdated or incorrect:**
-
-1. Agents MUST NOT delete it
-2. Instead, update the file header to include `**Status**: Needs Review`
+**If `memory/` looks outdated**: do not delete it. Add
+`**Status**: Needs Review` to its header.
 
 ---
 
-### Agent Write Policy
+## Write policy
 
-#### Agents MAY
+Agents MAY:
 
-- ✅ Capture reusable insights in `.agents/memory/`
-- ✅ Suggest promotions to `context/` or `skills/` (in memory files)
+- ✅ Capture reusable insights in `memory/`
+- ✅ Suggest promotions to `context/` or `skills/`, inside a memory file
 
-#### Agents MUST NOT
+Agents MUST NOT:
 
 - ❌ Store secrets, credentials, or personal data
-- ❌ Delete or modify existing files in `context/` or `skills/`
-- ❌ Write to `context/` or `skills/` without explicit human instruction
-- ❌ Generate speculative "rules" without concrete evidence
-
-#### Memory File Format (Recommended)
-
-**Filename**: `memory/YYYY-MM-DD-short-topic.md` or `memory/agent-name-topic.md`
-
-```markdown
-# [Short Descriptive Title]
-**Date**: YYYY-MM-DD
-**Agent**: [tool name]
-**Confidence**: High | Medium | Low
-**Status**: New | Needs Review | Promoted | Archived
-
-## Problem
-Brief description of issue or question
-
-## Finding
-What you discovered (concise)
-
-## Evidence
-- Files: `src/path/to/file.py`
-- Commits, tests, or links
-
-## Recommendation
-**Do**: Bullet list of actionable patterns
-**Don't**: Bullet list of anti-patterns
-
-## Promotion Candidate?
-[ ] context/ – Stable pattern, broadly applicable
-[ ] skills/ – Reusable procedure/checklist
-[ ] Not yet – Needs more validation
-```
-
-**Status lifecycle:**
-
-- `New` → Agent just created this
-- `Needs Review` → Outdated, conflicting, or requires validation
-- `Promoted` → Moved to context/ or skills/
-- `Archived` → Historical reference only
+- ❌ Write to any read-only path above without explicit human instruction
+- ❌ Generate speculative rules without concrete evidence
 
 ---
 
-### Evolution Model
+## Where to look for more
 
-```text
-1. Agent captures insight → memory/
-2. Human reviews periodically
-3. Valid insights promoted → context/ or skills/
-4. Promotion logged in plan/promotions.md
-```
-
-**Human feedback loop**: See `plan/PDCA.md` for systematic review methodology.
-
-**Promotion criteria:**
-
-- **To `context/`**: Stable pattern, validated 3+ times, broadly applicable
-- **To `skills/`**: Reusable procedure with clear triggers and steps
-
-#### Skills Format ([Agent Skills spec](https://agentskills.io/specification))
-
-Each skill is a directory under `skills/` containing a `SKILL.md` file
-with YAML frontmatter:
-
-```text
-skills/<skill-name>/
-  SKILL.md          # Required: frontmatter + instructions
-  scripts/          # Optional: executable code
-  references/       # Optional: additional docs
-  assets/           # Optional: templates, data files
-```
-
-`SKILL.md` must include:
-
-```markdown
----
-name: <skill-name>
-description: What this skill does and when to use it.
----
-
-## Trigger
-This skill activates whenever...
-
-## Procedure
-1. Step one
-2. Step two
-```
-
-The `name` field must match the directory name (kebab-case, lowercase).
-
-**Promotion log format** (in `plan/promotions.md`):
-
-```markdown
-## YYYY-MM-DD: [Topic] → [Destination]
-**Source**: memory/[filename]
-**Rationale**: [1-2 sentences]
-**Promoted by**: [Human name]
-```
-
-**Principle**: Stability > Speed. Promotion requires validation.
-
----
-
-### Quick Reference
-
-**Before coding**: Load context/ → Load relevant skills/
-**During work**: If you learn something useful → Write to memory/
-**After session**: Suggest promotion if high confidence
-
-**For humans**: Review memory/ weekly → Promote valid learnings → Log in plan/
-
----
-
-#### Exception: Explicit Human Instructions
-
-When a human **explicitly instructs** an agent to modify, create, or delete files under `.agents/`: [`context/`, `skills`, `plan/`],
-the agent MAY proceed BUT MUST:
-
-1. ⚠️ **Warn the human first** that authoritative or governance knowledge will be modified
-2. ✅ **Wait for explicit confirmation**
-3. 📝 **Log the change** in `plan/promotions.md` (or appropriate governance log) with a brief rationale
-
-**Example warning**:
-
-> ⚠️ **Warning**: You've asked me to modify authoritative knowledge under `.agents/`.
-> This may affect future agent behavior and project governance.
-> Please confirm you want to proceed. [Yes/No]
-
-This ensures intentional updates are allowed while preventing accidental governance drift.
-
----
-
-## 1. Role & Mindset
-
-You are a **pair programmer**, not a solo developer. Your human partner knows
-the project intent better than you do. Follow these principles:
-
-- **Ask before assuming.** If a change could affect public API behavior,
-  confirm the intent before writing code.
-- **Think out loud.** Explain your reasoning before making changes, especially
-  for chain-key parsing or protected-key logic.
-- **Small steps, frequent checks.** Prefer incremental edits with test runs
-  over large rewrites.
-- **Preserve what works.** This library has zero dependencies and a stable
-  API. Never introduce external packages or break existing contracts.
-- **Ensure AI Transparency** section (`## Transparency`) in `README.md` always be at the end of file (if present).
-
----
+| Read this                                            | When                                                 |
+| ---------------------------------------------------- | ---------------------------------------------------- |
+| [reference/memory-and-promotion.md](reference/memory-and-promotion.md) | Writing a memory file, or proposing a promotion |
+| [reference/root-files.md](reference/root-files.md)   | Editing `CLAUDE.md`, `AGENTS.md` or any harness stub |
+| [reference/mechanisms.md](reference/mechanisms.md)   | Choosing between a rule, skill, hook or sub-agent    |
+| [reference/skills.md](reference/skills.md)           | Authoring or fixing a `SKILL.md`                     |
+| [context/harness-behaviour.md](context/harness-behaviour.md) | Relying on how a harness loads, enforces or budgets  |
+| [context/memory-placement.md](context/memory-placement.md) | Saving a memory, and unsure which system it goes in |
+| [context/philosophy.md](context/philosophy.md)       | A judgement call the rules above do not cover        |
+| [plan/PDCA.md](plan/PDCA.md)                         | Opening or closing a round                           |

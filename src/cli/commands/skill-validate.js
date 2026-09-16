@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { validateSkill } from '../../skills/index.js';
+import { validateSkill, discoverSkills } from '../../skills/index.js';
 import { parseFrontmatter } from '../../utils/frontmatter.js';
 import { SKILL_FILE, SKILL_REF, SKILLS_DIRNAME } from '../../constants.js';
 
@@ -28,26 +28,28 @@ export function runSkillValidate(targetName, agentsDir) {
     return;
   }
 
-  const dirs = targetName
-    ? [path.join(skillsDir, targetName)]
-    : fs
-        .readdirSync(skillsDir, { withFileTypes: true })
-        .filter((e) => e.isDirectory())
-        .map((e) => path.join(skillsDir, e.name));
+  // `discoverSkills` recurses, so a nested skill installed as
+  // `skill add planning/master-plan` is validated under its full name rather
+  // than reported as a directory with no SKILL.md.
+  const targets = targetName
+    ? [{ name: targetName, skillDir: path.join(skillsDir, targetName) }]
+    : discoverSkills(agentsDir);
 
-  if (dirs.length === 0) {
+  if (targets.length === 0) {
     console.log('No skills to validate.');
     return;
   }
 
   let allValid = true;
-  for (const dir of dirs) {
-    const name = path.basename(dir);
-    const type = detectSkillType(dir);
+  let warned = 0;
+
+  for (const { name, skillDir } of targets) {
+    const type = detectSkillType(skillDir);
     const typeLabel = type === SKILL_REF ? 'skill-ref' : type;
-    const result = validateSkill(dir);
+    const result = validateSkill(skillDir);
+
     if (result.valid) {
-      console.log(`  ✔ ${name} [${typeLabel}] — valid`);
+      console.log(`  ✔ ${name} [${typeLabel}] — valid, ${result.score}/100`);
     } else {
       allValid = false;
       console.error(`  ✘ ${name} [${typeLabel}] — invalid`);
@@ -55,8 +57,21 @@ export function runSkillValidate(targetName, agentsDir) {
         console.error(`    - ${err}`);
       }
     }
+
+    for (const w of result.warnings) {
+      warned++;
+      console.error(`    ! ${w.message}`);
+    }
   }
 
+  if (warned > 0) {
+    console.error(
+      `\n${warned} conformance warning${warned === 1 ? '' : 's'}. ` +
+        'These do not block installation.'
+    );
+  }
+
+  // Exit code tracks spec validity only. Conformance warnings are advice.
   if (!allValid) {
     process.exit(1);
   }

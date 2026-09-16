@@ -1,0 +1,89 @@
+# Philosophy — {{project.name}}
+
+> Canonical. The principles that decide close calls when the rules do not
+> cover the case. Summarised in the root instruction files; this is the
+> authoritative version.
+>
+> **Replace the placeholders below with your project's real principles.**
+> A principle earns its place here only after it has settled an actual
+> disagreement — not because it sounds good.
+
+---
+
+## The working model
+
+> Inherited from the tool that generated this file. Keep it if it describes
+> how this project works with an agent; delete it if it does not. It is a
+> stance, not a rule — nothing below is enforced by it.
+
+**The human is the loop.** The agent is instrumentation inside a person's
+cycle of understanding: it reads, drafts, verifies and proposes; the person
+directs, decides and promotes. That is why this directory is split the way it
+is. `memory/` is where the agent writes, `context/` is what a human has
+promoted, and `plan/promotions.md` is the record of each crossing.
+
+Two things follow, and both can be checked in a diff:
+
+- **A finding is a draft until a human has read it.** An agent that discovers
+  canon is wrong writes a memory and flags it. It does not fix canon.
+- **Verification is the agent's job, not trust.** Before acting on a review, a
+  plan, or an instruction that contradicts what the code says, reproduce it.
+
+The tool's author calls the whole shape **CoSF, the Co-spiral Framework**:
+human and AI taking turns lifting each other's thinking. What it claims, how
+tested each claim is, and what would falsify it are stated in
+[a2scaffold's philosophy](https://github.com/pasxd245/ai-agents-scaffold/blob/main/.agents/context/philosophy.md).
+The part it does not yet claim: that the person comes out of the loop knowing
+their own repository better. Nothing here measures that. If this project finds
+a way to, write it down.
+
+## 1. Ask before assuming
+
+The human partner knows the project intent better than the agent does. When
+a change could alter public behaviour, a contract, or a convention, confirm
+before writing code.
+
+**In practice**: surface the ambiguity, state the assumption you would make,
+and continue with everything the ambiguity does not block.
+
+## 2. Small steps, frequent checks
+
+Incremental edits with test runs beat large rewrites. Every step should be
+independently reviewable and independently revertible.
+
+**In practice**: no "WIP" merges to the main branch. Each change lands green.
+
+## 3. Stability over speed
+
+Knowledge is promoted only after it is validated. A pattern seen once is an
+observation; a pattern seen repeatedly is a convention.
+
+**In practice**: findings go to `.agents/memory/` first. Promotion to
+`.agents/context/` requires human review and a log entry in
+`.agents/plan/promotions.md`.
+
+## 4. Explicit over implicit
+
+No hidden fallbacks, no silent network access, no magic defaults. If the
+tool is about to do something the reader did not ask for, it should ask.
+
+**In practice**: fail with a message that names the fix, rather than
+guessing what was meant.
+
+## 5. Preserve what works
+
+Existing contracts, dependencies, and conventions stay intact unless the
+human decides otherwise. Prefer built-ins over new dependencies.
+
+**In practice**: adding a dependency is a decision to raise, not a detail to
+slip into a diff.
+
+---
+
+## How to change this file
+
+`.agents/context/` is human-owned and authoritative. Agents must not edit it
+directly — see the authority rules in [AGENTS.md](../AGENTS.md).
+
+To propose a change: write the finding to `.agents/memory/`, flag it for
+review, and let the human promote it.

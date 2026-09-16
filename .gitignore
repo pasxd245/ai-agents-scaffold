@@ -3,4 +3,6 @@ node_modules/
 .tmp/
 tmp/
 temp/
-.claude/settings.json
+# Personal Claude Code settings. The shared .claude/settings.json IS tracked:
+# it carries the permission rules that back the .agents/ authority table.
+.claude/settings.local.json
