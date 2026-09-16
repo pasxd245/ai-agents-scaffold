@@ -577,6 +577,35 @@ describe('installSkillRef', () => {
     assert.equal(results[0].name, 'test-skill');
   });
 
+  it('refreshes a stale pointer with --force', async () => {
+    // The byte-identical case above passes even when `force` is ignored.
+    // A ref whose pointer differs is the case `--force` exists for: a
+    // v0.1.x ref re-anchored after the skillPath formula changed.
+    await installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' });
+    const refFile = path.join(tmpTo, 'skills', 'test-skill', 'SKILL.md');
+    const fresh = fs.readFileSync(refFile, 'utf8');
+    fs.writeFileSync(
+      refFile,
+      fresh.replace(
+        /skillPath: .*/,
+        'skillPath: ../../../old/skills/test-skill'
+      )
+    );
+
+    await assert.rejects(
+      () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'test-skill' }),
+      /already exists/
+    );
+
+    await installSkillRef({
+      from: tmpFrom,
+      to: tmpTo,
+      skill: 'test-skill',
+      force: true,
+    });
+    assert.equal(fs.readFileSync(refFile, 'utf8'), fresh);
+  });
+
   it('errors when source skill does not exist', async () => {
     await assert.rejects(
       () => installSkillRef({ from: tmpFrom, to: tmpTo, skill: 'nonexistent' }),

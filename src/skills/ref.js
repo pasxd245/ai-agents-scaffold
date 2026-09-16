@@ -141,9 +141,12 @@ export async function installSkillRef({ from, to, skill, force = false }) {
     const rootPath = path.relative(destSkillDir, sourceRoot);
     const sourceDir = path.relative(sourceRoot, skillDir);
 
+    // `checkDestConflict` has already proven the destination is a skill-ref
+    // (or absent), so `force` here can only replace a pointer, never a skill.
     await scaffold({
       templateName: SKILL_REF,
       outputDir: resolvedTo,
+      force,
       overrides: {
         skill: {
           name: leafName(name),
