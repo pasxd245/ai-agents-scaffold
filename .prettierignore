@@ -2,7 +2,10 @@ node_modules/
 pnpm-lock.yaml
 CHANGELOG.md
 templates/**/*.hbs
-templates/**/*.md
+# Rendered templates only. Pool skills under templates/skills/ are plain
+# markdown, installed verbatim into user repos where prettier does see
+# them — formatting them at the source keeps the two copies identical.
+templates/scaffold/**/*.md
 .agents/plan/cycles/
 .claude/
 .codex/

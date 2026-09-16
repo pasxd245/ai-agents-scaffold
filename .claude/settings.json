@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "ask": [
+      "Edit(/.agents/AGENTS.md)",
+      "Edit(/.agents/context/**)",
+      "Edit(/.agents/prompts/**)",
+      "Edit(/.agents/reference/**)",
+      "Edit(/.agents/skills/**)",
+      "Edit(/.agents/plan/**)"
+    ]
+  }
+}

@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { parseFrontmatter } from '../utils/frontmatter.js';
 import { walkRefChain } from './ref-chain.js';
+import { scoreConformance } from './conformance.js';
 import { SKILL_FILE, SKILL_REF } from '../constants.js';
 
 const NAME_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
@@ -70,14 +71,26 @@ function validateFrontmatterFields(frontmatter, dirName) {
  * depth-capped) and validates the terminal skill. Ref-hop errors are
  * surfaced in `errors`.
  *
+ * Hard spec violations land in `errors` and make the skill invalid.
+ * Conformance problems land in `warnings` and never do — a vague skill is
+ * still a well-formed one.
+ *
  * @param {string} skillDir - Path to the skill directory
- * @returns {{ valid: boolean, errors: string[], skill: object|null }}
+ * @returns {{ valid: boolean, errors: string[],
+ *             warnings: import('./conformance.js').ConformanceWarning[],
+ *             score: number, skill: object|null }}
  */
 export function validateSkill(skillDir) {
   const skillFile = path.join(skillDir, SKILL_FILE);
 
   if (!fs.existsSync(skillFile)) {
-    return { valid: false, errors: ['SKILL.md not found'], skill: null };
+    return {
+      valid: false,
+      errors: ['SKILL.md not found'],
+      warnings: [],
+      score: 0,
+      skill: null,
+    };
   }
 
   const content = fs.readFileSync(skillFile, 'utf8');
@@ -87,16 +100,20 @@ export function validateSkill(skillDir) {
     return {
       valid: false,
       errors: ['SKILL.md has no YAML frontmatter'],
+      warnings: [],
+      score: 0,
       skill: null,
     };
   }
 
-  const { frontmatter } = parsed;
+  const { frontmatter, body } = parsed;
   const dirName = path.basename(skillDir);
   const errors = validateFrontmatterFields(frontmatter, dirName);
+  const isRef = frontmatter.metadata?.type === SKILL_REF;
+  const { score, warnings } = scoreConformance(frontmatter, body, { isRef });
 
   // If it's a skill-ref, also validate the chain terminates at a valid raw skill
-  if (frontmatter.metadata?.type === SKILL_REF) {
+  if (isRef) {
     const walk = walkRefChain(skillDir);
     if (!walk.ok) {
       errors.push(walk.error);
@@ -112,5 +129,5 @@ export function validateSkill(skillDir) {
   }
 
   const skill = errors.length === 0 ? frontmatter : null;
-  return { valid: errors.length === 0, errors, skill };
+  return { valid: errors.length === 0, errors, warnings, score, skill };
 }

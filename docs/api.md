@@ -5,10 +5,19 @@
 ```javascript
 import {
   scaffold,
+  ScaffoldRefusal,
+  sync,
   listTemplates,
   resolveTemplatePath,
+  resolveScaffoldConfig,
   checkExistingFiles,
+  classifyConflicts,
+  listOutputPaths,
+  hasManagedRegion,
+  classifyRegion,
   validateSkill,
+  scoreConformance,
+  auditSkill,
   listSkills,
   installSkill,
   parseSkillSource,
@@ -26,27 +35,66 @@ Render a template to the output directory.
 
 **Parameters:**
 
-| Name                   | Type     | Required | Description                                      |
-| ---------------------- | -------- | -------- | ------------------------------------------------ |
-| `options.templateName` | `string` | Yes      | Template path (e.g. `"scaffold/base"`)           |
-| `options.outputDir`    | `string` | Yes      | Target directory to write files                  |
-| `options.overrides`    | `object` | No       | Values to deep-merge over resolved template view |
+| Name                   | Type      | Required | Description                                                                                      |
+| ---------------------- | --------- | -------- | ------------------------------------------------------------------------------------------------ |
+| `options.templateName` | `string`  | Yes      | Template path (e.g. `"scaffold/base"`)                                                           |
+| `options.outputDir`    | `string`  | Yes      | Target directory to write files                                                                  |
+| `options.overrides`    | `object`  | No       | Values to deep-merge over resolved template view                                                 |
+| `options.adopt`        | `boolean` | No       | Insert the generated block into an existing file that has no managed region, keeping its content |
+| `options.force`        | `boolean` | No       | Replace an existing file wholesale when neither merge nor adoption applies                       |
+| `options.dryRun`       | `boolean` | No       | Compute the same report without writing anything                                                 |
 
-**Returns:** `Promise<{ outputDir: string, template: string }>`
+**Returns:** `Promise<{ outputDir: string, template: string, created: string[], preserved: string[], adopted: string[], replaced: string[], unchanged: string[], needsAdopt: string[], needsForce: string[] }>`
+
+Pass `dryRun: true` to get the same report without writing a byte; a real run throws `ScaffoldRefusal` when `needsAdopt` or `needsForce` is non-empty, a dry run returns them.
+
+`created` lists new files; `replaced` lists files `force` overwrote wholesale; `preserved` lists files whose managed region was refreshed in place; `adopted`
+lists files that gained a region for the first time. Both are output-relative.
+
+**Existing files are never replaced silently.** Three cases, three outcomes:
+
+| The existing file                              | Needs   | What happens                          |
+| ---------------------------------------------- | ------- | ------------------------------------- |
+| Carries a managed region, as the template does | nothing | Only the fenced block is replaced     |
+| Has no region, but the template gives it one   | `adopt` | The block is inserted below its title |
+| Anything else, `.agents/` canon included       | `force` | Replaced wholesale                    |
+
+Rewriting a file with byte-identical content needs no permission. Without the
+permission it needs, `scaffold()` **throws before writing anything**, so the
+target is left exactly as it was.
+
+A file whose markers are broken — a duplicated pair, an end before a start, a
+start with no end — is not adoptable: adding a block beside a broken pair would
+leave it just as unmergeable. It lands under `force`, because replacement is
+the only thing a run could do to it. See [`classifyRegion()`](#classifyregiontext).
+
+**Throws:** `ScaffoldRefusal` when a permission is missing. It is exported, so
+`instanceof` works, and it carries the two lists apart because they are two
+different questions to put to a human:
+
+| Field        | Type       | Meaning                                              |
+| ------------ | ---------- | ---------------------------------------------------- |
+| `needsAdopt` | `string[]` | Marker-less stubs; adoption would keep their content |
+| `needsForce` | `string[]` | Files a render would replace wholesale, edits lost   |
 
 **Example:**
 
 ```javascript
-import { scaffold } from 'a2scaffold';
+import { scaffold, ScaffoldRefusal } from 'a2scaffold';
 
-const result = await scaffold({
-  templateName: 'scaffold/base',
-  outputDir: './my-project',
-  overrides: { project: { name: 'my-project' } },
-});
-
-console.log(result.outputDir); // "/absolute/path/to/my-project"
-console.log(result.template); // "scaffold/base"
+try {
+  const result = await scaffold({
+    templateName: 'scaffold/base',
+    outputDir: './my-project',
+    overrides: { project: { name: 'my-project' } },
+  });
+  console.log(result.outputDir); // "/absolute/path/to/my-project"
+  console.log(result.template); // "scaffold/base"
+} catch (err) {
+  if (!(err instanceof ScaffoldRefusal)) throw err;
+  console.error('would adopt:', err.needsAdopt);
+  console.error('would replace:', err.needsForce);
+}
 ```
 
 #### How overrides work
@@ -73,7 +121,7 @@ await scaffold({
 });
 ```
 
-All merged values (plus `process.env` as `env`) are available in Handlebars templates as `{{ project.name }}`, `{{ env.HOME }}`, etc.
+All merged values are available in Handlebars templates as `{{ project.name }}`, etc. The process environment is **not** exposed to templates: a `{{ env.X }}` in a template renders empty. Pass what a template needs through `values.yaml` or `overrides`, where it is visible.
 
 ---
 
@@ -135,27 +183,51 @@ console.log(paths.partialsDir); // ".../templates/scaffold/base/partials" or und
 
 ---
 
-### `checkExistingFiles(templateDir, outDir, extname?)`
+### `checkExistingFiles(templateDir, outDir, view?, extname?)`
 
-Check which output files already exist in the target directory. Use this to detect conflicts before calling `scaffold()`.
+Check which output files already exist in the target directory and would lose content. Use this to detect conflicts before calling `scaffold()`.
+
+Files that carry a managed region on both sides are **not** conflicts: the
+render replaces only the fenced block.
 
 **Parameters:**
 
-| Name          | Type     | Required | Default  | Description                                  |
-| ------------- | -------- | -------- | -------- | -------------------------------------------- |
-| `templateDir` | `string` | Yes      |          | Path to the template's `template/` directory |
-| `outDir`      | `string` | Yes      |          | Target output directory to check             |
-| `extname`     | `string` | No       | `".hbs"` | Template file extension                      |
+| Name          | Type     | Required | Default  | Description                                                                                                  |
+| ------------- | -------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------ |
+| `templateDir` | `string` | Yes      |          | Path to the template's `template/` directory                                                                 |
+| `outDir`      | `string` | Yes      |          | Target output directory to check                                                                             |
+| `view`        | `object` | No       |          | Resolved values. Without it, `$if{…}` path segments cannot be evaluated and every conditional file is missed |
+| `extname`     | `string` | No       | `".hbs"` | Template file extension                                                                                      |
+
+Pass a **fully resolved** view — the one `resolveScaffoldConfig()` returns, not
+a hand-built partial. Path formulas are evaluated exactly as the renderer
+evaluates them, and a formula naming a variable the view does not define is an
+error there and here.
 
 **Returns:** `string[]` — list of conflicting file paths, relative to `outDir`. Empty array if no conflicts.
+
+This is a prediction, not the verdict. It compares the **unrendered** template
+against the target, so a file the render would rewrite byte-identically still
+shows up here. `scaffold()` knows the difference and throws a `ScaffoldRefusal`
+carrying the true lists — prefer that for deciding what a run would destroy,
+and use this only to warn ahead of time.
 
 **Example:**
 
 ```javascript
-import { resolveTemplatePath, checkExistingFiles, scaffold } from 'a2scaffold';
+import {
+  resolveTemplatePath,
+  resolveScaffoldConfig,
+  checkExistingFiles,
+  scaffold,
+} from 'a2scaffold';
 
 const { templateDir } = resolveTemplatePath('scaffold/base');
-const conflicts = checkExistingFiles(templateDir, './my-project');
+const { view } = resolveScaffoldConfig({
+  templateName: 'scaffold/base',
+  outputDir: './my-project',
+});
+const conflicts = checkExistingFiles(templateDir, './my-project', view);
 
 if (conflicts.length > 0) {
   console.warn('These files already exist:', conflicts);
@@ -167,6 +239,116 @@ await scaffold({
   outputDir: './my-project',
 });
 ```
+
+---
+
+### `classifyConflicts(templateDir, outDir, view?, extname?)`
+
+Split what `checkExistingFiles()` found into the two permissions `scaffold()`
+distinguishes. Same parameters.
+
+**Returns:** `{ adopt: string[], overwrite: string[] }`
+
+| Property    | Description                                                                          |
+| ----------- | ------------------------------------------------------------------------------------ |
+| `adopt`     | Marker-less stubs — `scaffold({ adopt: true })` keeps their content                  |
+| `overwrite` | Everything else, `.agents/` canon included — `scaffold({ force: true })` replaces it |
+
+---
+
+### `sync(options)`
+
+Bring a repository's generated surface up to date without destroying anything.
+
+Where `scaffold()` has one behaviour for every file, `sync()` separates the two
+kinds of generated file: **managed** files, whose fenced region the template
+owns, and **seeded** files, written once and then the human's. It writes only
+inside one unambiguous managed region and never overwrites a seeded file that
+already exists, so it has no `force`. A file whose markers are missing,
+duplicated, fenced inside an example or out of order is reported, not merged.
+
+**Parameters:**
+
+| Name                   | Type      | Required | Description                                      |
+| ---------------------- | --------- | -------- | ------------------------------------------------ |
+| `options.templateName` | `string`  | Yes      | Template path (e.g. `"scaffold/base"`)           |
+| `options.outputDir`    | `string`  | Yes      | Repository to update                             |
+| `options.overrides`    | `object`  | No       | Values to deep-merge over resolved template view |
+| `options.adopt`        | `boolean` | No       | Insert markers into a stub that has none         |
+| `options.dryRun`       | `boolean` | No       | Report without writing                           |
+
+**Returns:** `Promise<{ created, updated, unchanged, adopted, unmanaged, ambiguous, drifted }>`
+
+| Property    | Type                                         | Meaning                                                              |
+| ----------- | -------------------------------------------- | -------------------------------------------------------------------- |
+| `created`   | `string[]`                                   | Absent from the repo, written fresh                                  |
+| `updated`   | `string[]`                                   | Managed region refreshed                                             |
+| `unchanged` | `string[]`                                   | Managed region already current                                       |
+| `adopted`   | `string[]`                                   | Brought under management this run                                    |
+| `unmanaged` | `string[]`                                   | The template owns a region here, this file has none                  |
+| `ambiguous` | `Array<{ file: string, reason: string }>`    | Markers present but not forming one region; left untouched to repair |
+| `drifted`   | `Array<{ file: string, missing: string[] }>` | Enforcement files where a required rule is not present verbatim      |
+
+`ambiguous` is never adopted, even with `adopt` on: inserting a block beside a
+duplicated or inverted pair would leave the file just as unmergeable and harder
+to repair. The `reason` says which shape was found.
+
+`drifted` names the rules, not every textual difference: reformatting the file
+and adding rules of your own are not drift. The comparison is **verbatim** —
+the same string in the same permission list. It does not evaluate what a
+pattern matches, so a broader rule of your own that covers a required one still
+reports the required one; that is a limit stated on purpose, not a claim that
+your rule is insufficient.
+
+**Example:**
+
+```javascript
+import { sync } from 'a2scaffold';
+
+const plan = await sync({
+  templateName: 'scaffold/base',
+  outputDir: '.',
+  dryRun: true,
+});
+
+console.log(plan.created); // [".agents/context/new-doc.md"]
+for (const { file, missing } of plan.drifted) {
+  console.warn(`${file} is missing: ${missing.join(', ')}`);
+}
+```
+
+---
+
+### `hasManagedRegion(text)`
+
+Whether a file carries exactly one complete, correctly ordered managed region
+outside any code block. A thin wrapper over [`classifyRegion()`](#classifyregiontext);
+`true` only for the `valid` state.
+
+---
+
+### `classifyRegion(text)`
+
+Classify a file's `<!-- a2scaffold:start -->` / `<!-- a2scaffold:end -->`
+markers. This is what `scaffold()` and `sync()` consult before touching a file.
+
+**Returns:** one of
+
+| Shape                           | When                                                       |
+| ------------------------------- | ---------------------------------------------------------- |
+| `{ kind: 'none' }`              | No marker outside a code block                             |
+| `{ kind: 'valid', start, end }` | Exactly one start followed by one end; offsets into `text` |
+| `{ kind: 'ambiguous', reason }` | Markers present but not forming one region                 |
+
+A marker counts only on its own line, indented at most three spaces, and
+outside a fenced (` ``` ` or `~~~`) or indented code block — so a document that
+shows the markers as an example is `none`, not a region.
+
+The three states are kept apart because callers act differently on each:
+merge needs `valid` on both sides, adoption accepts only `none`, and
+`ambiguous` is reported for a human to repair. Collapsing `none` and
+`ambiguous` was how `--adopt` once added a third marker pair to a file that
+already had two.
 
 ---
 
@@ -182,13 +364,20 @@ Validate a skill directory against the [agentskills.io specification](https://ag
 | ---------- | -------- | -------- | --------------------------- |
 | `skillDir` | `string` | Yes      | Path to the skill directory |
 
-**Returns:** `{ valid: boolean, errors: string[], skill: object|null }`
+**Returns:** `{ valid: boolean, errors: string[], warnings: ConformanceWarning[], score: number, skill: object|null }`
 
-| Property | Description                                              |
-| -------- | -------------------------------------------------------- |
-| `valid`  | `true` if the skill passes all validation checks         |
-| `errors` | Array of validation error messages (empty if valid)      |
-| `skill`  | Parsed SKILL.md frontmatter object, or `null` if invalid |
+| Property   | Description                                                                  |
+| ---------- | ---------------------------------------------------------------------------- |
+| `valid`    | `true` if the skill passes all validation checks                             |
+| `errors`   | Array of validation error messages (empty if valid)                          |
+| `warnings` | Conformance warnings — quality problems that never make a skill invalid      |
+| `score`    | 0–100 local guidance score derived from `warnings`; see `scoreConformance()` |
+| `skill`    | Parsed SKILL.md frontmatter object, or `null` if invalid                     |
+
+Errors and warnings answer different questions. An error means the skill is
+malformed and cannot be installed; a warning means it is well-formed but will
+work badly — a description too vague to match a task against, say. A skill with
+warnings is still valid.
 
 **Validation rules:**
 
@@ -212,6 +401,66 @@ if (!result.valid) {
   console.log(result.skill.description); // "Reviews code..."
 }
 ```
+
+---
+
+### `auditSkill(skillDir)`
+
+Screen a skill directory for supply-chain risks. A skill runs with the full
+permissions of the agent that loads it, so an unreviewed one from a registry
+reaches API keys, SSH credentials and the shell.
+
+**Parameters:**
+
+| Name       | Type     | Required | Description                 |
+| ---------- | -------- | -------- | --------------------------- |
+| `skillDir` | `string` | Yes      | Path to the skill directory |
+
+**Returns:** `{ findings: AuditFinding[], scanned: number, clean: boolean }`
+
+Each finding is `{ category, severity, file, line?, message }`, where
+`category` is one of `network`, `credentials`, `execution`, `injection` or
+`opaque`, and `severity` is `high` or `medium`. `installSkill()` refuses a
+**downloaded** skill with any high-severity finding unless `force` is set;
+local installs are not screened.
+
+These are heuristics, not proof. A crawler skill legitimately reaches the
+network. The audit's job is to say where to look.
+
+```javascript
+import { auditSkill } from 'a2scaffold';
+
+const { findings, clean } = auditSkill('./.agents/skills/research');
+for (const f of findings) {
+  console.warn(`[${f.severity}] ${f.file}:${f.line ?? '-'} — ${f.message}`);
+}
+```
+
+---
+
+### `scoreConformance(frontmatter, body, options?)`
+
+Score a parsed `SKILL.md` for quality problems that do not make it invalid.
+`validateSkill()` calls this for you; call it directly only when you already
+have the parsed pieces.
+
+**Returns:** `{ score: number, warnings: ConformanceWarning[] }`, each warning
+`{ code, message, weight? }`.
+
+`score` is a **local guidance score**, not a rating against any published
+specification. It is 100 minus weighted penalties for the warnings below, and
+its checks draw on the Agent Skills spec, Claude Code's listing behaviour and
+local judgement in roughly equal measure. Read the warnings; treat the number
+as a rough ordering, not a measurement.
+
+| Code                      | What it means                                         |
+| ------------------------- | ----------------------------------------------------- |
+| `description-too-short`   | Too little signal to match a task against             |
+| `description-no-trigger`  | Says what the skill does, never when to use it        |
+| `listing-cap-exceeded`    | Truncated in the skill listing                        |
+| `body-over-budget`        | Body far past the recommended token budget            |
+| `body-empty`              | No instructions below the frontmatter                 |
+| `unknown-frontmatter-key` | Likely a typo — the key is silently ignored otherwise |
 
 ---
 
@@ -301,15 +550,19 @@ Install a skill from a source into a target directory.
 | ---------------------- | ------------------------------------------------------- | --------------------------------------------- |
 | Explicit local path    | `./my-skill`, `/absolute/path`                          | Copies that directory                         |
 | Full GitHub tree URL   | `https://github.com/owner/repo/tree/main/path/to/skill` | Sparse-checks out that skill directory        |
-| Built-in name          | `my-skill`, `planning/master-plan`                      | Resolves under `templates/skills/`            |
+| Built-in name          | `my-skill`, `group/my-skill`                            | Resolves under `templates/skills/`            |
 | Registry name + `from` | `pdf` with `{ from: 'anthropics' }`                     | Resolves through `options.rc.registries.from` |
 
-**Returns:** `{ name: string, path: string }`
+**Returns:** `{ name: string, path: string, findings?: AuditFinding[] }`
 
-| Property | Description                                    |
-| -------- | ---------------------------------------------- |
-| `name`   | The installed skill's directory name           |
-| `path`   | Absolute path to the installed skill directory |
+| Property   | Description                                                          |
+| ---------- | -------------------------------------------------------------------- |
+| `name`     | The installed skill's directory name                                 |
+| `path`     | Absolute path to the installed skill directory                       |
+| `findings` | Audit findings from the remote screen; present for downloaded skills |
+
+Symbolic links inside the source are never copied, along with the build
+artefacts listed under `skill add`.
 
 **Throws:**
 

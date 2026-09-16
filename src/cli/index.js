@@ -2,6 +2,7 @@ import { HELP, pkg } from './help.js';
 import { detectCommand } from './args.js';
 import { runScaffold } from './commands/scaffold.js';
 import { runSkill } from './commands/skill.js';
+import { runSync } from './commands/sync.js';
 
 export async function run() {
   const argv = process.argv.slice(2);
@@ -20,6 +21,8 @@ export async function run() {
 
   if (command === 'skill') {
     await runSkill(args);
+  } else if (command === 'sync') {
+    await runSync(args);
   } else {
     await runScaffold(args);
   }

@@ -17,6 +17,7 @@ a2scaffold v${pkg.version}
 Usage:
   a2scaffold [options]              Scaffold files (default command)
   a2scaffold init [options]         Same as default scaffold command
+  a2scaffold sync [options]         Update the generated surface, safely
   a2scaffold skill <action>         Manage agent skills
 
 Scaffold Options:
@@ -24,15 +25,30 @@ Scaffold Options:
   -o, --output <dir>      Output directory (default: ".")
   -n, --name <name>       Project name (default: directory name)
   -l, --list              List available templates
-  -f, --force             Overwrite existing files
+      --adopt             Insert the generated block into an existing stub,
+                          keeping everything the author wrote
+  -f, --force             Replace existing files wholesale, edits lost
+                          (implies --adopt for stubs)
       --dry-run           Preview without writing files
   -h, --help              Show this help
   -v, --version           Show version
+
+sync — bring the generated surface up to date
+  Creates missing files, refreshes managed regions, and leaves every seeded
+  file that already exists alone. It writes only inside an unambiguous
+  managed region, so there is no --force; what it will not touch is reported.
+  Options:
+    -u, --use <name>        Template to use (default: "base")
+    -o, --output <dir>      Target directory (default: ".")
+    -n, --name <name>       Project name (default: directory name)
+        --adopt             Insert markers into a stub that has none
+        --dry-run           Report without writing
 
 Skill Commands:
   skill add <source> [options]              Install a skill into .agents/skills
   skill list [options]                      List installed skills
   skill validate [name] [options]           Validate one skill, or all skills
+  skill audit [name] [options]              Flag risky patterns in skills
   skill ref --skill <name|all> --to <dir>   Create lightweight skill references
 
 skill add — install a skill
@@ -42,36 +58,44 @@ skill add — install a skill
     ./path/to/skill         Local directory
     https://github.com/...  GitHub tree URL to one skill directory
   Options:
-    -d, --agents-dir <dir>  Target agents directory (default: ".agents")
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
         --from <registry>   Fetch from a named registry in .a2scaffoldrc.json
-    -f, --force             Overwrite an existing skill of the same name
+    -f, --force             Install despite a high-severity audit finding,
+                            and replace an existing skill of the same name
 
 skill list — show installed skills
   Options:
-    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
 
 skill validate [name] — validate skill frontmatter
   Args:
     name                    Optional skill directory name; omit to validate all
   Options:
-    -d, --agents-dir <dir>  Agents directory to read (default: ".agents")
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
+
+skill audit [name] — flag risky patterns in skills (heuristic, never a verdict)
+  Args:
+    name                    Optional skill directory name; omit to audit all
+  Options:
+    -d, --agents-dir <dir>  Directory that holds skills/ (default: ".agents")
 
 skill ref — create lightweight pointers to skills in another agents dir
   Options:
         --skill <name|all>  Skill name, or "all" to ref every skill (required)
-        --from <dir>        Source agents directory (default: ".agents")
-        --to <dir>          Destination agents directory (required)
+        --from <dir>        Source directory that holds skills/ (default: ".agents")
+        --to <dir>          Destination directory that holds skills/ (required)
     -f, --force             Overwrite existing skill refs at the destination
 
 Examples:
   npx a2scaffold
   npx a2scaffold init
   npx a2scaffold --use base --name my-project
-  npx a2scaffold --use shared/research-setup
+  npx a2scaffold sync
+  npx a2scaffold sync --dry-run
   npx a2scaffold skill add my-skill
-  npx a2scaffold skill add planning/master-plan
   npx a2scaffold skill add ./my-skill
   npx a2scaffold skill add code-review --from main
+  npx a2scaffold skill validate -d .             # skills/ kept at the repo root
   npx a2scaffold skill list
   npx a2scaffold skill validate
   npx a2scaffold skill ref --skill all --from .agents --to .github

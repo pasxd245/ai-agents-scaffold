@@ -43,8 +43,13 @@ metadata:
 
 ## Path computation
 
+- `sourceProjectRoot` = the deepest directory containing both the source and
+  destination agents dirs. For sibling dirs (`.agents` → `.claude`) that is
+  their shared parent; for a repo keeping `skills/` at its top level
+  (`--from .`) it is the source dir itself, so the pointer never climbs above
+  the project and does not depend on the repo's folder name.
 - `rootPath` = `path.relative(destSkillDir, sourceProjectRoot)`
-- `sourceDir` = `<agentsDirName>/skills/<skillName>` (e.g. `.agents/skills/create-template`)
+- `sourceDir` = `path.relative(sourceProjectRoot, skillDir)` (e.g. `.agents/skills/create-template`)
 - `skillPath` = `<rootPath>/<sourceDir>` — the canonical pointer used by
   validation and ref-chain resolution
 

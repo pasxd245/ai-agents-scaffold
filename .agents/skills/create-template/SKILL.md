@@ -1,6 +1,6 @@
 ---
 name: create-template
-description: Step-by-step procedure for adding a new template to a2scaffold. Use when a contributor wants to add a new template or you need to scaffold a new template directory structure.
+description: Step-by-step procedure for adding a new template to a2scaffold. Use when a contributor wants to add a new template, or when you need to scaffold a new template directory structure with its values file and partials.
 metadata:
   author: a2scaffold
   version: '1.0'

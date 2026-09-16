@@ -25,28 +25,30 @@ npx a2scaffold
 
 ## Commands
 
-a2scaffold has two command groups:
+a2scaffold has three command groups:
 
 | Command                     | Description                                         |
 | --------------------------- | --------------------------------------------------- |
 | `a2scaffold [options]`      | Scaffold AI agent config files (default)            |
 | `a2scaffold init [options]` | Same as the default scaffold command                |
+| `a2scaffold sync [options]` | Update the generated surface without losing work    |
 | `a2scaffold skill <action>` | Manage agent skills — [see Skills Guide](skills.md) |
 
 Running `a2scaffold` with no subcommand (or `a2scaffold init`) runs scaffolding.
 
 ## Scaffold options
 
-| Flag             | Short | Default        | Description                                     |
-| ---------------- | ----- | -------------- | ----------------------------------------------- |
-| `--use <name>`   | `-u`  | `base`         | Template to use                                 |
-| `--output <dir>` | `-o`  | `.`            | Output directory                                |
-| `--name <name>`  | `-n`  | directory name | Project name used in generated files            |
-| `--list`         | `-l`  |                | List available templates and exit               |
-| `--force`        | `-f`  |                | Overwrite existing files without prompting      |
-| `--dry-run`      |       |                | Preview what would be generated without writing |
-| `--help`         | `-h`  |                | Show help text                                  |
-| `--version`      | `-v`  |                | Show version number                             |
+| Flag             | Short | Default        | Description                                                      |
+| ---------------- | ----- | -------------- | ---------------------------------------------------------------- |
+| `--use <name>`   | `-u`  | `base`         | Template to use                                                  |
+| `--output <dir>` | `-o`  | `.`            | Output directory                                                 |
+| `--name <name>`  | `-n`  | directory name | Project name used in generated files                             |
+| `--list`         | `-l`  |                | List available templates and exit                                |
+| `--adopt`        |       |                | Adopt existing stubs, keeping what they say                      |
+| `--force`        | `-f`  |                | Replace existing files wholesale, edits lost — implies `--adopt` |
+| `--dry-run`      |       |                | Preview what would be generated without writing                  |
+| `--help`         | `-h`  |                | Show help text                                                   |
+| `--version`      | `-v`  |                | Show version number                                              |
 
 ## Common workflows
 
@@ -80,28 +82,45 @@ Dry run — template "base" would generate:
   Output directory: /home/user/my-project
   Project name: my-project
 
-  Files:
-    - $if{agents.codex}/AGENTS.md
-    - $if{agents.gemini}/GEMINI.md
+  Created — new files:
+
     - .agents/.gitignore
     - .agents/AGENTS.md
-    - $if{agents.claude}/.claude/CLAUDE.md
-    - $if{agents.codex}/.codex/.gitkeep
-    - $if{agents.copilot}/.github/copilot-instructions.md
-    - $if{agents.gemini}/.gemini/.gitkeep
     - .agents/context/.gitkeep
+    - .agents/context/harness-behaviour.md
+    - .agents/context/memory-placement.md
+    - .agents/context/philosophy.md
     - .agents/memory/.gitkeep
+    - .agents/memory/_TEMPLATE.md
+    - .agents/plan/DoD.md
     - .agents/plan/PDCA.md
+    - .agents/plan/cycles/.gitkeep
+    - .agents/plan/cycles/_TEMPLATE.md
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
+    - .agents/prompts/compact-content.prompt.md
     - .agents/prompts/reflect-agents.prompt.md
+    - .agents/reference/mechanisms.md
+    - .agents/reference/memory-and-promotion.md
+    - .agents/reference/root-files.md
+    - .agents/reference/skills.md
     - .agents/skills/.gitkeep
-    - .agents/plan/cycles/.gitkeep
+    - .claude/settings.json
+    - .github/copilot-instructions.md
+    - AGENTS.md
+    - CLAUDE.md
+
+  0 already current.
 ```
 
-Dry-run output is based on raw template paths, so conditional template
-directories such as `$if{agents.claude}` may appear in the preview even
-though they are evaluated during rendering.
+Dry-run renders the template to a temporary directory and compares it with the
+target file by file, so it reports the same split the real run acts on:
+created, updated in place, adopted, replaced, and — when a flag is missing —
+`Needs --adopt` or `Needs --force`. A repo with existing files therefore sees
+its conflicts in the preview, not only in the refusal. Files gated on a
+disabled harness — `GEMINI.md` and `.codex/` above, with `agents.gemini` and
+`agents.codex` off — are omitted rather than shown with their `$if{...}`
+marker.
 
 ### List available templates
 
@@ -122,18 +141,29 @@ Available templates:
 If the output directory already contains files that would be generated, the CLI exits with an error by default:
 
 ```text
-The following files already exist and would be overwritten:
+The following files already exist:
 
-  - .agents/AGENTS.md
-  - .claude/CLAUDE.md
+  Adopted — your content is kept, the generated block is
+  inserted below the title:
 
-Use --force to overwrite existing files.
+    - AGENTS.md
+
+  Use --adopt to proceed.
+
+  Overwritten — replaced wholesale, edits lost:
+
+    - .agents/AGENTS.md
+
+  Use --force to proceed.
 ```
 
-Use `--force` to overwrite:
+The two are different permissions and have different flags. Adoption keeps a
+hand-written stub's content; replacement deletes what is there. Grant only the
+one you meant:
 
 ```bash
-a2scaffold --force
+a2scaffold --adopt   # keep the stubs, add the generated block
+a2scaffold --force   # replace canon too — and adopt stubs, as before
 ```
 
 ### Use a specific template
@@ -183,7 +213,7 @@ Registry definitions for `skill add --from <registry>` are read from `.a2scaffol
 | User    | `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` (only)                                               |
 | Project | `<project>/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `<project>/.a2scaffoldrc.{json,yaml,yml}` |
 
-Project entries override user entries. At each level, only one form is allowed — if both the directory and flat forms exist, the CLI exits with a conflict error. See the [Skills Guide](skills.md#from-a-named-registry-a2scaffoldrcjson) for registry schema and examples.
+Project entries override user entries. At each level, only one form is allowed — if both the directory and flat forms exist, the CLI exits with a conflict error. See the [Skills Guide](skills.md#a2scaffold-skill-add-source) for registry schema and examples.
 
 ## Generated output structure
 
@@ -192,34 +222,298 @@ The `base` template generates:
 ```text
 .agents/
   .gitignore             # Keeps placeholder files trackable
-  AGENTS.md              # Pair programming guide for AI agents
+  AGENTS.md              # The heart — every stub points here
+  reference/             # Topic docs, each with its own trigger
+    mechanisms.md
+    memory-and-promotion.md
+    root-files.md
+    skills.md
   context/               # Canonical knowledge (human-curated)
     .gitkeep
+    harness-behaviour.md # How harnesses load and enforce (dated)
+    memory-placement.md  # Which memory system a finding belongs in
+    philosophy.md        # Principles that decide close calls
   memory/                # Agent-generated learnings
     .gitkeep
+    _TEMPLATE.md         # Copy this for a new memory entry
   plan/
+    DoD.md               # Standing bar every round clears
     PDCA.md              # PDCA methodology guide
     promotions.md        # Promotion log for validated learnings
     cycles/              # Individual PDCA cycle records
       .gitkeep
+      _TEMPLATE.md       # Copy this for a new round
   prompts/               # Scanning & generation prompts
     .gitkeep
+    compact-content.prompt.md
     reflect-agents.prompt.md
   skills/                # Reusable agent procedures
     .gitkeep
 .claude/
-  CLAUDE.md              # Claude Code project instructions
+  settings.json          # Permission rules backing the authority table
+AGENTS.md                # Stub for Codex & the AGENTS.md convention
+CLAUDE.md                # Stub for Claude Code (@.agents/AGENTS.md)
 .github/
-  copilot-instructions.md  # GitHub Copilot project instructions
+  copilot-instructions.md  # Stub for Copilot — restates it (cannot import)
 ```
+
+### Opt-in: `.agents/decisions/`
+
+Off by default. Set `plan.decisions: true` to also generate:
+
+```text
+.agents/
+  decisions/             # Cross-round commitments
+    README.md            # What belongs here, and what does not
+    _TEMPLATE.md         # Copy this for a new decision
+```
+
+A decision file holds a promise that outlives the round that made it — _"we
+agreed not to build X until Y"_. Round docs are round-scoped and `context/` is
+canon an agent must follow; neither holds this. Enabling the flag also adds
+`decisions/` to the knowledge base's authority table and to the permission
+rules in `.claude/settings.json`, so it is protected like the rest of canon.
+
+It stays off by default because it is real surface, and a repo that has not
+yet felt cross-round drift does not need it.
+
+### Opt-in: `.agents/plan/programs/`
+
+Off by default. Set `plan.programs: true` to also generate:
+
+```text
+.agents/
+  plan/
+    programs/            # Multi-round work
+      README.md          # When a program is warranted
+      _TEMPLATE.md       # Copy this for a new program
+```
+
+A round in `cycles/` is one unit of execution; a program is the goal above it —
+the phase order and the gate each phase clears. Open one when the work will not
+fit in a single round **and** the phases depend on each other. Independent work
+does not need a program, it needs several rounds.
+
+Each round names its program in its `**Part of**` header; that header is the
+only link between the two. `programs/` sits under `plan/`, so the existing
+authority rule and permission entry already cover it.
+
+### A convention we suggest, but do not generate: `docs/agents/`
+
+The scaffold stops at `.agents/`, on a deliberate line:
+
+> `.agents/` is what an **agent** must read to do the next task.
+> `docs/agents/` is what a **human** reads to understand the project.
+
+An agent may draft either; the audience decides where it lands. Because the
+second is human-facing, the tool has no opinion it can enforce there — so it
+generates nothing and charges you nothing for it.
+
+If you want the convention, it looks like this:
+
+```text
+docs/agents/
+  workflows/                  # End-to-end flows this repo supports
+    <name>.workflow.md
+  plan/                       # Co-planning docs — human and agent, together
+    <yyyyMMdd>-<name>.plan.md
+```
+
+Read on demand, never auto-loaded, and `.agents/context/` wins any conflict.
+A plan doc that kicks off real work hands off to `.agents/plan/` — either a
+single round in `cycles/`, or a program (see below) when it spans several.
+
+## Keeping a repo up to date — `sync`
+
+Scaffolding treats every file the same way, so refreshing a stub used to mean
+`--force`, and `--force` also replaces `.agents/` wholesale. In a repo with real
+curated canon that trade is never worth making, which left no way to pick up
+template changes at all.
+
+`sync` separates the two kinds of generated file:
+
+| Kind                                            | Example                  | What sync does                                           |
+| ----------------------------------------------- | ------------------------ | -------------------------------------------------------- |
+| **Managed** — the template owns a fenced region | the harness stubs        | Replaces the region only. Author content cannot be lost. |
+| **Seeded** — written once, then yours           | everything in `.agents/` | Creates it if absent. Never touches it if present.       |
+
+```bash
+a2scaffold sync --dry-run   # report only
+a2scaffold sync
+```
+
+It writes only inside one unambiguous managed region and never overwrites a
+seeded file that exists, so there is no `--force` and no conflict list —
+which makes it safe in CI or a pre-commit hook, where `--force` never will be.
+Files it will not touch are reported instead:
+
+```text
+Synced "base" into /path/to/repo
+
+  Created — new template files:
+    - .agents/plan/DoD.md
+
+  Updated — managed region refreshed:
+    - CLAUDE.md
+
+  Enforcement rules not present verbatim — confirm by hand:
+    - .claude/settings.json
+        permissions.ask: Edit(/.agents/reference/**)
+```
+
+Three reports need action from you:
+
+- **Not managed** — the template owns a block in that file and your copy has no
+  markers. `--adopt` inserts them, but read the warning it prints first: a stub
+  generated _before_ markers existed already contains a copy of the block, so
+  adoption duplicates it rather than replacing it. For those, place the markers
+  by hand.
+- **Ambiguous markers** — the file has markers, but they do not form one
+  region: a duplicated pair, an end before a start, a start with no end. Sync
+  cannot tell where the generated block ends and your content begins, so it
+  writes nothing and says which shape it found. `--adopt` does not apply here
+  either; adding a block beside a broken pair would only make the repair
+  harder. Leave exactly one start and one end marker, in that order.
+- **Enforcement rules not present verbatim** — `.claude/settings.json` carries
+  permission rules, and a required rule that has gone missing means canon the
+  harness is no longer protecting. The comparison is by string, in the same
+  permission list: if a broader rule of your own already covers a required one,
+  nothing is wrong, and sync says so rather than pretending to know. The file is
+  never overwritten, because you may have added rules of your own.
+
+On a repo that has never been scaffolded, `sync` does the whole install
+non-destructively: it creates everything missing and reports any pre-existing
+instruction file rather than touching it.
+
+## Re-running the scaffold
+
+Generated stubs — `CLAUDE.md`, `AGENTS.md`, `GEMINI.md` and
+`.github/copilot-instructions.md` — fence their generated content between
+markers:
+
+```markdown
+# CLAUDE.md — my-project
+
+<!-- a2scaffold:start -->
+
+...generated...
+
+<!-- a2scaffold:end -->
+
+## Anything you write here is yours
+```
+
+Re-running `a2scaffold` replaces **only** the fenced block. Edits outside it
+survive, and those files are therefore not reported as conflicts — updating
+them needs no `--force`.
+
+Two parts of every stub are deliberately outside the block:
+
+| Outside the block          | Why                                                                                                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **The title**              | `# CLAUDE.md — my-project` names the file, which is the least useful thing it can tell a model reading it at launch. Rename it to name the _project_: `# AI-Cowork — the owner's daily work & life base`. It will survive every re-scaffold. |
+| **The philosophy summary** | It ships as five placeholders, and `.agents/context/philosophy.md` tells you to replace them. Inside the block, doing so would be silently reverted on the next run. Keep it in step with the canonical list.                                |
+
+Everything under `.agents/` has no managed region on purpose. It is canonical
+knowledge you are expected to edit freely, so overwriting it is destructive
+and still requires `--force`.
+
+The markers are HTML comments: invisible in rendered markdown, and stripped by
+harnesses that strip comments before loading the file, so they cost nothing at
+read time.
 
 ## File conflict handling
 
 Before writing, the CLI checks whether any output files already exist in the target directory.
 
 - **No conflicts**: files are written normally.
-- **Conflicts found, no `--force`**: the CLI prints the conflicting file list and exits with code 1.
-- **Conflicts found, `--force`**: the CLI prints a warning and overwrites the files.
+- **Conflicts found, permission missing**: the CLI lists them, split by the
+  flag each kind needs, and exits with code 1.
+- **`--adopt`**: marker-less stubs are **adopted**. Canon still blocks the run.
+- **`--force`**: canon is overwritten, and stubs are adopted as well.
+
+`scaffold()` enforces this itself rather than trusting the pre-flight, and
+throws **before writing anything** when a permission is missing — so a refused
+run leaves the target exactly as it was.
+
+### Adopting a repo that already has agent files
+
+Bringing `a2scaffold` into an existing repo used to mean choosing between
+losing a hand-written `AGENTS.md` and not scaffolding at all. The managed-region
+merge could not help: it needs markers on **both** sides, and a file written
+before the tool has none.
+
+So `--adopt` exists instead. For any generated file that carries a managed
+region — the four harness stubs — the generated block is inserted below your
+title and **everything else you wrote is kept**, ending up below the end marker
+where user content belongs anyway:
+
+```markdown
+# p-01 Bootstrap ← your title, untouched
+
+<!-- a2scaffold:start -->
+
+…generated pointer to .agents/…
+
+<!-- a2scaffold:end -->
+
+## What is this ← everything you wrote, unchanged
+```
+
+The file now carries markers, so this happens exactly once; later runs take the
+ordinary merge path and need no flag at all.
+
+`.agents/` is different. It has no managed region on purpose, so only `--force`
+replaces it, wholesale — which is why the pre-flight list separates the two:
+
+```text
+The following files already exist:
+
+  Adopted — your content is kept, the generated block is
+  inserted below the title:
+
+    - AGENTS.md
+
+  Overwritten — replaced wholesale, edits lost:
+
+    - .agents/AGENTS.md
+```
+
+## Upgrading from 0.1.x
+
+Version 0.2.0 changes where the generated instruction files live. A repo
+scaffolded by 0.1.x keeps working, but it carries both layouts until you do the
+moves below. Nothing here is automated, on purpose: each step touches a file
+you may have edited.
+
+1. **Preview, then sync.** `npx a2scaffold sync --dry-run`, then
+   `npx a2scaffold sync`. It creates the root `CLAUDE.md` and `AGENTS.md` and
+   leaves every existing file alone — including the old `.claude/CLAUDE.md`.
+2. **Move your `.claude/CLAUDE.md` content up.** Anything you wrote there goes
+   below the `<!-- a2scaffold:end -->` marker in the root `CLAUDE.md`. Then
+   delete `.claude/CLAUDE.md`. Claude Code reads both locations, so keeping
+   both loads your instructions twice.
+3. **Root `AGENTS.md` is now on by default** (`agents.agentsmd: true`). Set it
+   to `false` in `.a2scaffold/values.yaml` if you do not want one, and re-run
+   `sync`.
+4. **`claude.kb_path` changed.** If your values file overrides it, replace
+   `../.agents/AGENTS.md` with `.agents/AGENTS.md`; the stub now sits at the
+   root, so the path is relative to the root.
+5. **Track `.claude/settings.json`.** It carries the permission rules that
+   back the `.agents/` authority table, so it belongs in git. If your
+   `.gitignore` lists it, swap that line for `.claude/settings.local.json`.
+6. **`--force` means replace.** It used to mean "overwrite the files the
+   scaffold owns"; it now replaces every conflicting file wholesale, including
+   anything under `.agents/`. The non-destructive path for a stub that has no
+   markers is the new `--adopt`. Read the CLI's adopt/overwrite split before
+   passing either.
+7. **Templates no longer see the environment.** `{{ env.X }}` rendered any
+   process variable into generated files, secrets included; it now renders
+   empty. Custom `--use` templates that relied on it should take the value
+   from `values.yaml` instead.
+
+Skills are unaffected. `skill validate` now prints a conformance score next to
+its verdict, and `skill audit` is new; see the [Skills Guide](skills.md).
 
 ## Skills management
 

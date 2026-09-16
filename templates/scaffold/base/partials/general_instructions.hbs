@@ -1,15 +1,12 @@
-## General instructions
+## Shared knowledge base
 
-{{#if kb_path}}
-> **Shared knowledge base**: [AGENTS.md]({{kb_path}})
+`.agents/` holds the directory layout, authority rules, load order, and the
+pair-programming workflow. Treat it as part of these instructions.
+{{#if kb_import}}
+Agents that expand `@` imports load it inline; others open it directly.
+
+@{{#if kb_path}}{{kb_path}}{{else}}.agents/AGENTS.md{{/if}}
 {{else}}
-> **Shared knowledge base**: [AGENTS.md](.agents/AGENTS.md)
+This harness does not expand `@` imports, so **open it first**:
+[AGENTS.md]({{#if kb_path}}{{kb_path}}{{else}}.agents/AGENTS.md{{/if}}).
 {{/if}}
-> It defines pair programming workflows, decision frameworks, and the `.agents/` directory structure.
-> Load it first for full context before starting any task.
-
-<!--
-
-## Your instructions here
-
--->

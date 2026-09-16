@@ -1,0 +1,8 @@
+# Project values for a2scaffold, deep-merged over templates/scaffold/base/values.yaml.
+# Only the differences belong here; unset keys keep their template defaults.
+
+agents:
+  # This repo has kept a GEMINI.md since before the flag defaulted to false.
+  # Without this the tool never generates it, so the file drifts unmaintained —
+  # which is what happened, and what a re-scaffold could not fix.
+  gemini: true
