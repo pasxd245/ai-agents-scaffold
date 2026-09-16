@@ -54,6 +54,32 @@ describe('CLI', () => {
     assert.ok(out.includes('.agents/context/.gitkeep'));
   });
 
+  it('sync honours flags placed before the command word', () => {
+    // `--dry-run sync -o <dir>` used to drop `--dry-run` and write for real;
+    // `-o <dir> sync` used to drop `-o` and aim at the cwd.
+    const target = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-sync-order-'));
+    try {
+      const out = execFileSync(
+        'node',
+        [CLI_PATH, '--dry-run', 'sync', '-o', target, '-n', 'Order'],
+        { encoding: 'utf8' }
+      );
+      assert.ok(out.includes('Would sync'), out);
+      assert.ok(out.includes(target), out);
+      assert.deepEqual(fs.readdirSync(target), []);
+
+      const out2 = execFileSync(
+        'node',
+        [CLI_PATH, '-o', target, 'sync', '--dry-run', '-n', 'Order'],
+        { encoding: 'utf8' }
+      );
+      assert.ok(out2.includes(target), out2);
+      assert.deepEqual(fs.readdirSync(target), []);
+    } finally {
+      fs.rmSync(target, { recursive: true, force: true });
+    }
+  });
+
   it('invalid template exits with error', () => {
     assert.throws(
       () =>

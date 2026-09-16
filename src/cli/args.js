@@ -66,7 +66,13 @@ export function detectCommand(argv) {
     return { command: 'skill', args: argv.slice(idx + 1) };
   }
   if (argv[idx] === 'sync') {
-    return { command: 'sync', args: argv.slice(idx + 1) };
+    // Flags on either side of the word belong to sync, as for `init`.
+    // Slicing from the word dropped a leading `--dry-run`, and a preview
+    // became a write.
+    return {
+      command: 'sync',
+      args: [...argv.slice(0, idx), ...argv.slice(idx + 1)],
+    };
   }
   if (argv[idx] === 'init') {
     return {
