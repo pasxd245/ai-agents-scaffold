@@ -256,6 +256,23 @@ describe('re-scaffolding an existing project', () => {
 
   afterEach(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
+  it('reports an untouched project as current and rewrites nothing', async () => {
+    const stub = path.join(tmpDir, 'CLAUDE.md');
+    const before = fs.statSync(stub).mtimeMs;
+    await new Promise((r) => setTimeout(r, 20));
+
+    const second = await scaffold({
+      templateName: TEMPLATE,
+      outputDir: tmpDir,
+    });
+
+    // Every managed stub is byte-identical to the render, so it belongs in
+    // `unchanged`, not `preserved`, and its file is left alone.
+    assert.deepEqual(second.preserved, []);
+    assert.ok(second.unchanged.includes('CLAUDE.md'));
+    assert.equal(fs.statSync(stub).mtimeMs, before);
+  });
+
   it('detects conditional files as existing, which raw paths missed', () => {
     const { templateDir } = resolveTemplatePath(TEMPLATE);
     // Without a view, $if{} segments cannot be evaluated and every gated
@@ -368,7 +385,11 @@ describe('re-scaffolding an existing project', () => {
 
     const after = fs.readFileSync(claudeMd, 'utf8');
     assert.match(after, /## Mine\n\nhand-written/);
-    assert.ok(result.preserved.includes('CLAUDE.md'));
+    // The region already matched the render, so the file is current; the
+    // author's addition outside it is what makes it differ from a fresh
+    // render, and that is not the tool's to touch.
+    assert.ok(result.unchanged.includes('CLAUDE.md'));
+    assert.ok(!result.preserved.includes('CLAUDE.md'));
   });
 
   it('refuses only the files that would actually change', async () => {
@@ -626,9 +647,11 @@ describe('scaffolding a repo that already has agent files', () => {
       adopt: true,
     });
 
-    // Adoption happens once. After it, the file has markers and is merged.
-    assert.ok(second.preserved.includes('AGENTS.md'));
+    // Adoption happens once. After it, the file has markers, its region
+    // already matches the render, and nothing is adopted or rewritten.
+    assert.ok(second.unchanged.includes('AGENTS.md'));
     assert.ok(!second.adopted.includes('AGENTS.md'));
+    assert.ok(!second.preserved.includes('AGENTS.md'));
 
     const after = fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8');
     assert.ok(after.includes('Monorepo for data processing.'));

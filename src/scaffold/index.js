@@ -195,6 +195,12 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
 
     const merged = mergeManagedRegion(existing, incoming);
     if (merged !== null) {
+      // A stub whose region already matches the render is current, not
+      // refreshed: reporting it as "updated" and rewriting it was false.
+      if (merged === existing) {
+        unchanged.push(rel);
+        return;
+      }
       plan.push({ rel, content: merged });
       preserved.push(rel);
       return;
