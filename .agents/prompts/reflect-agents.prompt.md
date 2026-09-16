@@ -24,36 +24,34 @@ You just made changes to this repository. Before committing, check whether any
 - Propose update to the relevant `.agents/context/*.md` file (e.g. directory map)
 - Propose update to `.agents/AGENTS.md` if `.agents/` structure itself changed
 
-### 2. Generator context/prompt paths changed?
+### 2. Source code paths changed?
 
-- `src/generator/context-loader.ts` — does `CONTEXT_DIR` still point correctly?
-- `src/generator/prompt-builder.ts` — does `SYSTEM_PROMPT_PATH` still point correctly?
-- Propose update to `.agents/AGENTS.md` "Separation of Concerns" table if locations changed
+- Were files or directories that `.agents/context/*.md` references moved or renamed?
+- Propose update to `.agents/AGENTS.md` if documented paths are now stale
 
-### 3. Runtime context/prompt files changed in `context/` or `prompts/`?
+### 3. Context or prompt files changed in `.agents/`?
 
 - New files added, existing files renamed, moved, or deleted?
 - Document what each file is for and when to update it
-- If it's Ansible reference material → belongs in `context/`
-- If it's a system prompt → belongs in `prompts/`
 - If it's project/agent knowledge → belongs in `.agents/context/`
+- If it's a reusable prompt → belongs in `.agents/prompts/`
 
 ### 4. Stack or toolchain changed?
 
-- New dependency added to `package.json`?
-- Python tool version changed?
-- New LLM backend or adapter added?
+- New dependency added?
+- Language or runtime version changed?
+- New backend or adapter added?
 - Propose update to the relevant `.agents/context/*.md` file (e.g. toolchain docs)
 
-### 5. Evaluation framework changed?
+### 5. Evaluation or testing changed?
 
-- New validator, metric, or verifier added?
+- New validator, metric, or test harness added?
 - Thresholds changed?
 - Propose update to the relevant `.agents/context/*.md` file (e.g. evaluation docs)
 
 ### 6. Phase boundary crossed?
 
-- Completed a phase (0–5) or started a new one?
+- Completed a phase or started a new one?
 - Propose update to the relevant `.agents/context/*.md` file (e.g. phases section)
 - Consider a PDCA cycle entry in `.agents/plan/`
 
@@ -74,14 +72,14 @@ You just made changes to this repository. Before committing, check whether any
 
 ## Decision Rule
 
-| Change type                          | Action                                                          |
-| ------------------------------------ | --------------------------------------------------------------- |
-| Path, directory, or structure        | Propose update to relevant `.agents/context/*.md` + `AGENTS.md` |
-| Generator layer (context/, prompts/) | Propose update to `.agents/AGENTS.md` Separation of Concerns    |
-| Stack / toolchain                    | Propose update to relevant `.agents/context/*.md`               |
-| Evaluation logic                     | Propose update to relevant `.agents/context/*.md`               |
-| New pattern / learning               | Write to `memory/` with promotion candidate                     |
-| No `.agents/` impact                 | No action needed — state this explicitly                        |
+| Change type                     | Action                                                          |
+| ------------------------------- | --------------------------------------------------------------- |
+| Path, directory, or structure   | Propose update to relevant `.agents/context/*.md` + `AGENTS.md` |
+| Source paths referenced in docs | Propose update to `.agents/AGENTS.md` or relevant context file  |
+| Stack / toolchain               | Propose update to relevant `.agents/context/*.md`               |
+| Evaluation logic                | Propose update to relevant `.agents/context/*.md`               |
+| New pattern / learning          | Write to `memory/` with promotion candidate                     |
+| No `.agents/` impact            | No action needed — state this explicitly                        |
 
 ---
 

@@ -118,7 +118,7 @@ with a one-line reason — not deleting it.
 
 ### 3. Paths are the grouping
 
-`templates/scaffold/base/`, `templates/skills/planning/master-plan/` — the
+`templates/scaffold/base/`, `templates/skills/master-plan/` — the
 directory path _is_ the namespace. No manifest, no registry schema, no
 grouping metadata to keep in sync with the filesystem.
 
@@ -204,7 +204,7 @@ by explicit instruction where it does not.
 
 **In practice**: project knowledge is never written into a harness stub. If
 it matters to more than one agent, it belongs in `.agents/`. See
-[Root instruction files](../AGENTS.md#root-instruction-files).
+[Root instruction files](../reference/root-files.md).
 
 ---
 

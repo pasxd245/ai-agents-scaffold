@@ -7,7 +7,7 @@
 > telling you. Each entry carries the date it was last verified. Past that,
 > treat it as unverified rather than wrong, and re-read the source.
 
-**Last verified**: 2026-08-29
+**Last verified**: 2026-09-16
 
 ---
 

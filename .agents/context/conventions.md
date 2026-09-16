@@ -19,9 +19,10 @@
 
 ## Template Conventions
 
-- Template names: **kebab-case** directories under `templates/`
+- Template names: **kebab-case** directories under `templates/scaffold/`;
+  installable skills live flat under `templates/skills/`
 - Every template must contain:
-  - `values.yaml` — default values (required)
+  - `values.yaml` — default values (optional; a template may declare none)
   - `template/` — .hbs files (required)
   - `partials/` — Handlebars partials dir (optional; add it when using partials)
 - `.hbs` extension is stripped in output
@@ -37,7 +38,8 @@
 
 ## Prompt Conventions
 
-- Prompt files use `.prompt.md` extension for auto-loading by agent tooling
+- Prompt files use the `.prompt.md` extension, the VS Code Copilot prompt-file
+  format; Claude Code does not load them, so a procedure it must run is a skill
 - Must include YAML frontmatter: `name`, `description`, `argument-hint`, `agent`
 - Stored in `.agents/prompts/`
 
@@ -51,7 +53,8 @@
 
 - User-facing errors: print clean message, exit with code 1
 - Unexpected errors: print stack trace to stderr
-- Never silently overwrite files — require `--force` flag
+- Never silently overwrite files: a stub without markers needs `--adopt`, and
+  anything else that would change needs `--force`, which names what it replaced
 
 ## Documentation
 

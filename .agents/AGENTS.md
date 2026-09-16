@@ -29,7 +29,7 @@ by habit. Loading everything is a cost, not thoroughness.
 ```text
 .agents/
   AGENTS.md      # This file — loaded every session
-    reference/     # Topic docs, each with its own trigger
+  reference/     # Topic docs, each with its own trigger
   context/       # Canonical knowledge (human-curated, authoritative)
     harness-behaviour.md  # How the harnesses load and enforce (dated)
     memory-placement.md   # Which memory system a finding belongs in
@@ -91,5 +91,7 @@ Agents MUST NOT:
 | [reference/mechanisms.md](reference/mechanisms.md)                     | Choosing between a rule, skill, hook or sub-agent    |
 | [reference/skills.md](reference/skills.md)                             | Authoring or fixing a `SKILL.md`                     |
 | [reference/docs-agents.md](reference/docs-agents.md)                   | Adding anything under `docs/agents/`                 |
+| [context/harness-behaviour.md](context/harness-behaviour.md)           | Relying on how a harness loads, enforces or budgets  |
+| [context/memory-placement.md](context/memory-placement.md)             | Saving a memory, and unsure which system it goes in  |
 | [context/philosophy.md](context/philosophy.md)                         | A judgement call the rules above do not cover        |
 | [plan/PDCA.md](plan/PDCA.md)                                           | Opening or closing a round                           |

@@ -395,3 +395,37 @@ generic. Revisit after it has reviewed a few PRs.
 Touched under the read-only path: `skills/review-pr/SKILL.md` (new).
 
 **Promoted by**: Vien Pham (approved in session; drafted by Claude Code)
+
+## 2026-09-16: review-pr findings → `.agents/` canon (authorised write)
+
+**Source**: the `review-pr` skill's first run, recorded in
+`memory/2026-09-16-review-pr-first-run.md`, items 1 to 6 under "Canon".
+The author approved the batch in session and deferred the design questions
+to Round 14.
+
+**Rationale**: `context/` is authoritative over everything else, so a stale
+line there misleads every agent that loads it. Each edit brings a sentence
+back in line with the code as it is today:
+
+- `context/philosophy.md`: link to `AGENTS.md#root-instruction-files`
+  retargeted to `reference/root-files.md`, where the section moved; the pool
+  path `templates/skills/planning/master-plan/` corrected to the flat
+  `templates/skills/master-plan/` (open since 2026-08-29).
+- `context/conventions.md`: templates live under `templates/scaffold/`;
+  `values.yaml` is optional; `.prompt.md` is the Copilot format and Claude
+  Code does not load it; stubs take `--adopt`, not `--force`.
+- `context/harness-behaviour.md`: header date brought to its newest row,
+  2026-09-16; template first, then here.
+- `AGENTS.md`: `reference/` indent matched to the render; the two `context/`
+  rows the template ships restored to "Where to look". 97 lines.
+- `prompts/reflect-agents.prompt.md`: re-seeded from the template; this
+  repo's copy still named another project's files.
+
+Also logs, late, four canon edits Round 13 recorded only in its Do table:
+`context/conventions.md` (File Naming and Documentation sections,
+2026-08-29), `skills/create-template/SKILL.md` (description reworded),
+`reference/mechanisms.md` and `reference/root-files.md` (the governance
+long-form split). Same author, same round; the log was incomplete, not the
+authorisation.
+
+**Promoted by**: Vien Pham (approved in session; drafted by Claude Code)
