@@ -374,3 +374,24 @@ others are marked not verified), and `context/harness-behaviour.md` (new
 "Enforcement is per harness" table). Template first, then this repo.
 
 **Promoted by**: Vien Pham (review requested in session; drafted by Claude Code)
+
+## 2026-09-16: `review-pr` skill → `.agents/skills/` (authorised write)
+
+**Source**: a PR pre-review prompt drafted by the author, evaluated in session
+against the findings of the same day's adversarial review. None of the five
+reproduced defects fell inside the draft's generic dimensions (OWASP, N+1,
+re-renders); all fell inside path handling, template leaks and claims that
+outran the code. The skill keeps the author's structure and evidence rule and
+replaces the dimensions with this repo's.
+
+**Rationale**: shipped as a skill, not a `.prompt.md`, because `.prompt.md` is
+the Copilot prompt-file format and Claude Code does not load it; a skill is
+the unit every harness here reads, and `.claude/skills/review-pr` is a
+skill-ref to the canon copy, as for the other five. Deliberately **not**
+promoted to `templates/skills/`: the checks are tuned to one repo's failure
+modes, and a template copy would need daily use first to know which part is
+generic. Revisit after it has reviewed a few PRs.
+
+Touched under the read-only path: `skills/review-pr/SKILL.md` (new).
+
+**Promoted by**: Vien Pham (approved in session; drafted by Claude Code)
