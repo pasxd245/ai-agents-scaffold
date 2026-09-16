@@ -83,6 +83,34 @@ describe('scaffold base template', () => {
     assert.deepEqual(loose, ['AGENTS.md']);
   });
 
+  it('does not claim a guardrail it was told not to generate', async () => {
+    const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-noguard-'));
+    try {
+      await scaffold({
+        templateName: 'scaffold/base',
+        outputDir: outDir,
+        overrides: { guardrails: { claude: false } },
+      });
+      assert.ok(!fs.existsSync(path.join(outDir, '.claude')));
+      const kb = fs.readFileSync(
+        path.join(outDir, '.agents/AGENTS.md'),
+        'utf8'
+      );
+      const hb = fs.readFileSync(
+        path.join(outDir, '.agents/context/harness-behaviour.md'),
+        'utf8'
+      );
+      // Both files used to state the settings file ships regardless.
+      assert.ok(!kb.includes('makes it **ask**'), kb);
+      assert.ok(kb.includes('generates none'), kb);
+      assert.ok(!hb.includes('Shipped. Interactive only'), hb);
+      assert.ok(hb.includes('Not generated'), hb);
+      assert.ok(kb.split('\n').length < 100, 'budget holds with the flag off');
+    } finally {
+      fs.rmSync(outDir, { recursive: true, force: true });
+    }
+  });
+
   it('keeps the knowledge base under its 100-line budget', () => {
     // .agents/AGENTS.md is imported into every session by every stub, so it
     // is the most expensive file in the scaffold. Detail belongs behind a

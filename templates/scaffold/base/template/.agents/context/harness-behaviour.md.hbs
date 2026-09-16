@@ -74,12 +74,20 @@ is not:
 
 | Harness     | Backing the scaffold ships                                   | Status                                                                   |
 | ----------- | ------------------------------------------------------------ | ------------------------------------------------------------------------ |
+{{#if guardrails.claude}}
 | Claude Code | `.claude/settings.json` — `ask` on `Edit` under `.agents/`   | Shipped. Interactive only; `Bash` and `Write` bypass it                  |
+{{else}}
+| Claude Code | none — `guardrails.claude` is off in `values.yaml`           | Not generated. `ask` rules exist; turn the flag on to ship them          |
+{{/if}}
 | Codex       | none                                                         | Not verified. Has approval modes and a sandbox; path scoping unchecked   |
 | Gemini CLI  | none                                                         | Not verified                                                             |
 | Copilot     | none known                                                   | Instruction file only                                                    |
 
+{{#if guardrails.claude}}
 For every harness but Claude Code the table is text the model reads. Treat
+{{else}}
+For every harness, in this repo, the table is text the model reads. Treat
+{{/if}}
 "READ ONLY" there as a request until a rule backs it, and record the rule here
 when one does.
 
