@@ -34,7 +34,7 @@ OWASP Top 10 for Agentic Applications 2026, and Snyk's ToxicSkills audit.
 
 ## Do
 
-Landed on `feat/restructure-agent-instructions`, 39 commits, each green.
+Landed on `feat/restructure-agent-instructions`, 51 commits, each green.
 Grouped by area rather than by date, because that is how a reviewer reads it:
 
 | Area                                   | Commits                                                                 |
@@ -44,7 +44,8 @@ Grouped by area rather than by date, because that is how a reviewer reads it:
 | Non-destructive scaffold and adoption  | `ac5c006` `eff7752` `74b0bb8` `b3ff47d` `6568095` `89e35be`             |
 | `sync`                                 | `78680ba`                                                               |
 | Release prep, 2026-09-15               | `56d728e` `a1da44e` `fb5cf93` `348e525` `7e3a85e` + round record + bump |
-| Pre-release review fixes, 2026-09-16   | `66b1641` `e28bff7` `5747ad5` `e68b58a`                                  |
+| Pre-release review fixes, 2026-09-16   | `66b1641` `e28bff7` `5747ad5` `e68b58a` `1069b0b` `0e1e6d4` `438127f`    |
+| `review-pr` skill and its first run    | `820afb2` + 10 fix commits, listed in the memory entry below              |
 | Pre-review fixes                       | `85bcf5c` `68e8474`                                                     |
 | Round record and research baseline     | `cfcb5e8` `b83d57e`                                                     |
 
@@ -220,6 +221,11 @@ prefer five.
 - [x] Adoption verified on a real unscaffolded repo: zero lines lost, second
       run merges
 - [x] `sync` is idempotent and a dry run writes nothing
+- [x] `review-pr` skill run on this branch in four area passes before the
+      dev PR: 2 Blockers and 15 Should-fix reproduced, 11 fixed with
+      regression tests shown to fail without the fix; the rest recorded in
+      [`memory/2026-09-16-review-pr-first-run.md`](../../memory/2026-09-16-review-pr-first-run.md)
+      as Round 14 candidates and canon edits for the human
 - [ ] Not verified: whether the permission rules behave as intended in a live
       session. They are declarative and syntactically checked, but untested
       against a real Claude Code run. One data point since: an agent editing
