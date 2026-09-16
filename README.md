@@ -62,7 +62,7 @@ This generates the base AI agent setup in your current directory:
     PDCA.md                    # PDCA methodology
     promotions.md              # Promotion log
     cycles/                    # Individual PDCA rounds
-.claude/settings.json          # Ask before Edit() on canon — interactive only
+.claude/settings.json          # Ask before Edit() on canon — Claude Code only, interactive
 AGENTS.md                      # Stub for Codex & the AGENTS.md convention
 CLAUDE.md                      # Stub for Claude Code — @.agents/AGENTS.md
 .github/copilot-instructions.md  # Stub for Copilot — restates it (cannot import)

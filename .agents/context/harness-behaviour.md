@@ -67,6 +67,28 @@ Source: Claude Code permissions docs. Verified 2026-08-29.
 
 ---
 
+## Enforcement is per harness
+
+The authority table in `AGENTS.md` is written for every harness. What backs it
+is not:
+
+| Harness     | Backing the scaffold ships                                 | Status                                                                 |
+| ----------- | ---------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Claude Code | `.claude/settings.json` — `ask` on `Edit` under `.agents/` | Shipped. Interactive only; `Bash` and `Write` bypass it                |
+| Codex       | none                                                       | Not verified. Has approval modes and a sandbox; path scoping unchecked |
+| Gemini CLI  | none                                                       | Not verified                                                           |
+| Copilot     | none known                                                 | Instruction file only                                                  |
+
+For every harness but Claude Code the table is text the model reads. Treat
+"READ ONLY" there as a request until a rule backs it, and record the rule here
+when one does.
+
+Source: this tool's `ENFORCEMENT_FILES` and the generated settings file; Claude
+Code permissions docs. Verified 2026-09-16 for Claude Code; the other rows are
+open items, not findings.
+
+---
+
 ## Skills load in tiers
 
 - Name and description at startup; the body only when the skill is triggered;

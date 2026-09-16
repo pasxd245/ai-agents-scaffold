@@ -368,6 +368,9 @@ for the layer we ship, and a reader who trusted it would under-review exactly
 the inputs that carry risk. Reworded at the template first, then here, same
 line count so the knowledge-base budget test holds.
 
-Touched under the read-only path: `AGENTS.md` (authority paragraph).
+Touched under the read-only path: `AGENTS.md` (authority paragraph, then
+made harness-neutral: Claude Code is the one harness with backing today, the
+others are marked not verified), and `context/harness-behaviour.md` (new
+"Enforcement is per harness" table). Template first, then this repo.
 
 **Promoted by**: Vien Pham (review requested in session; drafted by Claude Code)

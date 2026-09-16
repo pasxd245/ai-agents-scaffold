@@ -57,10 +57,10 @@ by habit. Loading everything is a cost, not thoroughness.
 
 Closing a round, editing a closed one and compacting `cycles/` are human calls — see [plan/PDCA.md](plan/PDCA.md).
 
-Backed by permission rules in `.claude/settings.json` that make Claude Code
-**ask** before an `Edit` under `.agents/`. A speed bump, not a wall: it covers
-one tool in interactive sessions, and shell writes bypass it — see
-[context/harness-behaviour.md](context/harness-behaviour.md).
+Enforcement is per harness; today only Claude Code has any: `.claude/settings.json`
+makes it **ask** before an `Edit` under `.agents/`. A speed bump, not a wall — one
+tool, interactive only, shell writes bypass it. Codex, Gemini and Copilot read this
+table as text; nothing backs it yet — see [context/harness-behaviour.md](context/harness-behaviour.md).
 
 **A human may still authorise a change** — warn first, wait for confirmation,
 log it in `plan/promotions.md`. Procedure:
