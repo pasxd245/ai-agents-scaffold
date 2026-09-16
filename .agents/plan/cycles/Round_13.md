@@ -368,8 +368,9 @@ gitignored — citing it here was a mistake this file used to make.
 ### Found by the pre-release adversarial review (2026-09-16)
 
 Three independent passes — premise, CLI as a stranger, security — before the
-tag. Data-loss and messaging defects were fixed the same day; the rest is
-Round 14 material. Durable record, with the approach questions in order:
+tag. Data-loss and messaging defects were fixed the same day. Round 14 takes
+the v0.2.1 bug fixes only; the approach questions and the hardening batch
+below wait for a round of their own. Durable record, in order:
 [`memory/2026-09-16-pre-release-adversarial-review.md`](../../memory/2026-09-16-pre-release-adversarial-review.md).
 
 - [x] `--adopt` de-indented content; CRLF markers unrecognised (`66b1641`)
