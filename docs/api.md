@@ -42,6 +42,7 @@ Render a template to the output directory.
 | `options.overrides`    | `object`  | No       | Values to deep-merge over resolved template view                                                 |
 | `options.adopt`        | `boolean` | No       | Insert the generated block into an existing file that has no managed region, keeping its content |
 | `options.force`        | `boolean` | No       | Replace an existing file wholesale when neither merge nor adoption applies                       |
+| `options.dryRun`       | `boolean` | No       | Compute the same report without writing anything                                                 |
 
 **Returns:** `Promise<{ outputDir: string, template: string, created: string[], preserved: string[], adopted: string[], replaced: string[], unchanged: string[], needsAdopt: string[], needsForce: string[] }>`
 
@@ -552,12 +553,16 @@ Install a skill from a source into a target directory.
 | Built-in name          | `my-skill`, `group/my-skill`                            | Resolves under `templates/skills/`            |
 | Registry name + `from` | `pdf` with `{ from: 'anthropics' }`                     | Resolves through `options.rc.registries.from` |
 
-**Returns:** `{ name: string, path: string }`
+**Returns:** `{ name: string, path: string, findings?: AuditFinding[] }`
 
-| Property | Description                                    |
-| -------- | ---------------------------------------------- |
-| `name`   | The installed skill's directory name           |
-| `path`   | Absolute path to the installed skill directory |
+| Property   | Description                                                          |
+| ---------- | -------------------------------------------------------------------- |
+| `name`     | The installed skill's directory name                                 |
+| `path`     | Absolute path to the installed skill directory                       |
+| `findings` | Audit findings from the remote screen; present for downloaded skills |
+
+Symbolic links inside the source are never copied, along with the build
+artefacts listed under `skill add`.
 
 **Throws:**
 

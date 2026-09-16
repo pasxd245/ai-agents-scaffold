@@ -86,7 +86,7 @@ Requires `git` to be installed. Uses sparse checkout to download only the specif
 Define registries in a `.a2scaffoldrc` config file, then reference them by name. The loader checks (in order):
 
 - `<project>/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `<project>/.a2scaffoldrc.{json,yaml,yml}` (project — pick one)
-- `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `~/.a2scaffoldrc.{json,yaml,yml}` (user home — pick one)
+- `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` (user home; the flat `~/.a2scaffoldrc.*` form is not read)
 
 Project entries override user entries by registry name. Example `.a2scaffold/.a2scaffoldrc.yaml`:
 

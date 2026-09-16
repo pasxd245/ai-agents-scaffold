@@ -90,12 +90,12 @@ Dry run — template "base" would generate:
     - .agents/context/harness-behaviour.md
     - .agents/context/memory-placement.md
     - .agents/context/philosophy.md
-    - .agents/memory/_TEMPLATE.md
     - .agents/memory/.gitkeep
-    - .agents/plan/cycles/_TEMPLATE.md
-    - .agents/plan/cycles/.gitkeep
+    - .agents/memory/_TEMPLATE.md
     - .agents/plan/DoD.md
     - .agents/plan/PDCA.md
+    - .agents/plan/cycles/.gitkeep
+    - .agents/plan/cycles/_TEMPLATE.md
     - .agents/plan/promotions.md
     - .agents/prompts/.gitkeep
     - .agents/prompts/compact-content.prompt.md
@@ -109,6 +109,8 @@ Dry run — template "base" would generate:
     - .github/copilot-instructions.md
     - AGENTS.md
     - CLAUDE.md
+
+  0 already current.
 ```
 
 Dry-run renders the template to a temporary directory and compares it with the
@@ -211,7 +213,7 @@ Registry definitions for `skill add --from <registry>` are read from `.a2scaffol
 | User    | `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` (only)                                               |
 | Project | `<project>/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or `<project>/.a2scaffoldrc.{json,yaml,yml}` |
 
-Project entries override user entries. At each level, only one form is allowed — if both the directory and flat forms exist, the CLI exits with a conflict error. See the [Skills Guide](skills.md#from-a-named-registry-a2scaffoldrcjson) for registry schema and examples.
+Project entries override user entries. At each level, only one form is allowed — if both the directory and flat forms exist, the CLI exits with a conflict error. See the [Skills Guide](skills.md#a2scaffold-skill-add-source) for registry schema and examples.
 
 ## Generated output structure
 
