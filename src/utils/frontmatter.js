@@ -13,6 +13,8 @@ import yaml from 'js-yaml';
  * @returns {ParsedFrontmatter | null}
  */
 export function parseFrontmatter(content) {
+  // Editors on Windows prepend a BOM; it is not part of the frontmatter.
+  if (content.charCodeAt(0) === 0xfeff) content = content.slice(1);
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return null;
 

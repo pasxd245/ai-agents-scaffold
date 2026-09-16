@@ -119,6 +119,12 @@ describe('adoptManagedRegion', () => {
     );
   });
 
+  it('keeps a BOM first and still finds the title behind it', () => {
+    const existing = '\uFEFF# My Title\n\nbody\n';
+    const out = adoptManagedRegion(existing, incoming);
+    assert.match(out, /^\uFEFF# My Title\n\n<!-- a2scaffold:start -->/);
+  });
+
   it('inserts at the top when there is no heading', () => {
     const out = adoptManagedRegion('just prose\n', incoming);
     assert.match(out, /^<!-- a2scaffold:start -->/);

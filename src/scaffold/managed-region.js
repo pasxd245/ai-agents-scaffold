@@ -191,10 +191,14 @@ export function adoptManagedRegion(existing, incoming) {
  * @returns {number} character offset to insert at
  */
 function insertionPoint(text) {
-  let offset = 0;
+  // A UTF-8 BOM is part of the file, not of the title; skip it so the
+  // frontmatter and heading anchors below still see the first line.
+  let offset = text.charCodeAt(0) === 0xfeff ? 1 : 0;
 
-  const frontmatter = text.match(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/);
-  if (frontmatter) offset = frontmatter[0].length;
+  const frontmatter = text
+    .slice(offset)
+    .match(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/);
+  if (frontmatter) offset += frontmatter[0].length;
 
   const heading = text
     .slice(offset)

@@ -227,7 +227,12 @@ export function auditSkill(skillDir) {
     }
 
     scanned++;
-    const lines = fs.readFileSync(abs, 'utf8').split('\n');
+    // A BOM at offset 0 is an encoding mark, not hidden text; the same code
+    // point anywhere else in the file is still flagged below.
+    const lines = fs
+      .readFileSync(abs, 'utf8')
+      .replace(/^\uFEFF/, '')
+      .split('\n');
 
     lines.forEach((line, i) => {
       for (const p of PATTERNS) {
