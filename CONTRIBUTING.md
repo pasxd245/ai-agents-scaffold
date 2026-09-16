@@ -38,7 +38,9 @@ does not exist.
 - Every file in `template/` ends in `.hbs`; the extension is stripped on
   output. An empty `.gitkeep.hbs` renders to an empty `.gitkeep`.
 - Content is Handlebars: `{{project.name}}`, `{{#if}}`, `{{#each}}`,
-  `{{> partial}}`. Merged values plus `process.env` (as `env`) are the view.
+  `{{> partial}}`. Merged values are the view. The process environment is
+  **not** exposed: `{{ env.X }}` renders empty, so declare what a template
+  needs in `values.yaml`.
 - Do not format `.hbs` files with prettier; they are excluded because
   Handlebars is not valid markdown. Format the _rendered_ output instead, and
   see "Formatter-stable" below.
