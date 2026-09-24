@@ -127,7 +127,10 @@ const PATTERNS = [
   {
     category: 'credentials',
     severity: 'high',
-    re: /\.ssh\b|id_rsa|\.aws\/credentials|\.npmrc|\.netrc|\.env\b|API_KEY|SECRET_KEY|ACCESS_TOKEN|keychain|wallet\.dat|Login Data|cookies\.sqlite/i,
+    // `process.env.HOME` and `import.meta.env` are how JavaScript reads its
+    // own configuration; neither opens a `.env` file. Matching bare `.env`
+    // flagged every Node script in the pool.
+    re: /\.ssh\b|id_rsa|\.aws\/credentials|\.npmrc|\.netrc|(?<!process)(?<!\.meta)\.env\b|API_KEY|SECRET_KEY|ACCESS_TOKEN|keychain|wallet\.dat|Login Data|cookies\.sqlite/i,
     message: 'references credential or secret storage',
   },
   {
@@ -135,20 +138,43 @@ const PATTERNS = [
     severity: 'high',
     // Match the calls, not the module: `except subprocess.CalledProcessError`
     // is error handling, and bare `subprocess\.` flagged it high-severity.
-    re: /\beval\s*\(|\bexec\s*\(|child_process|subprocess\.(run|call|check_output|check_call|Popen)\b|os\.system|Function\s*\(\s*['"`]|\|\s*(?:ba)?sh\b|base64\s+-d|atob\s*\(/,
+    // A leading dot makes it a method: `re.exec(str)` is a regular expression
+    // match, not dynamic evaluation. This also excludes `os.execv(`, which is
+    // a real gap — `os.system` and the `subprocess` calls cover the common
+    // shape, and a bare `exec(` remains the one worth stopping on.
+    re: /\beval\s*\(|(?<!\.)\bexec\s*\(|child_process|subprocess\.(run|call|check_output|check_call|Popen)\b|os\.system|Function\s*\(\s*['"`]|\|\s*(?:ba)?sh\b|base64\s+-d|atob\s*\(/,
     message: 'executes code dynamically or shells out',
   },
   {
     category: 'injection',
     severity: 'high',
-    re: /ignore (?:all )?(?:previous|prior|above) instructions|disregard (?:the )?(?:above|previous)|you are now|system prompt|do not (?:tell|inform|mention to) the user|without (?:asking|informing) the user/i,
+    // "You are now ready to run it" is documentation. A role reassignment
+    // reads "you are now a…", "you are now in…" — an article or a
+    // preposition, not an adjective.
+    re: /ignore (?:all )?(?:previous|prior|above) instructions|disregard (?:the )?(?:above|previous)|you are now (?:an?|the|in|under|acting|operating|running)\b|system prompt|do not (?:tell|inform|mention to) the user|without (?:asking|informing) the user/i,
     message:
       'contains instruction-override phrasing typical of prompt injection',
   },
 ];
 
-/** Zero-width and bidi characters used to hide text from human reviewers. */
-const HIDDEN_CHARS = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/;
+/**
+ * Zero-width and bidi characters used to hide text from human reviewers.
+ *
+ * U+200C and U+200D are deliberately absent: they are load-bearing in real
+ * text — compound emoji, Persian, Hindi — and are handled below.
+ */
+const HIDDEN_CHARS = /[\u200B\u200E\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/;
+
+/** ZWNJ and ZWJ on their own. Suspicious, but not on the same footing. */
+const JOINER_CHARS = /[\u200C\u200D]/;
+
+/**
+ * A joiner sitting between two pictographs is emoji construction, not hiding.
+ * Matches the joiner alone so a chain like `\u{1F468}ZWJ\u{1F469}ZWJ\u{1F467}`
+ * loses every joiner rather than only the first pair.
+ */
+const EMOJI_JOINER =
+  /(?<=\p{Extended_Pictographic}\uFE0F*)[\u200C\u200D](?=\uFE0F*\p{Extended_Pictographic})/gu;
 
 /**
  * Recursively list a skill's entries, relative to its root.
@@ -314,6 +340,15 @@ export function auditSkill(skillDir, options = {}) {
           line: i + 1,
           message:
             'contains zero-width or bidirectional characters, which can hide text from a human reviewer',
+        });
+      } else if (JOINER_CHARS.test(line.replace(EMOJI_JOINER, ''))) {
+        findings.push({
+          category: 'injection',
+          severity: 'medium',
+          file: rel,
+          line: i + 1,
+          message:
+            'contains a zero-width joiner outside an emoji sequence, which can hide text from a human reviewer',
         });
       }
     });
