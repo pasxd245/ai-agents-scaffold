@@ -49,8 +49,16 @@ python3 .agents/skills/research/scripts/crawl4ai_recursive.py \
   --max-pages 25
 ```
 
-If `--out` is omitted, the script reads `.a2scaffoldrc.json` from the
-current working directory first, then `~/.a2scaffoldrc.json`, and falls
+If `--out` is omitted, the script reads the a2scaffold rc — the same file
+the CLI reads, found the same way:
+
+- **Project**: `.a2scaffold/.a2scaffoldrc.{json,yaml,yml}` or the flat
+  `.a2scaffoldrc.{json,yaml,yml}`. Keep one; both is an error.
+- **User**: `~/.a2scaffold/.a2scaffoldrc.{json,yaml,yml}`. The flat
+  `~/.a2scaffoldrc.*` is deliberately unsupported.
+
+User settings load first and the project overrides them. YAML needs PyYAML
+installed; the script says so rather than falling back. Missing keys fall
 back to `.agents/tmp`. Default output is:
 
 ```text

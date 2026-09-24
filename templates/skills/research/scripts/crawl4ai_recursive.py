@@ -51,13 +51,60 @@ def deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]
     return result
 
 
+# Kept in step with src/config/rc.js. The CLI and this script read the same
+# file, so they have to look in the same places: a project rc in either the
+# `.a2scaffold/` directory form or the flat form (never both), and a user rc
+# in the directory form only — the flat `~/.a2scaffoldrc.*` is deliberately
+# unsupported, to keep the home directory tidy.
+RC_BASENAME = ".a2scaffoldrc"
+A2SCAFFOLD_DIRNAME = ".a2scaffold"
+CONFIG_EXTS = (".json", ".yaml", ".yml")
+
+
+def read_config_file(path: Path) -> dict[str, Any]:
+    text = path.read_text(encoding="utf-8")
+    if path.suffix.lower() in (".yaml", ".yml"):
+        try:
+            import yaml  # noqa: PLC0415 — optional, and only for YAML rc files
+        except ImportError as exc:
+            raise SystemExit(
+                f"{path} is YAML and PyYAML is not installed.\n"
+                "Install it (pip install pyyaml) or use the .json form."
+            ) from exc
+        return yaml.safe_load(text) or {}
+    return json.loads(text)
+
+
+def find_project_rc(cwd: Path) -> Path | None:
+    dir_hit = next(
+        (p for p in (cwd / A2SCAFFOLD_DIRNAME / f"{RC_BASENAME}{e}" for e in CONFIG_EXTS) if p.exists()),
+        None,
+    )
+    flat_hit = next(
+        (p for p in (cwd / f"{RC_BASENAME}{e}" for e in CONFIG_EXTS) if p.exists()),
+        None,
+    )
+    if dir_hit and flat_hit:
+        raise SystemExit(
+            f"Conflicting a2scaffold config files at {cwd}:\n"
+            f"  - {dir_hit}\n  - {flat_hit}\nKeep only one."
+        )
+    return dir_hit or flat_hit
+
+
+def find_user_rc(home: Path) -> Path | None:
+    return next(
+        (p for p in (home / A2SCAFFOLD_DIRNAME / f"{RC_BASENAME}{e}" for e in CONFIG_EXTS) if p.exists()),
+        None,
+    )
+
+
 def load_config(cwd: Path) -> dict[str, Any]:
     config = DEFAULT_CONFIG
-    for candidate in [cwd / ".a2scaffoldrc.json", Path.home() / ".a2scaffoldrc.json"]:
-        if candidate.exists():
-            with candidate.open("r", encoding="utf-8") as file:
-                return deep_merge(config, json.load(file))
-    return DEFAULT_CONFIG
+    for candidate in (find_user_rc(Path.home()), find_project_rc(cwd)):
+        if candidate is not None:
+            config = deep_merge(config, read_config_file(candidate))
+    return config
 
 
 def crawler_config(config: dict[str, Any]) -> dict[str, Any]:
@@ -82,13 +129,13 @@ def parse_args(config: dict[str, Any]) -> argparse.Namespace:
         "--max-depth",
         type=int,
         default=int(crawler.get("maxDepth", 1)),
-        help="Maximum link depth to crawl. Default comes from .a2scaffoldrc.json.",
+        help="Maximum link depth to crawl. Default comes from the a2scaffold rc.",
     )
     parser.add_argument(
         "--max-pages",
         type=int,
         default=int(crawler.get("maxPages", 20)),
-        help="Maximum pages to save. Default comes from .a2scaffoldrc.json.",
+        help="Maximum pages to save. Default comes from the a2scaffold rc.",
     )
     domain_default = bool(crawler.get("sameDomain", True))
     domain_group = parser.add_mutually_exclusive_group()
