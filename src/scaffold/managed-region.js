@@ -124,6 +124,35 @@ export function hasManagedRegion(text) {
 }
 
 /**
+ * The line ending the file already uses.
+ *
+ * Templates render LF. Splicing that into a CRLF file leaves one file with two
+ * conventions, which every diff then reports as a whole-file change and every
+ * `core.autocrlf` setting disagrees about. Majority rules, and a file with no
+ * newline at all gets LF.
+ *
+ * @param {string} text
+ * @returns {'\r\n' | '\n'}
+ */
+function dominantEol(text) {
+  const crlf = (text.match(/\r\n/g) ?? []).length;
+  const lf = (text.match(/\n/g) ?? []).length - crlf;
+  return crlf > lf ? '\r\n' : '\n';
+}
+
+/**
+ * Rewrite every line ending in `text` to `eol`.
+ *
+ * @param {string} text
+ * @param {'\r\n' | '\n'} eol
+ * @returns {string}
+ */
+function toEol(text, eol) {
+  const lf = text.replace(/\r\n/g, '\n');
+  return eol === '\n' ? lf : lf.replace(/\n/g, '\r\n');
+}
+
+/**
  * Replace the managed region of `existing` with the one from `incoming`.
  *
  * Returns `null` when the merge cannot be done safely — either side missing a
@@ -139,9 +168,10 @@ export function mergeManagedRegion(existing, incoming) {
   const target = findRegion(existing);
   if (!source || !target) return null;
 
+  const eol = dominantEol(existing);
   return (
     existing.slice(0, target.start) +
-    incoming.slice(source.start, source.end) +
+    toEol(incoming.slice(source.start, source.end), eol) +
     existing.slice(target.end)
   );
 }
@@ -165,7 +195,8 @@ export function adoptManagedRegion(existing, incoming) {
   if (!source) return null;
   if (classifyRegion(existing).kind !== 'none') return null;
 
-  const generated = incoming.slice(source.start, source.end);
+  const eol = dominantEol(existing);
+  const generated = toEol(incoming.slice(source.start, source.end), eol);
 
   const at = insertionPoint(existing);
   const before = existing.slice(0, at).replace(/\s*$/, '');
@@ -176,9 +207,9 @@ export function adoptManagedRegion(existing, incoming) {
 
   return [
     before,
-    before ? '\n\n' : '',
+    before ? eol + eol : '',
     generated,
-    after ? `\n\n${after}` : '\n',
+    after ? `${eol}${eol}${after}` : eol,
   ].join('');
 }
 
@@ -200,9 +231,12 @@ function insertionPoint(text) {
     .match(/^---\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/);
   if (frontmatter) offset += frontmatter[0].length;
 
+  // `[ \t]*\r?\n*` consumed one CR and then any number of LFs, so two blank
+  // CRLF lines after frontmatter left a stray CR where the `#` was expected
+  // and the title was never found. Match whole blank lines instead.
   const heading = text
     .slice(offset)
-    .match(/^[ \t]*\r?\n*(#[ \t][^\n]*)(\r?\n|$)/);
+    .match(/^(?:[ \t]*\r?\n)*(#[ \t][^\r\n]*)(\r?\n|$)/);
   if (heading) offset += heading[0].length;
 
   return offset;

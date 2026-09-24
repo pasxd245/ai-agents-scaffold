@@ -664,3 +664,56 @@ describe('scaffolding a repo that already has agent files', () => {
     assert.match(after, /^# p-01 Bootstrap/);
   });
 });
+
+// ── CRLF ────────────────────────────────────────────────────────────
+
+describe('line endings', () => {
+  const INCOMING =
+    '# T\n\n<!-- a2scaffold:start -->\n\nGenerated one.\nGenerated two.\n\n<!-- a2scaffold:end -->\n';
+
+  /** True when the text mixes CRLF and bare LF. */
+  const mixed = (text) => /(?<!\r)\n/.test(text) && /\r\n/.test(text);
+
+  it('adopts into a CRLF file without leaving mixed endings', () => {
+    // Templates render LF. Splicing that into a CRLF file leaves one file with
+    // two conventions, which every diff reports as a whole-file change.
+    const existing = '# My title\r\n\r\nMy own content.\r\n';
+    const out = adoptManagedRegion(existing, INCOMING);
+    assert.ok(out, 'should adopt');
+    assert.ok(!mixed(out), 'the result must use one line ending');
+    assert.ok(out.includes('Generated one.\r\nGenerated two.'));
+    assert.ok(out.includes('My own content.'));
+  });
+
+  it('keeps LF files on LF', () => {
+    const existing = '# My title\n\nMy own content.\n';
+    const out = adoptManagedRegion(existing, INCOMING);
+    assert.ok(out);
+    assert.ok(!/\r/.test(out), 'an LF file must not gain carriage returns');
+  });
+
+  it('finds the title past more than one blank CRLF line', () => {
+    // `[ \t]*\r?\n*` consumed one CR then any number of LFs, so a second blank
+    // CRLF line left a stray CR where the `#` was expected. The title was not
+    // found and the generated block landed above the author's heading.
+    const existing =
+      '---\r\nname: x\r\n---\r\n\r\n\r\n# My title\r\n\r\nMy own content.\r\n';
+    const out = adoptManagedRegion(existing, INCOMING);
+    assert.ok(out, 'should adopt');
+    assert.ok(
+      out.indexOf('# My title') < out.indexOf('<!-- a2scaffold:start -->'),
+      'the file must still open with the author’s own heading'
+    );
+    assert.ok(!mixed(out));
+  });
+
+  it('merges into a CRLF file without leaving mixed endings', () => {
+    const existing =
+      '# Mine\r\n\r\n<!-- a2scaffold:start -->\r\n\r\nOld.\r\n\r\n<!-- a2scaffold:end -->\r\n\r\nKept.\r\n';
+    const out = mergeManagedRegion(existing, INCOMING);
+    assert.ok(out, 'should merge');
+    assert.ok(!mixed(out), 'the result must use one line ending');
+    assert.ok(out.includes('Generated one.\r\n'));
+    assert.ok(out.includes('Kept.'));
+  });
+});
