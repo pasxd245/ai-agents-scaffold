@@ -988,6 +988,30 @@ describe('auditSkill', () => {
     assert.equal(remote.severity, 'high');
   });
 
+  it('raises an oversized file to high for the remote screen too', () => {
+    // Too-large-to-screen is the same gap as unreadable: the bytes land
+    // without anyone having looked at them.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2-big-'));
+    try {
+      fs.writeFileSync(
+        path.join(dir, 'SKILL.md'),
+        '---\nname: big\ndescription: d\n---\n\nBody.\n'
+      );
+      fs.writeFileSync(path.join(dir, 'data.json'), 'x'.repeat(600 * 1024));
+
+      const local = auditSkill(dir).findings.find((f) =>
+        f.message.includes('too large')
+      );
+      const remote = auditSkill(dir, { remote: true }).findings.find((f) =>
+        f.message.includes('too large')
+      );
+      assert.equal(local.severity, 'medium');
+      assert.equal(remote.severity, 'high');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a directory that is not a skill', () => {
     const { clean, findings } = auditSkill(FIXTURES);
     assert.equal(clean, false);
