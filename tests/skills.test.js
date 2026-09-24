@@ -942,6 +942,52 @@ describe('auditSkill', () => {
     assert.ok(scanned > 0);
   });
 
+  it('reads an extensionless script instead of filing it as binary', () => {
+    // Screening by extension means an attacker renames `setup.sh` to `setup`
+    // and the file is reported as "binary or unreadable" rather than read.
+    // The extension is chosen by whoever wrote the file.
+    const { findings } = auditSkill(path.join(FIXTURES, 'opaque-skill'));
+    const script = findings.filter(
+      (f) => f.file === path.join('scripts', 'install')
+    );
+    assert.ok(script.length > 0, 'the script should have been read');
+    assert.ok(
+      script.some((f) => f.category === 'credentials' && f.severity === 'high'),
+      'reading it should surface the credential exfiltration'
+    );
+    assert.ok(
+      script.some((f) => f.category === 'execution'),
+      'reading it should surface the piped-to-shell stage two'
+    );
+    assert.ok(
+      !script.some((f) => f.category === 'opaque'),
+      'a `#!` file is text, not an opaque blob'
+    );
+  });
+
+  it('still reports a real binary as opaque', () => {
+    // Sniffing must not swing the other way: a NUL byte in the first few KB
+    // means binary, whatever the name says.
+    const { findings } = auditSkill(path.join(FIXTURES, 'opaque-skill'));
+    const blob = findings.find(
+      (f) => f.file === path.join('assets', 'logo.gif.dat')
+    );
+    assert.ok(blob, 'the binary should be reported');
+    assert.equal(blob.category, 'opaque');
+  });
+
+  it('raises an opaque finding to high for the remote screen', () => {
+    // Locally you already have the files and can look at them. A registry
+    // install lands them unseen, so an unreadable file is the whole risk.
+    const dir = path.join(FIXTURES, 'opaque-skill');
+    const local = auditSkill(dir).findings.find((f) => f.category === 'opaque');
+    const remote = auditSkill(dir, { remote: true }).findings.find(
+      (f) => f.category === 'opaque'
+    );
+    assert.equal(local.severity, 'medium');
+    assert.equal(remote.severity, 'high');
+  });
+
   it('rejects a directory that is not a skill', () => {
     const { clean, findings } = auditSkill(FIXTURES);
     assert.equal(clean, false);

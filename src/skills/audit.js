@@ -41,6 +41,60 @@ const TEXT_EXT = new Set([
 /** Skip anything larger than this; a huge file in a skill is itself reported. */
 const MAX_SCAN_BYTES = 512 * 1024;
 
+/** How much of a file to sniff when its extension says nothing. */
+const SNIFF_BYTES = 8 * 1024;
+
+/**
+ * Whether a file is worth reading as text.
+ *
+ * The extension list is a fast path, not the decision. Screening by extension
+ * alone means an attacker renames `setup.sh` to `setup` and the file is
+ * reported as "binary or unreadable" instead of read — the one outcome the
+ * audit exists to prevent. Extensions are chosen by whoever wrote the file.
+ *
+ * Content decides the rest, using git's heuristic: a NUL byte in the first
+ * few KB means binary. A `#!` line means a script, whatever follows it.
+ *
+ * @param {string} abs
+ * @param {string} ext - Already lowercased
+ * @returns {boolean}
+ */
+function isTextFile(abs, ext) {
+  if (TEXT_EXT.has(ext)) return true;
+
+  /** @type {number | undefined} */
+  let fd;
+  try {
+    fd = fs.openSync(abs, 'r');
+    const buf = Buffer.alloc(SNIFF_BYTES);
+    const read = fs.readSync(fd, buf, 0, SNIFF_BYTES, 0);
+    const head = buf.subarray(0, read);
+    if (head.length >= 2 && head[0] === 0x23 && head[1] === 0x21) return true;
+    return !head.includes(0);
+  } catch {
+    // Unreadable is not text. It stays opaque and gets reported as such.
+    return false;
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
+}
+
+/**
+ * Severity for a file the audit could not read.
+ *
+ * An opaque file is a gap in the screen, and how much that gap matters depends
+ * on what happens next. Locally you already have the files and can look. A
+ * registry install lands them unseen, so the gap is the whole risk — and an
+ * executable one is worse still, because nothing has to open it for it to run.
+ *
+ * @param {boolean} remote - Whether this is the pre-install screen
+ * @param {boolean} executable
+ * @returns {AuditFinding['severity']}
+ */
+function opaqueSeverity(remote, executable) {
+  return remote || executable ? 'high' : 'medium';
+}
+
 /**
  * @typedef {object} AuditFinding
  * @property {'network'|'credentials'|'execution'|'injection'|'opaque'} category
@@ -166,9 +220,12 @@ function splitTools(value) {
  * Screen a skill directory for supply-chain risks.
  *
  * @param {string} skillDir - Path to the skill directory
+ * @param {{ remote?: boolean }} [options] - `remote` marks the pre-install
+ *   screen, where an unreadable file lands sight-unseen and so scores high
  * @returns {{ findings: AuditFinding[], scanned: number, clean: boolean }}
  */
-export function auditSkill(skillDir) {
+export function auditSkill(skillDir, options = {}) {
+  const remote = options.remote === true;
   /** @type {AuditFinding[]} */
   const findings = [];
 
@@ -203,15 +260,18 @@ export function auditSkill(skillDir) {
 
   for (const rel of files) {
     const abs = path.join(skillDir, rel);
-    const { size } = fs.statSync(abs);
+    const { size, mode } = fs.statSync(abs);
     const ext = path.extname(rel).toLowerCase();
+    const executable = (mode & 0o111) !== 0;
 
-    if (!TEXT_EXT.has(ext)) {
+    if (!isTextFile(abs, ext)) {
       findings.push({
         category: 'opaque',
-        severity: 'medium',
+        severity: opaqueSeverity(remote, executable),
         file: rel,
-        message: `binary or unreadable file shipped with the skill (${size} bytes)`,
+        message:
+          `binary or unreadable file shipped with the skill (${size} bytes)` +
+          (executable ? ', and it is executable' : ''),
       });
       continue;
     }
@@ -219,7 +279,7 @@ export function auditSkill(skillDir) {
     if (size > MAX_SCAN_BYTES) {
       findings.push({
         category: 'opaque',
-        severity: 'medium',
+        severity: opaqueSeverity(remote, executable),
         file: rel,
         message: `file is ${Math.round(size / 1024)}KB — too large to screen`,
       });

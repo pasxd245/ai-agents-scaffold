@@ -205,7 +205,7 @@ function installFromLocal(sourcePath, targetDir, options) {
  * @returns {import('./audit.js').AuditFinding[]}
  */
 function screenRemoteSkill(skillDir, options) {
-  const { findings } = auditSkill(skillDir);
+  const { findings } = auditSkill(skillDir, { remote: true });
   const high = findings.filter((f) => f.severity === 'high');
 
   if (high.length > 0 && !options.force) {
