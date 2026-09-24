@@ -3,6 +3,7 @@
   "permissions": {
     "ask": [
       "Edit(/.agents/AGENTS.md)",
+      "Edit(/.agents/decisions/**)",
       "Edit(/.agents/context/**)",
       "Edit(/.agents/prompts/**)",
       "Edit(/.agents/reference/**)",

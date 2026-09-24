@@ -1,0 +1,26 @@
+# [The decision, as a statement]
+
+**Date**: YYYY-MM-DD
+**Status**: Active | Superseded by [file] | Expired
+**Decided by**: [human name — a decision needs an owner]
+**Revisit when**: [the condition or date that reopens this, or `never`]
+
+## Context
+
+What was being decided, and what forced the choice now.
+
+## Decision
+
+What was agreed, stated so a reader can tell whether a given action complies.
+
+## Alternatives rejected
+
+| Option | Why not |
+| ------ | ------- |
+| ...    | ...     |
+
+Without this section the decision reads as if nothing was traded away.
+
+## Consequences
+
+What this commits the project to, including what it now cannot do cheaply.
