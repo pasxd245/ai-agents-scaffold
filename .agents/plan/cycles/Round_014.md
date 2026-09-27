@@ -1,9 +1,9 @@
 # Round 14: Harden the skill audit and the text edges, for v0.2.1
 
-**Status**: Review
+**Status**: Complete
 **Part of**: standalone
 **Date started**: 2026-09-16
-**Date completed**: —
+**Date completed**: 2026-09-27
 
 ## Goal
 
@@ -105,10 +105,17 @@ which was the condition for taking them.
    floor and the `planRender` prototype are the scope of the next round, not
    this one.
 
-**Not done**: the release itself. On 2026-09-16 `git push` failed on
-certificate verification behind a TLS-intercepting proxy; it went through on
-a later network and the branch is on `origin`. No tag exists yet. Tagging
-from `main` is a human's.
+**Release** (2026-09-27). The branch reached `dev` through PR #12 and
+`main` through PR #13, both merged by the author with merge commits. Tag
+`v0.2.1` on `7167559`; `release.yml` passed every step and published
+`a2scaffold@0.2.1` to npm as `latest` with provenance. The changelog PR the
+workflow opened (#14) is the author's to merge, then `main` folds back into
+`dev`.
+
+On the way there, `git push` failed twice for two different reasons: on
+2026-09-16 a TLS-intercepting proxy, on 2026-09-27 a revoked personal access
+token that had reappeared embedded in the `origin` URL. Both are environment,
+not repo; recorded in the harness's own memory, not here.
 
 ## Check
 
@@ -143,9 +150,40 @@ from `main` is a human's.
 
 **Learnings**:
 
-- ...
+- **The attacker chooses the extension.** Any screen that decides by file
+  name is a screen the file's author can route around. Content decides;
+  extension is a fast path. The same holds for "binary or unreadable" as a
+  verdict: it is a gap, and the severity of a gap depends on what happens next
+  (local look versus sight-unseen install).
+- **A loosening needs a positive control in the same commit.** A pattern
+  recalibrated to stop firing on benign code is indistinguishable from a
+  deleted pattern unless a hostile case still fires. Every recalibration here
+  shipped one.
+- **Two readers of one file drift on two axes.** The CLI and the crawler
+  disagreed about _where_ the rc lives and about _what_ it holds, and the
+  second was the one nobody had noticed: a loader that copies only the keys it
+  knows silently turns one config file into two. Declare every key in one
+  place, and carry the rest through.
+- **A fix at one edge regresses another.** The CRLF anchor fix required `#`
+  at column zero and broke headings indented one to three spaces. The pre-PR
+  review caught it, a `pnpm check` did not. When touching a parser bound, test
+  the bound the spec gives (CommonMark's three spaces), not only the input
+  that broke.
+- **"Verified at the audit level only" is a test seam waiting to be built.**
+  Screening runs only on network installs, and the suite cannot reach that
+  path without mocking the transport. Until `installSkill` takes an injectable
+  fetch, the abort is reasoned, not tested.
+- **The nit rule worked as written.** "Take a nit if a step touches the file
+  anyway" took none, because none did. That is the rule doing its job, not a
+  gap; the nits stay listed for whichever round opens those files.
 
 **Promotions**:
 
-- [ ] → `templates/skills/review-pr` : after this round's review, decide
-      whether the skill's generic core is ready for the pool
+- [x] → `templates/skills/review-pr` : **not yet, decided 2026-09-27.** Two
+      runs now (2026-09-16 on Round 13, 2026-09-27 on this branch); the second
+      found a real regression, so the skill earns its keep. But the six-area
+      checklist is this repo's and the generic core (preflight, two verdicts,
+      report shape, "no blockers is valid") has not been separated from it.
+      Promotion is a small round of its own: split the core into the pool
+      copy, keep the checklist as a repo-local overlay. Review-by
+      2026-12-01, per the memory file.
