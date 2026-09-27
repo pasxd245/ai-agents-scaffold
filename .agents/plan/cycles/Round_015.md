@@ -1,6 +1,6 @@
 # Round 015: Split the stub axis from the harness axis, for v0.3.0
 
-**Status**: In Progress
+**Status**: In Progress — code complete 2026-09-28; step 2 (canon) and step 8 (bump) open
 **Part of**: standalone — feature work, not a
 [CoSF pilot](../programs/cosf-pilot.md) phase. It fits in one round, and
 `programs/README.md` reserves programs for work that does not.
@@ -107,7 +107,7 @@ Each step independently landable, each green.
       `reference/root-files.md` table are corrected. Logged in
       `plan/promotions.md`. The round records this step; it does not perform
       it.
-- [ ] **Introduce the `harness.*` group.** Axis 2, one member per harness,
+- [x] **Introduce the `harness.*` group.** Axis 2, one member per harness,
       each meaning "create the directory and write its native project
       config". Proposed members and what each emits:
       - `harness.claude` → `.claude/settings.json`, the `ask` permission
@@ -135,27 +135,30 @@ Each step independently landable, each green.
       - **Defaults**: `harness.claude` inherits `guardrails.claude: true`.
         `harness.gemini` and `harness.codex` inherit today's `false`. No
         default changes shape this round.
-- [ ] **Never overwrite a harness config file.** A repo's
+- [x] **Never overwrite a harness config file.** A repo's
       `.gemini/settings.json` may already hold `mcpServers` or a theme, the
       same hazard `.claude/settings.json` already has. Extend the
       `ENFORCEMENT_FILES` treatment — report staleness, never overwrite — and
       widen that constant's doc comment, which currently says "enforcement"
       and no longer covers the set.
-- [ ] **Correct the stub blurbs.** `AGENTS.md.hbs` lists eight tools and
+- [x] **Correct the stub blurbs.** `AGENTS.md.hbs` lists eight tools and
       omits Claude Code; `CLAUDE.md.hbs` opens with "Claude Code reads this
       file, not `AGENTS.md`", now false. Reword both, and say in `CLAUDE.md`
       why it still exists (fact 3), so nobody deletes it as dead weight.
-- [ ] **Pin the converged layout with a test.** It works today and nothing
+- [x] **Pin the converged layout with a test.** It works today and nothing
       keeps it working. Assert that `agents.claude: false` +
       `agents.agentsmd: true` + `harness.claude: true` yields no `CLAUDE.md`,
       a root `AGENTS.md` carrying `@.agents/AGENTS.md`, and
       `.claude/settings.json` with the `ask` rules intact. Add the mirror
       case for Gemini: no `GEMINI.md`, `.gemini/settings.json` present.
-- [ ] **Document both axes.** `docs/usage.md` and a pointer in `README.md`:
+- [x] **Document both axes.** `docs/usage.md` and a pointer in `README.md`:
       the two-axis model, the values file that produces the converged layout,
       the per-harness support table, and the caveat list in full. A reader
       has to be able to decide whether their fleet can take it.
-- [ ] **Bump to 0.3.0**, only after v0.2.1 is tagged.
+- [ ] **Bump to 0.3.0**, only after v0.2.1 is tagged. v0.2.1 shipped
+      2026-09-27; the bump itself is deferred by the author's call on
+      2026-09-28 — Round 016 (js-tmpl 0.2.0) is to land first and the two
+      release together. `package.json` stays at 0.2.1 on this branch.
 
 ## Non-goals
 
@@ -198,31 +201,79 @@ green. The other 4 are pre-existing and untouched — they belong to a round of
 their own, and the memory proposes the scope. Fixing them here would have
 been exactly the scope creep this round's Non-goals section forbids.
 
+**2026-09-28 — steps 3 to 7 landed**, five commits on this branch after
+merging `dev` (v0.2.1) in, each green on its own.
+
+3. **`harness.*`** (`83df89a`). `$if{guardrails.claude}` → `$if{harness.claude}`,
+   `$if{agents.codex}` → `$if{harness.codex}`, and `.gemini/.gitkeep` replaced
+   by `$if{harness.gemini}/.gemini/settings.json` carrying
+   `context.fileName: [AGENTS.md, GEMINI.md]`. The refusal of the old keys
+   lives in `resolveScaffoldConfig`, the one funnel every entry point passes
+   through, and fires on a key set to `false` as much as `true`: the
+   documented opt-out was `guardrails.claude: false`, and ignoring it would
+   have turned an opt-out into a silent opt-in. Message names the new key.
+4. **Never overwrite** (`63b60c9`). `.gemini/settings.json` joined
+   `ENFORCEMENT_FILES` with its own reader — Gemini accepts a string or an
+   array in `context.fileName`, and setting it replaces the default — so a
+   file that lost `AGENTS.md` is reported by name and a file with extra keys
+   is not. The constant kept its name; its comment now says "harness config
+   files".
+5. **Stub blurbs** (`34c8363`). `AGENTS.md` names Claude Code v2.1.277+ as a
+   reader; `CLAUDE.md` says it exists because that support is not universal,
+   with the list. Wider than planned: the template's `harness-behaviour.md`
+   section "Each harness reads a different file" stated the falsehood
+   outright, so it became "Root `AGENTS.md` is converging, unevenly" with the
+   table and the three facts, and `root-files.md`'s stub table followed.
+   Templates only — this repo's `.agents/` copies are canon and wait for
+   step 2.
+6. **Pinned** (`83df89a`, `tests/harness-axis.test.js`): converged Claude,
+   converged Gemini, stub-without-directory, directory-without-stub, the
+   defaults, and every refusal.
+7. **Docs** (`04ba261`): `usage.md` "Two axes" with the support table and the
+   full caveat list, "Upgrading from 0.2.x", README's stub table.
+
+This repo migrated (`2a2b196`): `harness.gemini: true` because `.gemini/`
+holds skill refs; one `sync` wrote the settings file and refreshed the two
+stub regions, the next was a no-op.
+
+**Found on the way, not fixed**: prettier cannot be run on
+`harness-behaviour.md.hbs` — it flattens the table that holds `{{#if}}`
+rows. Same family as the 2026-09-24 memory; the new table was aligned by
+hand.
+
 ## Check
 
-- [ ] `pnpm check` green at each commit
-- [ ] Converged scaffold in a scratch repo: no `CLAUDE.md`, no `GEMINI.md`,
+- [x] `pnpm check` green at each commit — 266 tests at `2a2b196`
+- [x] Converged scaffold in a scratch repo: no `CLAUDE.md`, no `GEMINI.md`,
       root `AGENTS.md` present, `.claude/settings.json` and
-      `.gemini/settings.json` present
+      `.gemini/settings.json` present — 2026-09-28, from the CLI, and pinned
+      in `tests/harness-axis.test.js`
 - [ ] A live Claude Code session in that scratch repo reports
       `no CLAUDE.md found; AGENTS.md loaded: …` — verified by watching it,
-      not inferred from docs
+      not inferred from docs. **Not verified**: needs an interactive session
+      the author starts; the agent that did this round cannot observe one
 - [ ] `.agents/AGENTS.md` is **not** loaded as a second instruction file in
-      that session, only through the `@` import
-- [ ] A live Gemini CLI session in the same repo loads root `AGENTS.md`
-- [ ] `skill ref --to .gemini` still works with no `GEMINI.md` present
-- [ ] A repo with a hand-written `.gemini/settings.json` gets a report, not
-      an overwrite
-- [ ] A 0.2.x values file using `guardrails.claude` or `agents.codex` fails
+      that session, only through the `@` import — **not verified**, same
+      reason
+- [ ] A live Gemini CLI session in the same repo loads root `AGENTS.md` —
+      **not verified**, same reason
+- [x] `skill ref --to .gemini` still works with no `GEMINI.md` present —
+      2026-09-28, scratch repo: ref created beside `settings.json`
+- [x] A repo with a hand-written `.gemini/settings.json` gets a report, not
+      an overwrite — `tests/sync.test.js`, both directions
+- [x] A 0.2.x values file using `guardrails.claude` or `agents.codex` fails
       loudly, naming the new key — a silently ignored key is the one outcome
-      worse than breaking
-- [ ] This repo's own `.a2scaffold/values.yaml` migrated, and `sync` on it is
-      a no-op afterwards
+      worse than breaking. Tested at the API, and from the CLI on a scratch
+      repo: `sync --dry-run` exits with the message
+- [x] This repo's own `.a2scaffold/values.yaml` migrated, and `sync` on it is
+      a no-op afterwards — `2a2b196`
 - [ ] `/review-pr main` on the release branch before the `dev` PR, as in
       Round 014 — the release is challenged before it ships, not after
-- [ ] Re-running `sync` on a converged repo is a no-op
-- [ ] Record explicitly what could not be verified — the Bedrock/Vertex and
-      telemetry-disabled paths are claims from docs, not observations
+- [x] Re-running `sync` on a converged repo is a no-op — 2026-09-28,
+      scratch repo, "Everything up to date"
+- [x] Record explicitly what could not be verified — the Bedrock/Vertex and
+      telemetry-disabled paths are claims from docs, not observations; so are
+      the three live-session items above
 
 ## Act
 
