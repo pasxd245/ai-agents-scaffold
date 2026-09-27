@@ -3,6 +3,33 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.2.1] - 2026-09-27
+
+### Bug Fixes
+
+- *(tmpl)* Format the markdown templates prettier renders into a repo
+- *(skill-audit)* Decide text versus binary by content, not extension
+- *(skill-audit)* Recalibrate the patterns that fired on benign code
+- *(rc)* Give the CLI and the research crawler one config file
+- *(scaffold)* Keep one line ending when adopting or merging
+- *(deps)* Take js-tmpl 0.1.3 and js-yaml 4.3.2 for the handlebars and js-yaml advisories
+- *(scaffold)* Keep finding a title indented up to three spaces
+
+### Documentation
+
+- *(plan)* Close Round 013 and rename it to three digits
+- *(.agents)* Log the Round 014 pool reinstall in promotions
+- *(skills)* Say that opaque files abort a registry install
+- *(plan)* Record the review-pr run and its fixes in Round 014
+
+### Testing
+
+- *(rc)* Pin that the loader carries keys the CLI does not read
+
+### Miscellaneous
+
+- *(.agents)* Open the planning surface and declare the CoSF pilot
+
 ## [0.2.0] - 2026-09-16
 
 ### Features
