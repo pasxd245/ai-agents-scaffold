@@ -3,7 +3,7 @@
 **Date**: 2026-09-23
 **Agent**: Claude Code (Opus 5)
 **Confidence**: High
-**Status**: New
+**Status**: Promoted 2026-09-28 — see `plan/promotions.md`; the two-axis model stays here, unpromoted, on purpose
 **Source**: Round 015 planning — a user report that Claude Code had gained
 `AGENTS.md` support, verified against vendor docs and by scaffolding
 scratch repos
