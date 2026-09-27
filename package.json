@@ -1,6 +1,6 @@
 {
   "name": "a2scaffold",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CLI tool to scaffold AI agent configuration files in any repository",
   "type": "module",
   "main": "src/index.js",
@@ -66,8 +66,8 @@
   },
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
-    "@nci-gis/js-tmpl": "^0.1.0",
-    "js-yaml": "^4.1.1"
+    "@nci-gis/js-tmpl": "^0.1.3",
+    "js-yaml": "^4.3.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.5.2",

@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@nci-gis/js-tmpl':
-        specifier: ^0.1.0
-        version: 0.1.0
+        specifier: ^0.1.3
+        version: 0.1.3
       js-yaml:
-        specifier: ^4.1.1
-        version: 4.1.1
+        specifier: ^4.3.2
+        version: 4.3.2
     devDependencies:
       '@commitlint/cli':
         specifier: ^20.5.2
@@ -205,8 +205,8 @@ packages:
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
 
-  '@nci-gis/js-tmpl@0.1.0':
-    resolution: {integrity: sha512-IE2FDZrfhFxmUP7gqPW49gLLciah0urCKcY/JlYTjpsUvxp89+5QgsE4ROkQj47ixyfp/1nIjmNKY1QqLGuboQ==}
+  '@nci-gis/js-tmpl@0.1.3':
+    resolution: {integrity: sha512-WXXpHt84E9IFc+K5EpF3gUW1J3v+8RwrhBwIBPr1QgLC+iHbXtUVFmhlliTwm/emRKHjfXlnOepguD3qp1IcKA==}
     engines: {node: '>=20.0.0', pnpm: '>=10.0.0'}
     hasBin: true
 
@@ -360,10 +360,6 @@ packages:
 
   compare-func@2.0.0:
     resolution: {integrity: sha512-zHig5N+tPWARooBnb0Zx1MFcdfpyJrfTJ3Y5L+IFvUm8rM74hHz66z0gw0x4tijh5CorKkKUCnW82R2vmpeCRA==}
-
-  config@4.4.1:
-    resolution: {integrity: sha512-XfN4Q4+wBKkGtgMyQ+5ayjepdb0MrdiGKfBr0G1PTLx9rnqsX+Xiw03LEUtSALZU0UVfcFp6+xYV0NL8HLF94g==}
-    engines: {node: '>= 20.0.0'}
 
   conventional-changelog-angular@8.3.1:
     resolution: {integrity: sha512-6gfI3otXK5Ph5DfCOI1dblr+kN3FAm5a97hYoQkqNZxOaYa5WKfXH+AnpsmS+iUH2mgVC2Cg2Qw9m5OKcmNrIg==}
@@ -605,8 +601,8 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  handlebars@4.7.8:
-    resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==}
+  handlebars@4.7.9:
+    resolution: {integrity: sha512-4E71E0rpOaQuJR2A3xDZ+GM1HyWYv1clR58tC8emQNeQe3RH7MAzSbat+V0wG78LQBo6m6bzSG/L4pBuCsgnUQ==}
     engines: {node: '>=0.4.7'}
     hasBin: true
 
@@ -699,6 +695,10 @@ packages:
     resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
     hasBin: true
 
+  js-yaml@4.3.2:
+    resolution: {integrity: sha512-SFNOvSJ+Dgf/9An904Yx+CgSlIPCkIpao4qo51lpee25TIRejdH3rhR4EZMGoNx3/TP3O+wzWuiTFl4sqbltzA==}
+    hasBin: true
+
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
 
@@ -713,11 +713,6 @@ packages:
 
   json-stable-stringify-without-jsonify@1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
-
-  json5@2.2.3:
-    resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
-    engines: {node: '>=6'}
-    hasBin: true
 
   jsonc-parser@3.3.1:
     resolution: {integrity: sha512-HUgH65KyejrUFPvHFPbqOY0rsFip3Bo5wb4ngvdi1EpCYWUQDC5V+Y7mZws+DLkr4M//zQJoanu1SP+87Dv1oQ==}
@@ -1337,11 +1332,10 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
-  '@nci-gis/js-tmpl@0.1.0':
+  '@nci-gis/js-tmpl@0.1.3':
     dependencies:
-      config: 4.4.1
-      handlebars: 4.7.8
-      js-yaml: 4.1.1
+      handlebars: 4.7.9
+      js-yaml: 4.3.2
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -1473,10 +1467,6 @@ snapshots:
       array-ify: 1.0.0
       dot-prop: 5.3.0
 
-  config@4.4.1:
-    dependencies:
-      json5: 2.2.3
-
   conventional-changelog-angular@8.3.1:
     dependencies:
       compare-func: 2.0.0
@@ -1501,7 +1491,7 @@ snapshots:
     dependencies:
       env-paths: 2.2.1
       import-fresh: 3.3.1
-      js-yaml: 4.1.1
+      js-yaml: 4.3.2
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.9.3
@@ -1735,7 +1725,7 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
-  handlebars@4.7.8:
+  handlebars@4.7.9:
     dependencies:
       minimist: 1.2.8
       neo-async: 2.6.2
@@ -1804,6 +1794,10 @@ snapshots:
     dependencies:
       argparse: 2.0.1
 
+  js-yaml@4.3.2:
+    dependencies:
+      argparse: 2.0.1
+
   json-buffer@3.0.1: {}
 
   json-parse-even-better-errors@2.3.1: {}
@@ -1813,8 +1807,6 @@ snapshots:
   json-schema-traverse@1.0.0: {}
 
   json-stable-stringify-without-jsonify@1.0.1: {}
-
-  json5@2.2.3: {}
 
   jsonc-parser@3.3.1: {}
 

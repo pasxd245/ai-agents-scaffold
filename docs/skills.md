@@ -240,6 +240,11 @@ Skills fetched over the network are screened automatically: `skill add` with
 Pass `--force` to install anyway once you have reviewed the source. Local
 installs are not screened — you already have the files.
 
+On that network screen an `opaque` finding also counts as high: a file the
+audit could not read, one too large to scan, or one that is executable lands
+unseen, so a registry skill that ships a binary asset needs `--force` too.
+Locally the same finding is medium, because you can open the file yourself.
+
 ### What `validate` and `audit` do not check
 
 Both commands are narrow on purpose, and neither certifies a skill. Know the
