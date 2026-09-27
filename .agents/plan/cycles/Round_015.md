@@ -1,11 +1,11 @@
 # Round 015: Split the stub axis from the harness axis, for v0.3.0
 
-**Status**: In Progress — code complete 2026-09-28; step 2 (canon) and step 8 (bump) open
+**Status**: Complete
 **Part of**: standalone — feature work, not a
 [CoSF pilot](../programs/cosf-pilot.md) phase. It fits in one round, and
 `programs/README.md` reserves programs for work that does not.
 **Date started**: 2026-09-23
-**Date completed**: —
+**Date completed**: 2026-09-28
 
 ## Goal
 
@@ -101,7 +101,11 @@ Each step independently landable, each green.
       authority rules an agent writes the finding, never the canon:
       `memory/2026-09-23-agentsmd-convergence.md`, carrying a promotion
       proposal. Docs only, no code.
-- [ ] **Human promotes it into canon.** `context/harness-behaviour.md` gains
+- [ ] **Human promotes it into canon.** *Carried over at close, 2026-09-28:
+      the template copies are corrected (`34c8363`); this repo's own
+      `.agents/context/harness-behaviour.md` and `reference/root-files.md`
+      still state the old mapping and wait for the author's yes, then a
+      `promotions.md` entry.* `context/harness-behaviour.md` gains
       an `AGENTS.md`-support section and a new **Last verified** date; its
       "Each harness reads a different file" section and the
       `reference/root-files.md` table are corrected. Logged in
@@ -155,7 +159,9 @@ Each step independently landable, each green.
       the two-axis model, the values file that produces the converged layout,
       the per-harness support table, and the caveat list in full. A reader
       has to be able to decide whether their fleet can take it.
-- [ ] **Bump to 0.3.0**, only after v0.2.1 is tagged. v0.2.1 shipped
+- [ ] **Bump to 0.3.0**, only after v0.2.1 is tagged. *Not this round:
+      the author closed Rounds 015 and 016 into `dev` on 2026-09-28 without a
+      release; the bump belongs to whichever round cuts v0.3.0.* v0.2.1 shipped
       2026-09-27; the bump itself is deferred by the author's call on
       2026-09-28 — Round 016 (js-tmpl 0.2.0) is to land first and the two
       release together. `package.json` stays at 0.2.1 on this branch.
@@ -287,15 +293,39 @@ hand.
 
 **Learnings**:
 
-- ...
+- **A flag that never wrote what its name said was the design, hiding.**
+  `agents.codex` never wrote an instruction file; it was the second axis
+  under the first axis's name. Reading what each flag actually emits, in a
+  scratch repo per combination, found the split faster than reasoning about
+  what the flags should mean.
+- **The one lever a generator has is what it declines to write.** Claude's
+  opt-in cannot be set from project settings, so convergence for Claude is
+  purely the absence of `CLAUDE.md`. Gemini's opt-in is project-level, so the
+  tool writes it. Same goal, opposite mechanisms — which is why the second
+  axis has one member per harness rather than one flag.
+- **Refuse on `false` too.** The documented opt-out was `guardrails.claude:
+  false`. A rename that only caught truthy uses would have turned every
+  opt-out into a silent opt-in — the exact failure the no-alias decision
+  exists to prevent.
+- **Correct the template, hand the canon to a human.** The same falsehood
+  lived in three places: the stub blurbs, the template's knowledge base, and
+  this repo's own copy of it. The first two are code and were fixed in the
+  round; the third is canon and is carried over. Keeping that line held even
+  when the fix was a copy.
+- **Say what could not be verified, in the file, not the chat.** Three Check
+  items need a live harness session. They are recorded as not verified with
+  the reason, so the next reader does not mistake a table from vendor docs
+  for an observation.
 
 **Promotions**:
 
 - [ ] → `context/harness-behaviour.md` : `AGENTS.md` support per harness, the
       `.agents/` exclusion, and why the Claude-side option cannot be written
-      from project settings
-- [ ] → `reference/root-files.md` : the stub table, once the above lands
-- [ ] → `memory/` **only** : the two-axis model. It is the reason the flags
+      from project settings — **carried over**, the author's; the template
+      copy is done, so it is a copy plus a `promotions.md` line
+- [ ] → `reference/root-files.md` : the stub table, once the above lands —
+      **carried over** with it
+- [x] → `memory/` **only** : the two-axis model. It is the reason the flags
       get renamed, but it has been observed once, today, from reading a
       values file — never used. Philosophy #6 puts it in `memory/` until a
       second harness has actually been added along it. Do not promote it to
