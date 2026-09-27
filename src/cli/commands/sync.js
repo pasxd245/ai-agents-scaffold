@@ -94,17 +94,21 @@ export async function runSync(argv) {
   }
 
   if (result.drifted.length > 0) {
-    console.log('  Enforcement rules not present verbatim — confirm by hand:');
+    console.log(
+      '  Harness config entries not present verbatim — confirm by hand:'
+    );
     for (const { file, missing } of result.drifted) {
       console.log(`    - ${file}`);
       for (const rule of missing) console.log(`        ${rule}`);
     }
     console.log(
-      '\n    The template requires these rules and they do not appear here as\n' +
+      '\n    The template requires these entries and they do not appear here as\n' +
         '    written. If a broader rule of your own already covers them, nothing\n' +
         '    is wrong; sync compares strings, not what a pattern matches. If not,\n' +
-        '    this is canon the harness is no longer protecting. The file is never\n' +
-        '    overwritten: your own rules and formatting stay as they are.\n'
+        '    a missing permission rule is canon the harness no longer protects,\n' +
+        '    and a missing context file is instructions the harness no longer\n' +
+        '    reads. The file is never overwritten: your own settings and\n' +
+        '    formatting stay as they are.\n'
     );
   }
 
