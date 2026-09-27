@@ -13,7 +13,7 @@ npm install -g a2scaffold
 pnpm add -D a2scaffold
 ```
 
-Requires Node.js >= 20.
+Requires Node.js >= 22.
 
 ## Quick start
 
@@ -408,9 +408,11 @@ Synced "base" into /path/to/repo
   Updated — managed region refreshed:
     - CLAUDE.md
 
-  Enforcement rules not present verbatim — confirm by hand:
+  Harness config entries not present verbatim — confirm by hand:
     - .claude/settings.json
         permissions.ask: Edit(/.agents/reference/**)
+    - .gemini/settings.json
+        context.fileName: AGENTS.md
 ```
 
 Three reports need action from you:
@@ -426,12 +428,14 @@ Three reports need action from you:
   writes nothing and says which shape it found. `--adopt` does not apply here
   either; adding a block beside a broken pair would only make the repair
   harder. Leave exactly one start and one end marker, in that order.
-- **Enforcement rules not present verbatim** — `.claude/settings.json` carries
-  permission rules, and a required rule that has gone missing means canon the
-  harness is no longer protecting. The comparison is by string, in the same
-  permission list: if a broader rule of your own already covers a required one,
-  nothing is wrong, and sync says so rather than pretending to know. The file is
-  never overwritten, because you may have added rules of your own.
+- **Harness config entries not present verbatim** — `.claude/settings.json`
+  carries permission rules, and a required rule that has gone missing means
+  canon the harness is no longer protecting; `.gemini/settings.json` carries
+  `context.fileName`, and `AGENTS.md` gone from it means instructions the
+  harness no longer reads. The comparison is by string, in the same list: if a
+  broader rule of your own already covers a required one, nothing is wrong,
+  and sync says so rather than pretending to know. Neither file is ever
+  overwritten, because you may have added settings of your own.
 
 On a repo that has never been scaffolded, `sync` does the whole install
 non-destructively: it creates everything missing and reports any pre-existing
@@ -549,7 +553,9 @@ silently dropped leaves a repo looking scaffolded when it is not:
    `.gitkeep`. A repo that had `agents.gemini: true` and wants to keep
    `.gemini/` sets `harness.gemini: true` too, then runs `sync` once; the old
    `.gitkeep` is harmless and can be deleted.
-3. **Nothing else moves.** The stubs' generated blocks changed wording, so
+3. **Node.js 22 or later.** The template engine underneath, js-tmpl 0.2.0,
+   dropped Node 20 when it reached end of life; so does a2scaffold.
+4. **Nothing else moves.** The stubs' generated blocks changed wording, so
    `sync` will refresh them; everything outside the markers is untouched.
 
 ## Upgrading from 0.1.x

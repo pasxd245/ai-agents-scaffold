@@ -1,7 +1,6 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { renderDirectory } from '@nci-gis/js-tmpl';
+import { planRender } from '@nci-gis/js-tmpl';
 
 import { ENFORCEMENT_FILES } from '../constants.js';
 import { missingEnforcement } from './enforcement.js';
@@ -12,6 +11,7 @@ import {
   mergeManagedRegion,
   adoptManagedRegion,
 } from './managed-region.js';
+import { toNative } from './output-paths.js';
 
 /**
  * Bring the generated surface up to date without destroying anything.
@@ -55,94 +55,82 @@ export async function sync({
   });
   const outDir = config.outDir;
 
-  const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2scaffold-sync-'));
-  try {
-    config.outDir = stagingDir;
-    await renderDirectory(config);
+  const entries = await planRender(config);
 
-    /** @type {Record<string, any[]>} */
-    const result = {
-      created: [],
-      updated: [],
-      unchanged: [],
-      adopted: [],
-      unmanaged: [],
-      ambiguous: [],
-      drifted: [],
-    };
+  /** @type {Record<string, any[]>} */
+  const result = {
+    created: [],
+    updated: [],
+    unchanged: [],
+    adopted: [],
+    unmanaged: [],
+    ambiguous: [],
+    drifted: [],
+  };
 
-    /** @param {string} rel */
-    const walk = (rel) => {
-      const abs = path.join(stagingDir, rel);
-      if (fs.statSync(abs).isDirectory()) {
-        for (const name of fs.readdirSync(abs)) {
-          walk(rel ? path.join(rel, name) : name);
+  /**
+   * @param {string} rel - Output-relative, native separators
+   * @param {string} incoming - Rendered content
+   */
+  const visit = (rel, incoming) => {
+    const dest = path.join(outDir, rel);
+
+    // Absent: creating a file cannot destroy one.
+    if (!fs.existsSync(dest)) {
+      if (!dryRun) {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
+        fs.writeFileSync(dest, incoming);
+      }
+      result.created.push(rel);
+      return;
+    }
+
+    const existing = fs.readFileSync(dest, 'utf8');
+
+    if (hasManagedRegion(incoming)) {
+      const merged = mergeManagedRegion(existing, incoming);
+      if (merged !== null) {
+        if (merged === existing) {
+          result.unchanged.push(rel);
+        } else {
+          if (!dryRun) fs.writeFileSync(dest, merged);
+          result.updated.push(rel);
         }
         return;
       }
 
-      const dest = path.join(outDir, rel);
-      const incoming = fs.readFileSync(abs, 'utf8');
-
-      // Absent: creating a file cannot destroy one.
-      if (!fs.existsSync(dest)) {
-        if (!dryRun) {
-          fs.mkdirSync(path.dirname(dest), { recursive: true });
-          fs.writeFileSync(dest, incoming);
-        }
-        result.created.push(rel);
+      // Template owns a region, file has no valid one: adoptable only if
+      // marker-less; broken markers are reported for repair.
+      const state = classifyRegion(existing);
+      if (state.kind === 'ambiguous') {
+        result.ambiguous.push({ file: rel, reason: state.reason });
         return;
       }
-
-      const existing = fs.readFileSync(dest, 'utf8');
-
-      if (hasManagedRegion(incoming)) {
-        const merged = mergeManagedRegion(existing, incoming);
-        if (merged !== null) {
-          if (merged === existing) {
-            result.unchanged.push(rel);
-          } else {
-            if (!dryRun) fs.writeFileSync(dest, merged);
-            result.updated.push(rel);
-          }
+      if (adopt) {
+        const wrapped = adoptManagedRegion(existing, incoming);
+        if (wrapped !== null) {
+          if (!dryRun) fs.writeFileSync(dest, wrapped);
+          result.adopted.push(rel);
           return;
         }
-
-        // Template owns a region, file has no valid one: adoptable only if
-        // marker-less; broken markers are reported for repair.
-        const state = classifyRegion(existing);
-        if (state.kind === 'ambiguous') {
-          result.ambiguous.push({ file: rel, reason: state.reason });
-          return;
-        }
-        if (adopt) {
-          const wrapped = adoptManagedRegion(existing, incoming);
-          if (wrapped !== null) {
-            if (!dryRun) fs.writeFileSync(dest, wrapped);
-            result.adopted.push(rel);
-            return;
-          }
-        }
-        result.unmanaged.push(rel);
-        return;
       }
+      result.unmanaged.push(rel);
+      return;
+    }
 
-      // Enforcement files are seeded, but a missing rule is a protection gap,
-      // so it is reported (never overwritten); see `enforcement.js`.
-      const posix = rel.split(path.sep).join('/');
-      if (ENFORCEMENT_FILES.includes(posix)) {
-        const missing = missingEnforcement(posix, existing, incoming);
-        if (missing.length > 0) result.drifted.push({ file: rel, missing });
-        return;
-      }
+    // Enforcement files are seeded, but a missing rule is a protection gap,
+    // so it is reported (never overwritten); see `enforcement.js`.
+    const posix = rel.split(path.sep).join('/');
+    if (ENFORCEMENT_FILES.includes(posix)) {
+      const missing = missingEnforcement(posix, existing, incoming);
+      if (missing.length > 0) result.drifted.push({ file: rel, missing });
+      return;
+    }
 
-      // Seeded and present: the human's. Silent on purpose; reporting every
-      // divergence would train people to ignore the output.
-    };
+    // Seeded and present: the human's. Silent on purpose; reporting every
+    // divergence would train people to ignore the output.
+  };
 
-    walk('');
-    return /** @type {any} */ (result);
-  } finally {
-    fs.rmSync(stagingDir, { recursive: true, force: true });
-  }
+  for (const entry of entries) visit(toNative(entry.target), entry.content);
+  return /** @type {any} */ (result);
 }

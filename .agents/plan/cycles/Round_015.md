@@ -273,8 +273,16 @@ hand.
       repo: `sync --dry-run` exits with the message
 - [x] This repo's own `.a2scaffold/values.yaml` migrated, and `sync` on it is
       a no-op afterwards — `2a2b196`
-- [ ] `/review-pr main` on the release branch before the `dev` PR, as in
-      Round 014 — the release is challenged before it ships, not after
+- [x] `/review-pr main` on the release branch before the `dev` PR, as in
+      Round 014 — run 2026-09-28 against `dev` on the stacked branch with
+      Round 016. Two findings, both fixed before the PR: the sync drift
+      report said "enforcement rules" and "canon no longer protected" for a
+      Gemini file where the gap is instructions no longer read (`98c8701`),
+      and `usage.md` quoted the old wording. Also confirmed: the generated
+      `.gemini/settings.json` is prettier-stable, the four markdown files
+      prettier rewrites are the pre-existing ones from the 2026-09-24 memory,
+      and no path under `.agents/` outside `memory/` and `plan/cycles/`
+      changed
 - [x] Re-running `sync` on a converged repo is a no-op — 2026-09-28,
       scratch repo, "Everything up to date"
 - [x] Record explicitly what could not be verified — the Bedrock/Vertex and
