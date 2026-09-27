@@ -1,8 +1,23 @@
 # Round 13: Align the scaffold with 2026 agent practice
 
-**Status**: Review
+**Status**: Complete
 **Date started**: 2026-08-29
-**Date completed**: —
+**Date completed**: 2026-09-16
+
+> Closed 2026-09-27, retroactively to the v0.2.0 tag. The goal was v0.2.0
+> groundwork and v0.2.0 shipped on 2026-09-16; the file was renamed from
+> `Round_13.md` to the three-digit form at the same time. What was still open
+> on the day of closing, and where it went:
+>
+> - **Path-scoped rules emitter** (Plan step below, and *Ready to build* 3b):
+>   not built. Backlog, no round yet.
+> - **Two unverified Check items** (permission rules in a live session; `sync`
+>   against a v0.1.0 repo in the field): left unverified, recorded as such.
+> - **Approach questions and the hardening batch** from the 2026-09-16
+>   adversarial review: the `AGENTS.md` shape went to Round 015 (on
+>   `feat/agentsmd-convergence`, not yet merged); the rest has no round yet.
+> - **Backlog items 5, 6, 7, 7b, 7c**: still backlog. Item 11, the survey
+>   re-run, is due 2027-02-28.
 
 ## Goal
 

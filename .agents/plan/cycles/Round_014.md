@@ -18,7 +18,7 @@ Source of record:
 "Need a design decision". The approach-level questions from the same day's
 adversarial review (knowledge-base budget, root `AGENTS.md` shape, the
 permission layer's real coverage) stay in
-[Round 13 § Found by the pre-release adversarial review](Round_13.md#found-by-the-pre-release-adversarial-review-2026-09-16)
+[Round 13 § Found by the pre-release adversarial review](Round_013.md#found-by-the-pre-release-adversarial-review-2026-09-16)
 and are **not** in scope here, nor is that section's hardening batch; both
 need a round of their own.
 

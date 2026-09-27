@@ -34,7 +34,7 @@ that label is marketing:
 
 The full statement, with what would falsify each claim, is in
 [philosophy.md](.agents/context/philosophy.md). The repository runs the model
-on itself: [Round 13](.agents/plan/cycles/Round_13.md) records the review loop
+on itself: [Round 13](.agents/plan/cycles/Round_013.md) records the review loop
 this branch went through before its own PR, including what each pass missed.
 
 ## Quick Start
