@@ -13,7 +13,7 @@ npm install -g a2scaffold
 pnpm add -D a2scaffold
 ```
 
-Requires Node.js >= 20.
+Requires Node.js >= 22.
 
 ## Quick start
 
@@ -549,7 +549,9 @@ silently dropped leaves a repo looking scaffolded when it is not:
    `.gitkeep`. A repo that had `agents.gemini: true` and wants to keep
    `.gemini/` sets `harness.gemini: true` too, then runs `sync` once; the old
    `.gitkeep` is harmless and can be deleted.
-3. **Nothing else moves.** The stubs' generated blocks changed wording, so
+3. **Node.js 22 or later.** The template engine underneath, js-tmpl 0.2.0,
+   dropped Node 20 when it reached end of life; so does a2scaffold.
+4. **Nothing else moves.** The stubs' generated blocks changed wording, so
    `sync` will refresh them; everything outside the markers is untouched.
 
 ## Upgrading from 0.1.x

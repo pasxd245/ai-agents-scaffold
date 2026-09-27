@@ -30,7 +30,7 @@ import { TEMPLATE_EXT } from '../constants.js';
  * - A segment merely *containing* `$if{` / `$ifn{` is malformed — an error.
  * - A formula naming a variable absent from the view is an error.
  * - Present-but-falsy prunes the subtree; `$ifn` inverts.
- * - `${var}` interpolates anywhere, and a missing value renders empty.
+ * - `${var}` interpolates anywhere; a value absent from the view is an error.
  */
 
 const FORMULA_WHOLE = /^\$(if|ifn)\{([^}]+)\}$/;
@@ -133,7 +133,13 @@ export function resolveOutputPath(rel, view) {
 
     out.push(
       segment.replace(INTERPOLATION, (_, expr) => {
-        const value = lookup(view, String(expr).trim());
+        const name = String(expr).trim();
+        if (!has(view, name)) {
+          throw new Error(
+            `Path variable '${name}' is not defined in the view (in '${rel}')`
+          );
+        }
+        const value = lookup(view, name);
         return value === undefined || value === null ? '' : String(value);
       })
     );

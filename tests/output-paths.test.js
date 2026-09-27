@@ -125,10 +125,19 @@ describe('output-path prediction matches the renderer', () => {
     }
   });
 
-  it('agrees on ${...} interpolation, including a missing value', async () => {
+  it('agrees on ${...} interpolation', async () => {
+    const dir = template({ '${dir}/${name}.md.hbs': 'x' });
+    const view = { dir: 'sub', name: 'file' };
+    assert.deepEqual(predicted(dir, view), await rendered(dir, view));
+  });
+
+  it('rejects a ${...} value the view does not define, as 0.2.0 does', async () => {
+    // 0.1.x rendered a missing value empty; 0.2.0 throws. The mirror follows
+    // the installed engine, which is the whole point of this file.
     const dir = template({ '${dir}/${missing}name.md.hbs': 'x' });
     const view = { dir: 'sub' };
-    assert.deepEqual(predicted(dir, view), await rendered(dir, view));
+    await assert.rejects(() => rendered(dir, view), /not defined in the view/);
+    assert.throws(() => predicted(dir, view), /not defined in the view/);
   });
 
   it('rejects a formula naming a variable the view does not define', async () => {

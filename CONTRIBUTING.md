@@ -12,7 +12,7 @@ pnpm install          # installs husky hooks too
 pnpm check            # lint + format + typecheck + test — must be green
 ```
 
-Requires Node.js >= 20 and pnpm. There is no build step.
+Requires Node.js >= 22 and pnpm. There is no build step.
 
 ## Scaffold templates
 

@@ -102,7 +102,7 @@ npm install -g a2scaffold
 pnpm add -D a2scaffold
 ```
 
-Requires Node.js >= 20.
+Requires Node.js >= 22.
 
 ## Usage
 
