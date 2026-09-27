@@ -32,10 +32,18 @@ export const CONFIG_EXTS = ['.json', '.yaml', '.yml'];
 export const RC_FILENAME = '.a2scaffoldrc.json';
 
 /**
- * Generated files whose staleness has a cost beyond documentation drift.
+ * Harness config files: seeded, never overwritten, and checked for drift.
  *
- * Sync leaves seeded files alone silently, but a permission rule that has not
- * caught up with the template means canon the harness is no longer protecting.
- * Reported, never overwritten — a repo may have added rules of its own.
+ * Sync leaves seeded files alone silently. These are the exception, because
+ * their staleness costs more than documentation drift: a permission rule that
+ * has not caught up with the template is canon the harness no longer guards,
+ * and a `context.fileName` list without `AGENTS.md` is a harness that no
+ * longer reads the instructions at all. A repo may also have put its own
+ * settings in them — MCP servers, a theme, local rules — so the check is per
+ * required entry (see `enforcement.js`), and the answer is a report, never a
+ * rewrite.
  */
-export const ENFORCEMENT_FILES = ['.claude/settings.json'];
+export const ENFORCEMENT_FILES = [
+  '.claude/settings.json',
+  '.gemini/settings.json',
+];
