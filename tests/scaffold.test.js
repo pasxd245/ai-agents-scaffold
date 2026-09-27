@@ -89,7 +89,7 @@ describe('scaffold base template', () => {
       await scaffold({
         templateName: 'scaffold/base',
         outputDir: outDir,
-        overrides: { guardrails: { claude: false } },
+        overrides: { harness: { claude: false } },
       });
       assert.ok(!fs.existsSync(path.join(outDir, '.claude')));
       const kb = fs.readFileSync(

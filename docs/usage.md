@@ -119,7 +119,7 @@ created, updated in place, adopted, replaced, and — when a flag is missing —
 `Needs --adopt` or `Needs --force`. A repo with existing files therefore sees
 its conflicts in the preview, not only in the refusal. Files gated on a
 disabled harness — `GEMINI.md` and `.codex/` above, with `agents.gemini` and
-`agents.codex` off — are omitted rather than shown with their `$if{...}`
+`harness.codex` off — are omitted rather than shown with their `$if{...}`
 marker.
 
 ### List available templates
@@ -189,9 +189,10 @@ project:
   name: acme-api
 agents:
   claude: true
-  codex: false
   gemini: false
   copilot: false
+harness:
+  gemini: true
 ```
 
 **Precedence (lowest to highest):**

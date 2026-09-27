@@ -4,18 +4,23 @@
 project:
   name: 'my-project'
 
-# Which agent-facing stubs to generate.
+# Axis 1 — which root instruction file to write.
 #
 # `.agents/AGENTS.md` is the heart — always generated, and the single place
-# project knowledge lives. Every file below is a stub that points at it, so
-# the flags here are purely about which harnesses you want wired up.
+# project knowledge lives. Every file below is a stub that points at it. Which
+# stubs a repo needs depends on which harnesses it runs and whether each of
+# them reads root `AGENTS.md`; see `harness:` below for the other half.
 #
-#   agentsmd  Root AGENTS.md, the cross-tool convention read by Codex, Cursor,
-#             Jules, Devin, Amp, Zed, Windsurf and Aider.
-#   claude    CLAUDE.md — Claude Code reads this name, not AGENTS.md.
-#   gemini    GEMINI.md, plus .gemini/ for skill refs.
+#   agentsmd  Root AGENTS.md — the cross-tool convention. Read natively by
+#             Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf and Aider; by
+#             Claude Code v2.1.277+ when no CLAUDE.md is present; by Gemini
+#             CLI and Copilot when opted in.
+#   claude    CLAUDE.md. Still on by default: Claude Code's AGENTS.md support
+#             is off for sessions that cannot fetch feature flags (Bedrock,
+#             Vertex, telemetry disabled) and for the first session after an
+#             upgrade. Turn it off only if your whole fleet is covered.
+#   gemini    GEMINI.md. The directory `.gemini/` is `harness.gemini`.
 #   copilot   .github/copilot-instructions.md.
-#   codex     .codex/ for skill refs; Codex itself reads root AGENTS.md.
 #
 # Note: JavaScript falsy values (false, 0, '', null, undefined) are treated as false.
 agents:
@@ -23,7 +28,6 @@ agents:
   claude: true
   copilot: true
   gemini: false
-  codex: false
 
 # Per-stub settings. Every stub points at the same knowledge base; only the
 # relative path and the pointer mechanism differ.
@@ -50,22 +54,31 @@ copilot:
   philosophy_path: '../.agents/context/philosophy.md'
   kb_import: false
 
-# Enforcement.
+# Axis 2 — which harness directory to create, with its native config.
 #
-# The authority rules in .agents/AGENTS.md are prose, and instruction files are
-# context rather than configuration — an agent can read "READ-ONLY" and write
-# anyway. These emit harness-native permission rules so the rule actually holds.
+# Independent of `agents:` above. A harness directory carries permission
+# rules, native settings and skill refs whether or not a `.md` stub sits
+# beside it, and a stub can exist without the directory. Keeping the two apart
+# is what lets a repo say "no GEMINI.md, but keep .gemini/".
 #
-# `ask` is used rather than `deny` on purpose: the governance model allows a
-# human to authorise a change after an explicit warning, and `ask` is exactly
-# that handshake. `deny` cannot be overridden in-session.
+#   claude   .claude/settings.json — `ask` before writing to canon. The
+#            authority rules in .agents/AGENTS.md are prose, and instruction
+#            files are context rather than configuration; this makes the rule
+#            hold. `ask`, not `deny`, so a human can still authorise a change
+#            after the warning. Read by Claude Code whether or not CLAUDE.md
+#            exists, so turning the stub off is not a request to drop this.
+#   gemini   .gemini/settings.json — `context.fileName` listing AGENTS.md and
+#            GEMINI.md, which is how Gemini CLI opts in to root AGENTS.md. Also
+#            where `skill ref --to .gemini` lands.
+#   codex    .codex/ — where `skill ref --to .codex` lands. Codex itself reads
+#            root AGENTS.md and has no instruction file of its own.
 #
-# Independent of the harness flags above. `.claude/settings.json` is read by
-# Claude Code whether or not a CLAUDE.md stub exists, so a repo can enforce the
-# authority rules without generating the stub — and turning the stub off is not
-# a request to drop the protection. Set this to false to opt out of that.
-guardrails:
-  claude: true # .claude/settings.json — ask before writing to canon
+# Renamed in 0.3.0 from `guardrails.claude` and `agents.codex`; the old keys
+# are refused with the new name, never silently ignored.
+harness:
+  claude: true
+  gemini: false
+  codex: false
 
 # Optional planning surface.
 #
