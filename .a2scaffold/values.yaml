@@ -6,3 +6,11 @@ agents:
   # Without this the tool never generates it, so the file drifts unmaintained —
   # which is what happened, and what a re-scaffold could not fix.
   gemini: true
+
+# Opened 2026-09-24 when this repo became a declared CoSF pilot. Round docs are
+# round-scoped and `context/` is canon; neither holds the goal above a round,
+# nor a promise that spans rounds. Every round to date reads
+# `Part of: standalone`, which is what not having these looks like.
+plan:
+  decisions: true
+  programs: true
