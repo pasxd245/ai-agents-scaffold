@@ -7,6 +7,11 @@ agents:
   # which is what happened, and what a re-scaffold could not fix.
   gemini: true
 
+harness:
+  # `.gemini/` holds this repo's skill refs. Since 0.3.0 the directory is its
+  # own axis, and the settings file it writes points Gemini CLI at AGENTS.md.
+  gemini: true
+
 # Opened 2026-09-24 when this repo became a declared CoSF pilot. Round docs are
 # round-scoped and `context/` is canon; neither holds the goal above a round,
 # nor a promise that spans rounds. Every round to date reads

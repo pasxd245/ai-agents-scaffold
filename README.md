@@ -63,27 +63,31 @@ This generates the base AI agent setup in your current directory:
     promotions.md              # Promotion log
     cycles/                    # Individual PDCA rounds
 .claude/settings.json          # Ask before Edit() on canon — Claude Code only, interactive
-AGENTS.md                      # Stub for Codex & the AGENTS.md convention
+AGENTS.md                      # Stub for the AGENTS.md convention — and Claude Code, when CLAUDE.md is absent
 CLAUDE.md                      # Stub for Claude Code — @.agents/AGENTS.md
 .github/copilot-instructions.md  # Stub for Copilot — restates it (cannot import)
 ```
 
 `.agents/AGENTS.md` is the **heart** — project knowledge lives there once.
-Each harness reads a different filename, so the root files are peer stubs that
-all point at it:
+The root files are peer stubs that all point at it; which ones a repo needs
+depends on which harnesses read root `AGENTS.md`:
 
-| Stub                              | Harness                                                | Points at the KB by                   |
-| --------------------------------- | ------------------------------------------------------ | ------------------------------------- |
-| `CLAUDE.md`                       | Claude Code                                            | `@.agents/AGENTS.md`, expanded inline |
-| `GEMINI.md`                       | Gemini CLI                                             | `@.agents/AGENTS.md`, expanded inline |
-| `AGENTS.md`                       | Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf, Aider | the same line, read as a path         |
-| `.github/copilot-instructions.md` | GitHub Copilot                                         | restated — it cannot import           |
+| Stub                              | Harness                                                                                                                        | Points at the KB by                   |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `AGENTS.md`                       | Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf, Aider; Claude Code v2.1.277+ without `CLAUDE.md`; Gemini and Copilot opted in | the same line, read as a path         |
+| `CLAUDE.md`                       | Claude Code — the only file it reads in sessions without `AGENTS.md` support                                                   | `@.agents/AGENTS.md`, expanded inline |
+| `GEMINI.md`                       | Gemini CLI, unless `.gemini/settings.json` points it at `AGENTS.md`                                                            | `@.agents/AGENTS.md`, expanded inline |
+| `.github/copilot-instructions.md` | GitHub Copilot                                                                                                                 | restated — it cannot import           |
 
 No stub imports another, so every one reaches the knowledge base in a single
 hop and no harness depends on a file meant for a different one.
 
-Toggle each stub in the template's `values.yaml` under `agents:`. `AGENTS.md`,
-Claude Code and Copilot are on by default.
+Toggle each stub in `values.yaml` under `agents:`, and each harness directory
+(`.claude/settings.json`, `.gemini/settings.json`, `.codex/`) under `harness:`.
+The two are independent, so a repo whose fleet reads `AGENTS.md` can keep one
+instruction file and every harness directory; which fleets can, and why
+`CLAUDE.md` stays on by default, is in
+[Two axes](docs/usage.md#two-axes-instruction-files-and-harness-directories).
 
 ## Installation
 

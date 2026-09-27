@@ -7,18 +7,26 @@
 ---
 
 **This file is the heart.** Every root file is a stub that points here; the
-project knowledge lives in `.agents/` exactly once. Each harness reads a
-different name, and only some expand inline imports:
+project knowledge lives in `.agents/` exactly once. Only some harnesses expand
+inline imports, and not every harness needs its own name any more:
 
-| Stub                              | Harness                                                | Points here by                          |
-| --------------------------------- | ------------------------------------------------------ | --------------------------------------- |
-| `CLAUDE.md`                       | Claude Code                                            | `@.agents/AGENTS.md`, expanded inline   |
-| `GEMINI.md`                       | Gemini CLI                                             | `@.agents/AGENTS.md`, expanded inline   |
-| `AGENTS.md`                       | Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf, Aider | the same line, read as a path reference |
-| `.github/copilot-instructions.md` | GitHub Copilot                                         | restated content — it cannot import     |
+| Stub                              | Harness                                                                                                                                            | Points here by                          |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `AGENTS.md`                       | Codex, Cursor, Jules, Devin, Amp, Zed, Windsurf, Aider — natively; Claude Code v2.1.277+ when no `CLAUDE.md`; Gemini CLI and Copilot when opted in | the same line, read as a path reference |
+| `CLAUDE.md`                       | Claude Code — always, and the only file it reads in sessions without `AGENTS.md` support                                                           | `@.agents/AGENTS.md`, expanded inline   |
+| `GEMINI.md`                       | Gemini CLI — by default; `.gemini/settings.json` can point it at `AGENTS.md` instead                                                               | `@.agents/AGENTS.md`, expanded inline   |
+| `.github/copilot-instructions.md` | GitHub Copilot                                                                                                                                     | restated content — it cannot import     |
 
 The stubs are peers. None of them imports another, so no harness depends on a
 file meant for a different one, and every stub reaches this file in one hop.
+
+**Two axes, in `values.yaml`.** `agents.*` decides which stubs above exist;
+`harness.*` decides which harness directory exists with its native config
+(`.claude/settings.json`, `.gemini/settings.json`, `.codex/`). They are
+independent, so a repo whose whole fleet reads `AGENTS.md` can keep one
+instruction file and every harness directory. Which sessions cannot, and why
+`CLAUDE.md` stays on by default, is in
+[context/harness-behaviour.md](../context/harness-behaviour.md).
 
 ## Rules
 

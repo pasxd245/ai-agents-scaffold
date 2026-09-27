@@ -7,7 +7,7 @@
 > telling you. Each entry carries the date it was last verified. Past that,
 > treat it as unverified rather than wrong, and re-read the source.
 
-**Last verified**: 2026-09-16
+**Last verified**: 2026-09-23
 
 ---
 
@@ -74,16 +74,16 @@ is not:
 
 | Harness     | Backing the scaffold ships                                   | Status                                                                   |
 | ----------- | ------------------------------------------------------------ | ------------------------------------------------------------------------ |
-{{#if guardrails.claude}}
+{{#if harness.claude}}
 | Claude Code | `.claude/settings.json` — `ask` on `Edit` under `.agents/`   | Shipped. Interactive only; `Bash` and `Write` bypass it                  |
 {{else}}
-| Claude Code | none — `guardrails.claude` is off in `values.yaml`           | Not generated. `ask` rules exist; turn the flag on to ship them          |
+| Claude Code | none — `harness.claude` is off in `values.yaml`           | Not generated. `ask` rules exist; turn the flag on to ship them          |
 {{/if}}
 | Codex       | none                                                         | Not verified. Has approval modes and a sandbox; path scoping unchecked   |
 | Gemini CLI  | none                                                         | Not verified                                                             |
 | Copilot     | none known                                                   | Instruction file only                                                    |
 
-{{#if guardrails.claude}}
+{{#if harness.claude}}
 For every harness but Claude Code the table is text the model reads. Treat
 {{else}}
 For every harness, in this repo, the table is text the model reads. Treat
@@ -136,16 +136,41 @@ specification. Verified 2026-08-29.
 
 ---
 
-## Each harness reads a different file
+## Root `AGENTS.md` is converging, unevenly
 
-`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.github/copilot-instructions.md` — and
-only some expand `@` imports. `AGENTS.md` is the cross-tool convention;
-Claude Code reads `CLAUDE.md` and not `AGENTS.md`.
+`AGENTS.md` is the cross-tool convention, and the file every harness reads is
+becoming it — but on different terms:
 
-See [reference/root-files.md](../reference/root-files.md) for the current
-mapping.
+| Harness     | Reads root `AGENTS.md`                                 | What it takes                                 |
+| ----------- | ------------------------------------------------------ | --------------------------------------------- |
+| Claude Code | v2.1.277+, by default, when no `CLAUDE.md` is in scope | nothing — the stub's absence is the switch    |
+| Codex       | natively                                               | nothing                                       |
+| Gemini CLI  | opt-in                                                 | `context.fileName` in `.gemini/settings.json` |
+| Copilot     | opt-in in VS Code; native for the coding agent         | `chat.useAgentsMdFile`, user or workspace     |
 
-Source: agents.md; Claude Code memory docs. Verified 2026-08-29.
+Three facts decide what this scaffold does with that:
+
+1. **`.agents/` is excluded by name.** Claude Code does not auto-read anything
+   under a `.agents/` directory, so the heart cannot collide with the root
+   stub, and `@.agents/AGENTS.md` stays the only path in.
+2. **The Claude side cannot be configured from the repo.** The option lives at
+   `pluginConfigs["agents-md@builtin"].options.instructionFiles`, and Claude
+   Code ignores it in project and local settings. The only lever the scaffold
+   has is whether it writes `CLAUDE.md`. Gemini's opt-in is project-level, so
+   `harness.gemini` writes it.
+3. **Support is not universal.** Off for sessions that cannot fetch feature
+   flags (Bedrock, Vertex, other third-party providers, telemetry disabled),
+   off for the first session after an install or upgrade, off if the
+   `agents-md` plugin is disabled, and off for any developer keeping a
+   `CLAUDE.local.md`. This is why `agents.claude` stays on by default: a
+   converged layout is a choice a repo makes knowing its fleet.
+
+See [reference/root-files.md](../reference/root-files.md) for the stub table.
+
+Source: Claude Code memory docs (the default table, the `.agents/` exclusion,
+the `pluginConfigs` location, the "unavailable" list); Gemini CLI context-file
+docs; Copilot coding-agent changelog and VS Code custom-instructions docs.
+Verified 2026-09-23.
 
 ---
 

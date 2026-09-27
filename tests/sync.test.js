@@ -171,6 +171,53 @@ describe('sync', () => {
     );
   });
 
+  it('reports a Gemini settings file that lost AGENTS.md, and never rewrites it', async () => {
+    // A repo's .gemini/settings.json may hold MCP servers or a theme. Sync
+    // owes it the same treatment as .claude/settings.json: name what is
+    // missing, touch nothing.
+    const gemini = { overrides: { harness: { gemini: true } } };
+    await scaffold({ templateName: TEMPLATE, outputDir: dir, ...gemini });
+    const mine = JSON.stringify(
+      {
+        mcpServers: { docs: { command: 'x' } },
+        context: { fileName: 'GEMINI.md' },
+      },
+      null,
+      2
+    );
+    write('.gemini/settings.json', mine);
+
+    const result = await sync({
+      templateName: TEMPLATE,
+      outputDir: dir,
+      ...gemini,
+    });
+
+    const drift = result.drifted.find(
+      (d) => d.file === path.join('.gemini', 'settings.json')
+    );
+    assert.ok(drift, 'a list without AGENTS.md is behind the template');
+    assert.deepEqual(drift.missing, ['context.fileName: AGENTS.md']);
+    assert.equal(read('.gemini/settings.json'), mine, 'must not be rewritten');
+  });
+
+  it('does not call a Gemini settings file with extra keys drift', async () => {
+    const gemini = { overrides: { harness: { gemini: true } } };
+    await scaffold({ templateName: TEMPLATE, outputDir: dir, ...gemini });
+    const settings = JSON.parse(read('.gemini/settings.json'));
+    settings.theme = 'Dracula';
+    settings.context.fileName.push('CONTEXT.md');
+    write('.gemini/settings.json', JSON.stringify(settings));
+
+    const result = await sync({
+      templateName: TEMPLATE,
+      outputDir: dir,
+      ...gemini,
+    });
+
+    assert.deepEqual(result.drifted, []);
+  });
+
   it('writes nothing on a dry run', async () => {
     const before = fs.readdirSync(dir);
     const result = await sync({

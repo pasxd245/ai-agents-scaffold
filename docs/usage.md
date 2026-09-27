@@ -119,7 +119,7 @@ created, updated in place, adopted, replaced, and — when a flag is missing —
 `Needs --adopt` or `Needs --force`. A repo with existing files therefore sees
 its conflicts in the preview, not only in the refusal. Files gated on a
 disabled harness — `GEMINI.md` and `.codex/` above, with `agents.gemini` and
-`agents.codex` off — are omitted rather than shown with their `$if{...}`
+`harness.codex` off — are omitted rather than shown with their `$if{...}`
 marker.
 
 ### List available templates
@@ -189,9 +189,10 @@ project:
   name: acme-api
 agents:
   claude: true
-  codex: false
   gemini: false
   copilot: false
+harness:
+  gemini: true
 ```
 
 **Precedence (lowest to highest):**
@@ -200,7 +201,7 @@ agents:
 2. Project values (`<project>/.a2scaffold/values.{yaml,yml,json}`)
 3. CLI flags (currently `--name` only)
 
-The project values file is deep-merged over the template defaults — keys you don't set keep their template values. The shape mirrors the template's own `values.yaml`; check it for the available keys (e.g. `project.name`, `agents.*`).
+The project values file is deep-merged over the template defaults — keys you don't set keep their template values. The shape mirrors the template's own `values.yaml`; check it for the available keys (`project.name`, `agents.*`, `harness.*`, `plan.*`).
 
 If the file is malformed or both `values.yaml` and `values.json` exist in `.a2scaffold/`, the CLI exits with an error.
 
@@ -256,6 +257,10 @@ CLAUDE.md                # Stub for Claude Code (@.agents/AGENTS.md)
 .github/
   copilot-instructions.md  # Stub for Copilot — restates it (cannot import)
 ```
+
+With `agents.gemini` on, `GEMINI.md` is added; with `harness.gemini`,
+`.gemini/settings.json`; with `harness.codex`, `.codex/`. Which is which is
+the subject of [Two axes](#two-axes-instruction-files-and-harness-directories).
 
 ### Opt-in: `.agents/decisions/`
 
@@ -322,6 +327,53 @@ docs/agents/
 Read on demand, never auto-loaded, and `.agents/context/` wins any conflict.
 A plan doc that kicks off real work hands off to `.agents/plan/` — either a
 single round in `cycles/`, or a program (see below) when it spans several.
+
+## Two axes: instruction files and harness directories
+
+`values.yaml` separates two decisions that used to share one group of flags:
+
+| Group       | Decides                                                   | Members                                                                                     |
+| ----------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `agents.*`  | which root instruction file to write                      | `agentsmd`, `claude`, `gemini`, `copilot`                                                   |
+| `harness.*` | which harness directory to create, with its native config | `claude` (`.claude/settings.json`), `gemini` (`.gemini/settings.json`), `codex` (`.codex/`) |
+
+They are independent. A harness directory carries permission rules, native
+settings and skill refs whether or not a `.md` stub sits beside it, and a stub
+can exist without the directory. That is what lets a repo say "no `GEMINI.md`,
+but keep `.gemini/`" — the shape a **converged** layout needs, where root
+`AGENTS.md` is the one instruction file:
+
+```yaml
+agents:
+  agentsmd: true
+  claude: false # no CLAUDE.md — Claude Code reads AGENTS.md instead
+  gemini: false # no GEMINI.md — .gemini/settings.json points at AGENTS.md
+harness:
+  claude: true # keep the permission rules
+  gemini: true
+```
+
+Whether your fleet can take that depends on the harness:
+
+| Harness     | Reads root `AGENTS.md`                                 | What it takes                                                       |
+| ----------- | ------------------------------------------------------ | ------------------------------------------------------------------- |
+| Claude Code | v2.1.277+, by default, when no `CLAUDE.md` is in scope | nothing — the stub's absence is the switch                          |
+| Codex       | natively                                               | nothing                                                             |
+| Gemini CLI  | opt-in                                                 | `context.fileName` in `.gemini/settings.json`, generated            |
+| Copilot     | opt-in in VS Code; native for the coding agent         | `chat.useAgentsMdFile` in user or workspace settings, not generated |
+
+Claude Code's support is **not universal**: it is off for sessions that cannot
+fetch feature flags (Bedrock, Vertex, other third-party providers, telemetry
+disabled), off for the first session after an install or upgrade, off if the
+built-in `agents-md` plugin is disabled, and off for any developer who keeps a
+`CLAUDE.local.md`. A converged repo silently loses its instructions in those
+sessions, and the tool cannot opt them in — the option Claude Code exposes is
+ignored in project and local settings. That is why `agents.claude` stays on by
+default. Converge when you know your fleet, not before.
+
+`.agents/` itself is excluded from Claude Code's instruction-file discovery by
+name, so the knowledge base is only ever reached through the `@` import in a
+stub.
 
 ## Keeping a repo up to date — `sync`
 
@@ -478,6 +530,27 @@ The following files already exist:
 
     - .agents/AGENTS.md
 ```
+
+## Upgrading from 0.2.x
+
+Version 0.3.0 splits the values keys into two axes (above). Two keys were
+renamed, and the old names are **refused**, not ignored — a key that is
+silently dropped leaves a repo looking scaffolded when it is not:
+
+| 0.2.x               | 0.3.0            | Writes                  |
+| ------------------- | ---------------- | ----------------------- |
+| `guardrails.claude` | `harness.claude` | `.claude/settings.json` |
+| `agents.codex`      | `harness.codex`  | `.codex/`               |
+
+1. **Rename the keys** in `.a2scaffold/values.yaml` if you set either. The
+   defaults are unchanged: `harness.claude` is on, `harness.codex` off.
+2. **`agents.gemini` now writes only `GEMINI.md`.** The directory moved to
+   `harness.gemini`, which writes `.gemini/settings.json` instead of an empty
+   `.gitkeep`. A repo that had `agents.gemini: true` and wants to keep
+   `.gemini/` sets `harness.gemini: true` too, then runs `sync` once; the old
+   `.gitkeep` is harmless and can be deleted.
+3. **Nothing else moves.** The stubs' generated blocks changed wording, so
+   `sync` will refresh them; everything outside the markers is untouched.
 
 ## Upgrading from 0.1.x
 

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { renderDirectory, resolveConfig } from '@nci-gis/js-tmpl';
 import { resolveTemplatePath } from '../templates/index.js';
 import { TEMPLATE_EXT } from '../constants.js';
+import { assertNoRetiredKeys } from '../config/retired-keys.js';
 import { mergeManagedRegion, adoptManagedRegion } from './managed-region.js';
 
 export { checkExistingFiles, classifyConflicts } from './conflicts.js';
@@ -64,6 +65,10 @@ export function resolveScaffoldConfig({
   outputDir,
   overrides = {},
 }) {
+  // Every entry point — scaffold, sync, dry-run, the API — passes through
+  // here, so this is the one place an old key is guaranteed to be caught.
+  assertNoRetiredKeys(overrides);
+
   const paths = resolveTemplatePath(templateName);
   const outDir = path.resolve(outputDir);
 
