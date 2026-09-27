@@ -450,3 +450,33 @@ with the CLI).
 
 **Promoted by**: Vien Pham (round plan approved in session; drafted and logged
 by Claude Code)
+
+## 2026-09-28: Claude Code reads root `AGENTS.md` → `.agents/` canon (authorised write)
+
+**Source**: [memory/2026-09-23-agentsmd-convergence.md](../memory/2026-09-23-agentsmd-convergence.md),
+Round 015 step 2. Approved by the author in session on 2026-09-28, after the
+round closed with the step carried over.
+
+**Rationale**: `context/harness-behaviour.md` stated, under "Each harness
+reads a different file", that Claude Code reads `CLAUDE.md` and not
+`AGENTS.md`. Since Claude Code v2.1.277 that is false: with no `CLAUDE.md` in
+scope it reads root `AGENTS.md` by default. The file's own "Re-verifying"
+section names this trigger — "a harness gains or drops native `AGENTS.md`
+support" — and it fired. The template copies were corrected in Round 015
+(`34c8363`); this brings the repo's own canon to the same text.
+
+Touched under the read-only path:
+
+- `context/harness-behaviour.md`: "Each harness reads a different file"
+  replaced by "Root `AGENTS.md` is converging, unevenly" — the per-harness
+  table, the `.agents/` exclusion, the Claude-side option the repo cannot set,
+  the list of sessions without support. **Last verified** moves from
+  2026-09-16 to 2026-09-23, the day the facts were checked against vendor docs
+  and scratch repos.
+- `reference/root-files.md`: the stub table's harness column, and a paragraph
+  on the two `values.yaml` axes.
+
+Both are byte-identical to what the template renders for this repo, then
+formatted by prettier as the repo's copies always are.
+
+**Promoted by**: Vien Pham (approved in session; drafted by Claude Code)
