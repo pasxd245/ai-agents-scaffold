@@ -43,6 +43,11 @@ Each step independently landable, each green.
 - [x] **CRLF-aware adopt and merge.** Detect the file's dominant line ending
       and normalise the spliced block to it; let the heading anchor skip more
       than one blank CRLF line after frontmatter.
+- [x] **Take js-tmpl 0.1.3 and js-yaml 4.3.2.** Added 2026-09-27, after the
+      four above. Both are security patches with no API change and no Node
+      floor change, which is what a 0.2.1 can carry. js-tmpl 0.2.0, released
+      the same day, is breaking (Node 22, `${missing}` throws, `planRender`)
+      and gets a round of its own.
 - [x] **Bump to 0.2.1** once the four above are in; tag from `main`.
 
 Nits from the same run, taken if a step touches the file anyway: `--adopt`
@@ -83,10 +88,27 @@ Four commits on `fix/audit-and-text-edges`, each green on its own.
 **Nits**: not taken. None of the four commits touched the files they live in,
 which was the condition for taking them.
 
-**Not done**: the release itself. `git push` fails on certificate verification
-behind a TLS-intercepting proxy, so nothing is on `origin` and no tag exists.
-The version bump is committed; tagging from `main` is a human's, from a
-network that is not being intercepted.
+5. **Dependency patches** (2026-09-27). The lockfile carried handlebars 4.7.8
+   and js-yaml 4.1.1, and `pnpm audit --prod` named eight handlebars
+   advisories (one critical, CVE-2026-33937, JavaScript injection via AST
+   type confusion) and four js-yaml ones (quadratic CPU via merge keys).
+   js-tmpl 0.1.3 raises both; a2scaffold's own direct js-yaml range moved to
+   `^4.3.2` in the same commit. Templates are trusted input, but the skill
+   audit and the rc reader parse YAML fetched from registries, and a critical
+   in the lockfile does not ship under a patch tag. Production audit is clean
+   after the bump; the remaining advisories are all in dev tooling.
+
+   Checked on the way: the a2scaffold suite against js-tmpl **0.2.0** on
+   Node 22 is 250 / 251. The one failure is the `${missing}` test in
+   `tests/output-paths.test.js`, exactly the semantics 0.2.0 changed, so the
+   path mirror is now wrong for 0.2.0 and right for 0.1.x. That, the Node 22
+   floor and the `planRender` prototype are the scope of the next round, not
+   this one.
+
+**Not done**: the release itself. On 2026-09-16 `git push` failed on
+certificate verification behind a TLS-intercepting proxy; it went through on
+a later network and the branch is on `origin`. No tag exists yet. Tagging
+from `main` is a human's.
 
 ## Check
 
@@ -107,8 +129,11 @@ network that is not being intercepted.
 - [x] `--adopt` on a CRLF stub yields a file with one line-ending style —
       and with the generated block below the author's heading, including past
       two blank CRLF lines
-- [ ] `/review-pr main` on the release branch before the `dev` PR —
-      **blocked**, not skipped. Nothing has been pushed
+- [x] `pnpm audit --prod` reports no known vulnerabilities after the
+      dependency patches; `pnpm check` green, 251 tests
+- [ ] `/review-pr main` on the release branch before the `dev` PR — not
+      yet run. It was blocked while nothing could be pushed; the branch is on
+      `origin` now, so it is simply the next step
 
 ## Act
 
