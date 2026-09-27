@@ -131,9 +131,13 @@ from `main` is a human's.
       two blank CRLF lines
 - [x] `pnpm audit --prod` reports no known vulnerabilities after the
       dependency patches; `pnpm check` green, 251 tests
-- [ ] `/review-pr main` on the release branch before the `dev` PR — not
-      yet run. It was blocked while nothing could be pushed; the branch is on
-      `origin` now, so it is simply the next step
+- [x] `/review-pr main` on the release branch before the `dev` PR — run
+      2026-09-27. One Blocker (the CRLF anchor stopped finding a heading
+      indented one to three spaces, a regression from `cf615b2`) and three
+      Should-fix (no rc regression test, no promotions entry for the pool
+      reinstall, docs silent on opaque files aborting a registry install).
+      All four fixed, one commit each; two nits recorded in the PR and not
+      taken. PR #12 to `dev`, CI green
 
 ## Act
 
