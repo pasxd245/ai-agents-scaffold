@@ -58,7 +58,7 @@ belongs in the template prose, not only in our copy of it.
   was not — three false-positive classes, all since fixed and regression-tested
   in `38594dc` and `967faa8`.
 - Round 13 closed 7 of the findings; the ticked list is in
-  `.agents/plan/cycles/Round_13.md`.
+  `.agents/plan/cycles/Round_013.md`.
 
 ## Recommendation
 

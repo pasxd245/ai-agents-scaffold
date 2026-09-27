@@ -429,3 +429,24 @@ long-form split). Same author, same round; the log was incomplete, not the
 authorisation.
 
 **Promoted by**: Vien Pham (approved in session; drafted by Claude Code)
+
+## 2026-09-16: Round 014 rc fix → `.agents/skills/` (authorised write, logged late)
+
+**Source**: Round 014 step 3, "One rc location" (`d7ec089`), approved in
+session. Logged on 2026-09-27 after the pre-PR review found the entry missing;
+the authorisation was the round plan, the log was incomplete.
+
+**Rationale**: the research skill's crawler and the CLI read the same rc file
+but looked in different places and disagreed about what it holds. The crawler
+now probes the same candidates as `src/config/rc.js`, and the pool's
+documentation stops claiming the rc "holds skill registries only". The
+installed copies under `.agents/skills/` are byte-identical to the pool.
+
+Touched under the read-only path, each reinstalled from `templates/skills/`:
+`skills/a2scaffold/SKILL.md` (rc has more than one reader; values file is not
+the rc), `skills/research/references/crawl4ai.md` (rc locations and precedence)
+and `skills/research/scripts/crawl4ai_recursive.py` (rc discovery kept in step
+with the CLI).
+
+**Promoted by**: Vien Pham (round plan approved in session; drafted and logged
+by Claude Code)

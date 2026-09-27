@@ -14,8 +14,16 @@ import { A2SCAFFOLD_DIRNAME, CONFIG_EXTS, RC_BASENAME } from '../constants.js';
  */
 
 /**
+ * The project's a2scaffold configuration, as one file with one shape.
+ *
+ * `registries` is the CLI's. `tmpDir` and `research` belong to the pool's
+ * `research` skill, whose crawler reads the same file. They are declared here
+ * because a key nobody declares is a key the next reader invents twice.
+ *
  * @typedef {object} A2ScaffoldRc
  * @property {Record<string, RegistryConfig>} [registries]
+ * @property {string} [tmpDir] - Scratch directory, read by the research skill
+ * @property {Record<string, unknown>} [research] - Research skill settings
  */
 
 /**
@@ -89,13 +97,18 @@ function findProjectRc(cwd) {
  * Shallow merge of two rc objects. Project rc wins for top-level keys;
  * `registries` are merged by name with project entries overriding user.
  *
+ * Keys the CLI does not itself read are carried through rather than dropped.
+ * The file has other readers — the research skill's crawler among them — and
+ * a loader that silently discards what it does not recognise turns one config
+ * file into two that happen to share a name.
+ *
  * @param {A2ScaffoldRc | null} userRc
  * @param {A2ScaffoldRc | null} projectRc
  * @returns {A2ScaffoldRc}
  */
 function mergeRc(userRc, projectRc) {
   /** @type {A2ScaffoldRc} */
-  const out = {};
+  const out = { ...(userRc ?? {}), ...(projectRc ?? {}) };
   /** @type {Record<string, RegistryConfig> | undefined} */
   let registries;
   if (userRc?.registries) registries = { ...userRc.registries };
@@ -107,6 +120,7 @@ function mergeRc(userRc, projectRc) {
     }
   }
   if (registries) out.registries = registries;
+  else delete out.registries;
   return out;
 }
 

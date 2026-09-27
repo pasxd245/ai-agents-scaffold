@@ -57,8 +57,14 @@ flag and re-run; do not `mkdir` them by hand, or they arrive without the README,
 template, and permission rules the flag brings with them.
 
 Values come from the template's `values.yaml`, overridable per repo through
-`.a2scaffold/values.{json,yaml,yml}`. The rc file
-(`.a2scaffold/.a2scaffoldrc.*`) holds skill registries only.
+`.a2scaffold/values.{json,yaml,yml}`. That is scaffolding input, and it is not
+the rc.
+
+The rc file (`.a2scaffold/.a2scaffoldrc.*`, or the flat `.a2scaffoldrc.*` —
+one or the other) is runtime configuration, and it has more than one reader.
+`registries` is the CLI's; `tmpDir` and `research` belong to the `research`
+skill's crawler. Both find the file the same way, so put a key where its
+reader looks and expect the other reader to carry it through untouched.
 
 ### Updating an existing repo — reach for `sync` first
 
