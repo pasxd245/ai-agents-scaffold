@@ -48,12 +48,12 @@ before Round 015, 265 / 266 after. The one failure is the mirror's
 
 Each step independently landable, each green.
 
-- [ ] **Take 0.2.0 and Node 22.** `@nci-gis/js-tmpl@^0.2.0`; `engines.node`
+- [x] **Take 0.2.0 and Node 22.** `@nci-gis/js-tmpl@^0.2.0`; `engines.node`
       `>=22`; both workflows on Node 22; README, CONTRIBUTING and `usage.md`
       say 22; "Upgrading from 0.2.x" gains the floor. The mirror's `${var}`
       rule changes to throw on a missing value, so its pinned test stays
       green — a one-commit stopgap so the bump lands on its own.
-- [ ] **Replace the mirror with `planRender`.** `listOutputPaths` becomes a
+- [x] **Replace the mirror with `planRender`.** `listOutputPaths` becomes a
       thin async wrapper returning `{ templateRel, outputRel, content }`;
       `resolveOutputPath` goes. `scaffold()` and `sync()` iterate the plan
       instead of rendering into `mkdtemp` and walking it. `checkExistingFiles`
@@ -63,9 +63,9 @@ Each step independently landable, each green.
       cannot work, and the docs already said to pass the resolved one.
       Targets come back `/`-separated and are converted to native at the
       boundary, once.
-- [ ] **Docs follow the API.** `api.md`: async signatures, `view` required,
+- [x] **Docs follow the API.** `api.md`: async signatures, `view` required,
       `content` in the listing, `resolveOutputPath` gone.
-- [ ] **Test seam, not mocks.** `tests/output-paths.test.js` stops pinning a
+- [x] **Test seam, not mocks.** `tests/output-paths.test.js` stops pinning a
       mirror and pins the wrapper: conditional inclusion, the missing-value
       error carries js-tmpl's code, targets are native paths.
 
@@ -79,15 +79,52 @@ Each step independently landable, each green.
 
 ## Do
 
+**2026-09-28.** Two commits on `feat/js-tmpl-0.2`, stacked on Round 015's
+branch, each green on Node 22.
+
+1. **Bump** (`0ab8235`). `@nci-gis/js-tmpl@^0.2.0`, `engines.node >=22`,
+   both workflows on 22, three doc mentions, and an "Upgrading from 0.2.x"
+   item. The mirror's `${var}` rule flipped to throw on a missing value so
+   the pinned test stayed green: a one-commit stopgap, as planned.
+2. **planRender** (`30d9b2c`). `output-paths.js` 192 → 69 lines, none of them
+   a path rule; the staging directories in `scaffold()` and `sync()` are gone;
+   `checkExistingFiles` and `classifyConflicts` compare rendered content and
+   are async; `resolveOutputPath` removed; `api.md` and the ambient types
+   follow. The old pinned test became five tests of the wrapper's contract.
+   Steps 2, 3 and 4 of the plan landed together because the API change, its
+   docs and its tests are one change — splitting them would have left a
+   commit whose docs described the next commit.
+
+Against the prototype's numbers: it reported `src/` net −203 with 4 tests
+failing; here `src/` is net −180 across the four files and the suite is
+green, because the tests were rewritten rather than left behind.
+
+**Deviation**: a view is now **required** by `listOutputPaths`,
+`checkExistingFiles` and `classifyConflicts`, where the plan said "converted
+at the boundary" and nothing about the no-view mode. The old no-view mode
+returned raw `$if{…}` paths, which is exactly the list that once missed every
+gated stub; a plan renders content, so there is no partial answer to give.
+The docs already told callers to pass the resolved view. Refusing is the
+explicit-over-implicit call.
+
+**Not possible as written**: the Check item "through the CLI". The CLI takes
+built-in template names only (`--use base`), so a scratch template with
+`${missing}` cannot reach it. Verified at the API instead: the error is
+js-tmpl's, with code `JSTMPL_PATH_MISSING_VAR` and the template path in the
+message.
+
 ## Check
 
-- [ ] `pnpm check` green at each commit, on Node 22
-- [ ] `src/scaffold/output-paths.js` contains no path rule of its own
-- [ ] No `mkdtemp` left in `scaffold()` or `sync()`
-- [ ] `--dry-run` and the refusal on a repo with existing files report the
-      same split as before (the suite's re-scaffold and sync cases)
-- [ ] A template with `${missing}` in a path fails with `JSTMPL_PATH_MISSING_VAR`
-      through the CLI, naming the template path
+- [x] `pnpm check` green at each commit, on Node 22 — 267 at `0ab8235`, 262 at `30d9b2c` (the mirror's tests retired)
+- [x] `src/scaffold/output-paths.js` contains no path rule of its own
+- [x] No `mkdtemp` left in `scaffold()` or `sync()` — `grep` clean, `node:os` no longer imported
+- [x] `--dry-run` and the refusal on a repo with existing files report the
+      same split as before (the suite's re-scaffold and sync cases) — every
+      existing case passes unchanged except the two that asserted the
+      no-view mode
+- [x] A template with `${missing}` in a path fails with `JSTMPL_PATH_MISSING_VAR`
+      naming the template path — at the API; the CLI cannot load a scratch
+      template (see Do)
 - [ ] CI green on Node 22
 - [ ] `/review-pr dev` on the stacked branch before the `dev` PR
 
