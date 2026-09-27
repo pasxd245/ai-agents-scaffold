@@ -2,8 +2,11 @@
 
 <!-- a2scaffold:start -->
 
-> Claude Code reads this file, not `AGENTS.md`. It is a stub: the project
-> knowledge lives in `.agents/`, imported below.
+> Claude Code reads this file when it exists. Since v2.1.277 it reads root
+> `AGENTS.md` instead when this file is absent, but not in every session —
+> Bedrock, Vertex, telemetry off, the first run after an upgrade — so this
+> stub stays until that list is empty. The project knowledge lives in
+> `.agents/`, imported below.
 
 ## Shared knowledge base
 
