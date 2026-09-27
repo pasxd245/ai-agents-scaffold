@@ -233,10 +233,12 @@ function insertionPoint(text) {
 
   // `[ \t]*\r?\n*` consumed one CR and then any number of LFs, so two blank
   // CRLF lines after frontmatter left a stray CR where the `#` was expected
-  // and the title was never found. Match whole blank lines instead.
+  // and the title was never found. Match whole blank lines instead. The
+  // heading itself may sit up to three spaces in, the same bound CommonMark
+  // and the marker regexes above use; four is an indented code block.
   const heading = text
     .slice(offset)
-    .match(/^(?:[ \t]*\r?\n)*(#[ \t][^\r\n]*)(\r?\n|$)/);
+    .match(/^(?:[ \t]*\r?\n)*( {0,3}#[ \t][^\r\n]*)(\r?\n|$)/);
   if (heading) offset += heading[0].length;
 
   return offset;

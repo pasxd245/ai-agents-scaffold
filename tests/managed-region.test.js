@@ -125,6 +125,21 @@ describe('adoptManagedRegion', () => {
     assert.match(out, /^\uFEFF# My Title\n\n<!-- a2scaffold:start -->/);
   });
 
+  it('still finds a heading indented up to three spaces', () => {
+    // CommonMark allows an ATX heading to sit up to three spaces in. The
+    // whole-line anchor that fixed CRLF once required `#` at column zero, so
+    // an indented title got the generated block above it.
+    for (const indent of [' ', '  ', '   ']) {
+      const existing = `${indent}# My title\n\nMy own content.\n`;
+      const out = adoptManagedRegion(existing, incoming);
+      assert.ok(out, 'should adopt');
+      assert.ok(
+        out.indexOf('# My title') < out.indexOf('<!-- a2scaffold:start -->'),
+        `the file must still open with its heading (indent ${indent.length})`
+      );
+    }
+  });
+
   it('inserts at the top when there is no heading', () => {
     const out = adoptManagedRegion('just prose\n', incoming);
     assert.match(out, /^<!-- a2scaffold:start -->/);
