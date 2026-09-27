@@ -126,7 +126,8 @@ message.
       naming the template path — at the API; the CLI cannot load a scratch
       template (see Do)
 - [ ] CI green on Node 22
-- [ ] `/review-pr dev` on the stacked branch before the `dev` PR
+- [x] `/review-pr dev` on the stacked branch before the `dev` PR — run
+      2026-09-28 together with Round 015's; findings recorded there
 
 ## Act
 
