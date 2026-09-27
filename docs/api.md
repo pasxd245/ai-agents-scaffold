@@ -183,7 +183,34 @@ console.log(paths.partialsDir); // ".../templates/scaffold/base/partials" or und
 
 ---
 
-### `checkExistingFiles(templateDir, outDir, view?, extname?)`
+### `listOutputPaths(templateDir, view, extname?)`
+
+What a render of the template would write, as js-tmpl's own `planRender`
+reports it — one entry per output file, with its rendered content. Nothing
+is written.
+
+**Parameters:**
+
+| Name          | Type     | Required | Default  | Description                                                                         |
+| ------------- | -------- | -------- | -------- | ----------------------------------------------------------------------------------- |
+| `templateDir` | `string` | Yes      |          | Path to the template's `template/` directory; partials are read from `../partials/` |
+| `view`        | `object` | Yes      |          | The resolved view, as `resolveScaffoldConfig()` returns it                          |
+| `extname`     | `string` | No       | `".hbs"` | Template file extension                                                             |
+
+**Returns:** `Promise<Array<{ templateRel, outputRel, content }>>`, sorted by
+`outputRel`. Paths are native to the OS.
+
+The view has to be the **fully resolved** one: a plan renders every file's
+content, so a hand-built partial that covers only the path variables is an
+error, not a smaller answer. The errors are js-tmpl's — a guard or `${var}`
+naming a value the view lacks, a malformed segment, a target collision, a
+missing template value — with its `code` (`JSTMPL_PATH_MISSING_VAR`,
+`JSTMPL_GUARD_MISSING_VAR`, …) and, when there are several, collected into one
+`JSTMPL_MULTIPLE_ERRORS`.
+
+---
+
+### `checkExistingFiles(templateDir, outDir, view, extname?)`
 
 Check which output files already exist in the target directory and would lose content. Use this to detect conflicts before calling `scaffold()`.
 
@@ -192,25 +219,20 @@ render replaces only the fenced block.
 
 **Parameters:**
 
-| Name          | Type     | Required | Default  | Description                                                                                                  |
-| ------------- | -------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------ |
-| `templateDir` | `string` | Yes      |          | Path to the template's `template/` directory                                                                 |
-| `outDir`      | `string` | Yes      |          | Target output directory to check                                                                             |
-| `view`        | `object` | No       |          | Resolved values. Without it, `$if{…}` path segments cannot be evaluated and every conditional file is missed |
-| `extname`     | `string` | No       | `".hbs"` | Template file extension                                                                                      |
+| Name          | Type     | Required | Default  | Description                                                |
+| ------------- | -------- | -------- | -------- | ---------------------------------------------------------- |
+| `templateDir` | `string` | Yes      |          | Path to the template's `template/` directory               |
+| `outDir`      | `string` | Yes      |          | Target output directory to check                           |
+| `view`        | `object` | Yes      |          | The resolved view, as `resolveScaffoldConfig()` returns it |
+| `extname`     | `string` | No       | `".hbs"` | Template file extension                                    |
 
-Pass a **fully resolved** view — the one `resolveScaffoldConfig()` returns, not
-a hand-built partial. Path formulas are evaluated exactly as the renderer
-evaluates them, and a formula naming a variable the view does not define is an
-error there and here.
+**Returns:** `Promise<string[]>` — conflicting file paths, relative to `outDir`. Empty array if no conflicts.
 
-**Returns:** `string[]` — list of conflicting file paths, relative to `outDir`. Empty array if no conflicts.
-
-This is a prediction, not the verdict. It compares the **unrendered** template
-against the target, so a file the render would rewrite byte-identically still
-shows up here. `scaffold()` knows the difference and throws a `ScaffoldRefusal`
-carrying the true lists — prefer that for deciding what a run would destroy,
-and use this only to warn ahead of time.
+Still a warning ahead of time, not the verdict: it compares the **rendered**
+content's markers with the existing file's, so a file the render would rewrite
+byte-identically still shows up here. `scaffold()` knows the difference and
+throws a `ScaffoldRefusal` carrying the true lists — prefer its `dryRun` for
+deciding what a run would destroy.
 
 **Example:**
 
@@ -227,7 +249,7 @@ const { view } = resolveScaffoldConfig({
   templateName: 'scaffold/base',
   outputDir: './my-project',
 });
-const conflicts = checkExistingFiles(templateDir, './my-project', view);
+const conflicts = await checkExistingFiles(templateDir, './my-project', view);
 
 if (conflicts.length > 0) {
   console.warn('These files already exist:', conflicts);
@@ -242,12 +264,12 @@ await scaffold({
 
 ---
 
-### `classifyConflicts(templateDir, outDir, view?, extname?)`
+### `classifyConflicts(templateDir, outDir, view, extname?)`
 
 Split what `checkExistingFiles()` found into the two permissions `scaffold()`
 distinguishes. Same parameters.
 
-**Returns:** `{ adopt: string[], overwrite: string[] }`
+**Returns:** `Promise<{ adopt: string[], overwrite: string[] }>`
 
 | Property    | Description                                                                          |
 | ----------- | ------------------------------------------------------------------------------------ |

@@ -1,15 +1,15 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
-import { renderDirectory, resolveConfig } from '@nci-gis/js-tmpl';
+import { planRender, resolveConfig } from '@nci-gis/js-tmpl';
 import { resolveTemplatePath } from '../templates/index.js';
 import { TEMPLATE_EXT } from '../constants.js';
 import { assertNoRetiredKeys } from '../config/retired-keys.js';
 import { mergeManagedRegion, adoptManagedRegion } from './managed-region.js';
+import { toNative } from './output-paths.js';
 
 export { checkExistingFiles, classifyConflicts } from './conflicts.js';
 export { sync } from './sync.js';
-export { listOutputPaths, resolveOutputPath } from './output-paths.js';
+export { listOutputPaths } from './output-paths.js';
 export {
   classifyRegion,
   hasManagedRegion,
@@ -72,9 +72,10 @@ export function resolveScaffoldConfig({
   const paths = resolveTemplatePath(templateName);
   const outDir = path.resolve(outputDir);
 
-  // Use the template root as `cwd` for resolveConfig so it doesn't pick up
-  // a `js-tmpl.config.*` from the user's project. All paths we pass are
-  // absolute, so cwd only affects project-config discovery.
+  // Since js-tmpl 0.2.0 nothing is discovered from `cwd` — a config file is
+  // read only when named — and every path passed here is absolute, so the
+  // second argument is inert. The template root is passed for the message a
+  // relative path would produce if one ever slipped in.
   const config = resolveConfig(
     {
       templateDir: paths.templateDir,
@@ -132,7 +133,7 @@ export class ScaffoldRefusal extends Error {
 }
 
 /**
- * Copy a rendered tree onto the target, preserving managed-region surroundings.
+ * Write a render plan onto the target, preserving managed-region surroundings.
  *
  * This is the last thing between a render and someone's file, so it decides
  * for itself what it may destroy rather than trusting a preflight. Three
@@ -152,16 +153,17 @@ export class ScaffoldRefusal extends Error {
  * and nothing throws: the caller gets every list, including the two refusal
  * lists, so a preview shows the split the real run would stop on.
  *
- * @param {string} stagingDir - Freshly rendered tree
+ * @param {Array<{ target: string, content: string }>} entries - js-tmpl's
+ *   plan: what a render would write, `/`-separated targets
  * @param {string} outDir - Destination
  * @param {{ adopt?: boolean, force?: boolean, dryRun?: boolean }} [permissions]
  * @returns {MergeReport} output-relative paths
  * @throws {ScaffoldRefusal} when a file needs a permission that was not given
  */
-function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
+function mergeRenderedTree(entries, outDir, permissions = {}) {
   const { adopt = false, force = false, dryRun = false } = permissions;
 
-  /** @type {Array<{ rel: string, content: string | null }>} */
+  /** @type {Array<{ rel: string, content: string }>} */
   const plan = [];
   /** @type {string[]} */
   const created = [];
@@ -178,25 +180,19 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
   /** @type {string[]} */
   const needsForce = [];
 
-  /** @param {string} rel */
-  const walk = (rel) => {
-    const abs = path.join(stagingDir, rel);
-    if (fs.statSync(abs).isDirectory()) {
-      for (const name of fs.readdirSync(abs)) {
-        walk(rel ? path.join(rel, name) : name);
-      }
-      return;
-    }
-
+  /**
+   * @param {string} rel - Output-relative, native separators
+   * @param {string} incoming - Rendered content
+   */
+  const visit = (rel, incoming) => {
     const dest = path.join(outDir, rel);
     if (!fs.existsSync(dest)) {
-      plan.push({ rel, content: null });
+      plan.push({ rel, content: incoming });
       created.push(rel);
       return;
     }
 
     const existing = fs.readFileSync(dest, 'utf8');
-    const incoming = fs.readFileSync(abs, 'utf8');
 
     const merged = mergeManagedRegion(existing, incoming);
     if (merged !== null) {
@@ -226,7 +222,7 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
     }
 
     if (force) {
-      plan.push({ rel, content: null });
+      plan.push({ rel, content: incoming });
       replaced.push(rel);
       return;
     }
@@ -234,7 +230,7 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
     (wrapped !== null ? needsAdopt : needsForce).push(rel);
   };
 
-  walk('');
+  for (const entry of entries) visit(toNative(entry.target), entry.content);
 
   const report = {
     created,
@@ -255,11 +251,7 @@ function mergeRenderedTree(stagingDir, outDir, permissions = {}) {
   for (const { rel, content } of plan) {
     const dest = path.join(outDir, rel);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    if (content === null) {
-      fs.copyFileSync(path.join(stagingDir, rel), dest);
-    } else {
-      fs.writeFileSync(dest, content);
-    }
+    fs.writeFileSync(dest, content);
   }
 
   return report;
@@ -314,19 +306,10 @@ export async function scaffold({
   });
   const outDir = config.outDir;
 
-  // Render to staging, then merge; rendering in place would clobber a file
-  // before its region could be read back.
-  const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'a2scaffold-'));
-  try {
-    config.outDir = stagingDir;
-    await renderDirectory(config);
-    const report = mergeRenderedTree(stagingDir, outDir, {
-      adopt,
-      force,
-      dryRun,
-    });
-    return { outputDir: outDir, template: templateName, ...report };
-  } finally {
-    fs.rmSync(stagingDir, { recursive: true, force: true });
-  }
+  // Plan in memory, then merge. Rendering in place would clobber a file
+  // before its region could be read back; a staging directory used to stand
+  // in for the plan, and cost a temp dir and a walk per run.
+  const entries = await planRender(config);
+  const report = mergeRenderedTree(entries, outDir, { adopt, force, dryRun });
+  return { outputDir: outDir, template: templateName, ...report };
 }

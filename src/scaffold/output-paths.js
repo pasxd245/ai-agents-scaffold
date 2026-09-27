@@ -1,198 +1,69 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { planRender } from '@nci-gis/js-tmpl';
 
-import { TEMPLATE_EXT } from '../constants.js';
-
-/**
- * Template path resolution.
- *
- * A template directory encodes conditionals and interpolations in its path
- * segments: `$if{agents.claude}/CLAUDE.md.hbs` renders to `CLAUDE.md` when
- * `agents.claude` is truthy, and to nothing when it is not.
- *
- * Anything that needs to know what a render *will* produce — conflict
- * detection, dry-run, the managed-region merge — has to evaluate those the
- * same way the renderer does. Comparing raw template paths against the output
- * directory silently misses every conditional file, and predicting *fewer*
- * files than the render writes is not a cosmetic bug: a file absent from the
- * conflict list is one `mergeRenderedTree` will overwrite without `--force`.
- *
- * So this is a deliberate mirror of js-tmpl's `pathSegment` / `pathFormula` /
- * `pathRenderer` trio, not an approximation of it. It would be better to call
- * those directly, but js-tmpl's `exports` map publishes only `resolveConfig`
- * and `renderDirectory`, so a deep import is not available. Until it exports
- * them, `tests/output-paths.test.js` pins every rule below against what the
- * installed renderer actually does; that test is what keeps the mirror honest.
- *
- * The rules, all of them js-tmpl's:
- * - `$if{var}` / `$ifn{var}` must be a *whole* directory segment.
- * - A formula in filename position is an error.
- * - A segment merely *containing* `$if{` / `$ifn{` is malformed — an error.
- * - A formula naming a variable absent from the view is an error.
- * - Present-but-falsy prunes the subtree; `$ifn` inverts.
- * - `${var}` interpolates anywhere; a value absent from the view is an error.
- */
-
-const FORMULA_WHOLE = /^\$(if|ifn)\{([^}]+)\}$/;
-const FORMULA_SUBSTR = /\$ifn?\{/;
-const INTERPOLATION = /\$\{([^}]+)\}/g;
+import { PARTIALS_DIRNAME, TEMPLATE_EXT } from '../constants.js';
 
 /**
- * Read a dotted path out of the view.
+ * What a render will write, straight from js-tmpl's `planRender`.
  *
- * @param {Record<string, any>} view
- * @param {string} dotted - e.g. `agents.claude`
- * @returns {unknown}
- */
-function lookup(view, dotted) {
-  return dotted
-    .split('.')
-    .reduce(
-      (acc, key) => (acc === null || acc === undefined ? undefined : acc[key]),
-      /** @type {any} */ (view)
-    );
-}
-
-/**
- * Whether a dotted path is present in the view as an own property.
+ * This file used to mirror js-tmpl's path rules — `$if{}` guards, `${}`
+ * interpolation, the malformed-segment cases — because 0.1.x exported only
+ * `resolveConfig` and `renderDirectory`. A pinned test kept the mirror
+ * honest, and on 0.2.0 the mirror was wrong for the engine it mirrored. Now
+ * the engine answers the question itself, and nothing here needs keeping
+ * honest.
  *
- * Distinct from {@link lookup}, which cannot tell "absent" from "present and
- * undefined". js-tmpl throws on the first and prunes on the second, so the
- * distinction decides whether a render fails or silently drops a file.
- *
- * @param {Record<string, any>} view
- * @param {string} dotted
- * @returns {boolean}
- */
-function has(view, dotted) {
-  const parts = dotted.split('.');
-  /** @type {any} */
-  let cur = view;
-  for (const part of parts.slice(0, -1)) {
-    if (cur === null || cur === undefined || typeof cur !== 'object') {
-      return false;
-    }
-    cur = cur[part];
-  }
-  if (cur === null || cur === undefined || typeof cur !== 'object') {
-    return false;
-  }
-  return Object.hasOwn(cur, parts[parts.length - 1]);
-}
-
-/**
- * Resolve one template-relative path to its output-relative path.
- *
- * `rel` is the path as it sits on disk, extension included — the same string
- * js-tmpl's walker hands to its renderer. Strip the extension from the
- * *result*, not the input: `$if{x}.hbs` is a malformed filename segment, and
- * stripping first would hide that.
- *
- * @param {string} rel - Path relative to `template/`, still carrying markers
- * @param {Record<string, any>} view
- * @returns {string | null} output-relative path, or null if a condition excludes it
- * @throws {Error} on a malformed segment, a formula in filename position, or a
- *   formula naming a variable the view does not define — each one an error the
- *   renderer would raise too
- */
-export function resolveOutputPath(rel, view) {
-  const segments = rel.split(path.sep);
-  const last = segments.length - 1;
-  /** @type {string[]} */
-  const out = [];
-
-  for (const [index, segment] of segments.entries()) {
-    const formula = FORMULA_WHOLE.exec(segment);
-    if (formula) {
-      if (index === last) {
-        throw new Error(
-          `Path formula '${segment}' is not allowed in a filename ` +
-            `(directories only) — in '${rel}'`
-        );
-      }
-      const expr = formula[2].trim();
-      if (!has(view, expr)) {
-        throw new Error(
-          `Path formula '${segment}' in '${rel}' references undefined view ` +
-            `variable '${expr}'`
-        );
-      }
-      const truthy = Boolean(lookup(view, expr));
-      // A pruned subtree contributes no output file at all.
-      if (formula[1] === 'if' ? !truthy : truthy) return null;
-      // Satisfied: the segment itself contributes nothing to the output path.
-      continue;
-    }
-
-    if (FORMULA_SUBSTR.test(segment)) {
-      throw new Error(
-        `formulas must be whole segments in directory positions, one per ` +
-          `segment: got '${segment}' (in '${rel}')`
-      );
-    }
-
-    out.push(
-      segment.replace(INTERPOLATION, (_, expr) => {
-        const name = String(expr).trim();
-        if (!has(view, name)) {
-          throw new Error(
-            `Path variable '${name}' is not defined in the view (in '${rel}')`
-          );
-        }
-        const value = lookup(view, name);
-        return value === undefined || value === null ? '' : String(value);
-      })
-    );
-  }
-
-  return path.join(...out);
-}
-
-/**
- * List every file a render of this template would produce.
+ * The plan carries rendered content, so the view has to be the full resolved
+ * one — a path-only partial cannot render a body. Targets come back
+ * `/`-separated on every OS and are converted to native paths here, once.
  *
  * @param {string} templateDir - Path to the template's `template/` directory
- * @param {Record<string, any>} [view] - Resolved values; conditionals are kept
- *   unevaluated when omitted, which preserves the raw-path behaviour
+ * @param {Record<string, any>} view - The resolved view, as
+ *   `resolveScaffoldConfig()` returns it
  * @param {string} [extname]
- * @returns {Array<{ templateRel: string, outputRel: string }>}
+ * @returns {Promise<Array<{ templateRel: string, outputRel: string, content: string }>>}
+ *   sorted by `outputRel`
+ * @throws {import('@nci-gis/js-tmpl').JsTmplError} what the render would
+ *   throw: a guard or path variable the view does not define, a malformed
+ *   segment, a collision, a missing template value — all of them collected
+ *   into one error when there are several
  */
-export function listOutputPaths(templateDir, view, extname = TEMPLATE_EXT) {
-  /** @type {Array<{ templateRel: string, outputRel: string }>} */
-  const results = [];
-  /** @type {string[]} */
-  const queue = [''];
-
-  while (queue.length) {
-    const rel = /** @type {string} */ (queue.shift());
-    const abs = path.join(templateDir, rel);
-
-    if (fs.statSync(abs).isDirectory()) {
-      for (const name of fs.readdirSync(abs)) {
-        queue.push(rel ? path.join(rel, name) : name);
-      }
-      continue;
-    }
-
-    if (!abs.endsWith(extname)) continue;
-
-    if (!view) {
-      results.push({
-        templateRel: rel,
-        outputRel: rel.slice(0, -extname.length),
-      });
-      continue;
-    }
-
-    const rendered = resolveOutputPath(rel, view);
-    if (rendered !== null) {
-      results.push({
-        templateRel: rel,
-        outputRel: rendered.slice(0, -extname.length),
-      });
-    }
+export async function listOutputPaths(
+  templateDir,
+  view,
+  extname = TEMPLATE_EXT
+) {
+  if (!view || typeof view !== 'object') {
+    throw new TypeError(
+      'listOutputPaths needs the resolved view — pass what ' +
+        'resolveScaffoldConfig() returns; a plan renders content, so a ' +
+        'path-only partial cannot work'
+    );
   }
+  // Templates keep their partials beside `template/`, not inside it.
+  const partialsDir = path.join(path.dirname(templateDir), PARTIALS_DIRNAME);
+  const plan = await planRender({
+    templateDir,
+    partialsDir: fs.existsSync(partialsDir) ? partialsDir : '',
+    outDir: '.',
+    extname,
+    view,
+  });
+  return plan.map((entry) => ({
+    templateRel: toNative(entry.relPath),
+    outputRel: toNative(entry.target),
+    content: entry.content,
+  }));
+}
 
-  results.sort((a, b) => a.outputRel.localeCompare(b.outputRel));
-  return results;
+/**
+ * js-tmpl reports paths with `/` on every OS; callers here compare against
+ * `path.join` results.
+ *
+ * @param {string} posix
+ * @returns {string}
+ */
+export function toNative(posix) {
+  return posix.split('/').join(path.sep);
 }

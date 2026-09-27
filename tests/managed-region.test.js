@@ -67,19 +67,23 @@ describe('mergeManagedRegion', () => {
 describe('listOutputPaths', () => {
   const templateDir = resolveTemplatePath(TEMPLATE).templateDir;
 
-  it('resolves $if{} segments away when the condition is truthy', () => {
-    const out = listOutputPaths(
-      templateDir,
-      view({ agents: { claude: true, agentsmd: true } })
+  it('resolves $if{} segments away when the condition is truthy', async () => {
+    const out = (
+      await listOutputPaths(
+        templateDir,
+        view({ agents: { claude: true, agentsmd: true } })
+      )
     ).map((p) => p.outputRel);
     assert.ok(out.includes('CLAUDE.md'), 'CLAUDE.md should be predicted');
     assert.ok(!out.some((p) => p.includes('$if{')));
   });
 
-  it('omits files whose condition is falsy', () => {
-    const out = listOutputPaths(
-      templateDir,
-      view({ agents: { claude: false, agentsmd: true } })
+  it('omits files whose condition is falsy', async () => {
+    const out = (
+      await listOutputPaths(
+        templateDir,
+        view({ agents: { claude: false, agentsmd: true } })
+      )
     ).map((p) => p.outputRel);
     assert.ok(!out.includes('CLAUDE.md'));
     assert.ok(out.includes('AGENTS.md'));
@@ -294,18 +298,21 @@ describe('re-scaffolding an existing project', () => {
     assert.equal(fs.statSync(stub).mtimeMs, before);
   });
 
-  it('detects conditional files as existing, which raw paths missed', () => {
+  it('needs the resolved view, since gated files are invisible without one', async () => {
     const { templateDir } = resolveTemplatePath(TEMPLATE);
-    // Without a view, $if{} segments cannot be evaluated and every gated
-    // stub is invisible to conflict detection.
-    const blind = checkExistingFiles(templateDir, tmpDir);
-    assert.ok(!blind.includes('CLAUDE.md'));
+    // Without a view, $if{} segments could not be evaluated and every gated
+    // stub was invisible to conflict detection — a quiet way to miss the
+    // file a run then overwrote. A plan renders content, so there is no
+    // path-only mode any more: asking without a view is an error.
+    await assert.rejects(
+      () => checkExistingFiles(templateDir, tmpDir),
+      /resolved view/
+    );
 
     // With a view, CLAUDE.md resolves — and is then excluded only because it
     // carries a managed region, not because it was never seen.
-    const seen = listOutputPaths(
-      templateDir,
-      view({ agents: { claude: true } })
+    const seen = (
+      await listOutputPaths(templateDir, view({ agents: { claude: true } }))
     ).map((p) => p.outputRel);
     assert.ok(seen.includes('CLAUDE.md'));
   });
@@ -435,9 +442,9 @@ describe('re-scaffolding an existing project', () => {
     );
   });
 
-  it('does not report a managed stub as a conflict', () => {
+  it('does not report a managed stub as a conflict', async () => {
     const { templateDir } = resolveTemplatePath(TEMPLATE);
-    const conflicts = checkExistingFiles(templateDir, tmpDir, view());
+    const conflicts = await checkExistingFiles(templateDir, tmpDir, view());
     assert.ok(!conflicts.includes('CLAUDE.md'));
     // Canonical knowledge has no managed region and must still conflict.
     assert.ok(conflicts.includes(path.join('.agents', 'AGENTS.md')));
@@ -570,9 +577,9 @@ describe('scaffolding a repo that already has agent files', () => {
 
   afterEach(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
-  it('classifies a marker-less stub as adoptable, not overwritable', () => {
+  it('classifies a marker-less stub as adoptable, not overwritable', async () => {
     const { templateDir } = resolveTemplatePath(TEMPLATE);
-    const { adopt, overwrite } = classifyConflicts(
+    const { adopt, overwrite } = await classifyConflicts(
       templateDir,
       tmpDir,
       view({ agents: { agentsmd: true, claude: true } })
@@ -636,7 +643,7 @@ describe('scaffolding a repo that already has agent files', () => {
     fs.writeFileSync(path.join(tmpDir, 'AGENTS.md'), broken);
 
     const { templateDir } = resolveTemplatePath(TEMPLATE);
-    const { adopt, overwrite } = classifyConflicts(
+    const { adopt, overwrite } = await classifyConflicts(
       templateDir,
       tmpDir,
       view({ agents: { agentsmd: true, claude: true } })

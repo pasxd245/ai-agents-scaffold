@@ -8,38 +8,33 @@ import { classifyRegion, hasManagedRegion } from './managed-region.js';
 /**
  * Check which output files already exist and would lose content.
  *
- * A file whose template and existing copy both carry a managed region is not
+ * A file whose render and existing copy both carry a managed region is not
  * a conflict: only the fenced block is replaced.
  *
- * This is a prediction, not the verdict. It compares the *unrendered*
- * template against the target, so it also reports files the render would
- * rewrite byte-identically. `scaffold()` refuses with the true list; use this
- * to warn ahead of time.
+ * Still a warning ahead of time, not the verdict: a file the render would
+ * rewrite byte-identically is reported here too. `scaffold()` refuses with
+ * the true lists, so prefer its `dryRun` for deciding what a run would
+ * destroy.
  *
  * @param {string} templateDir - Path to template/ directory
  * @param {string} outDir - Target output directory
- * @param {Record<string, any>} [view] - Resolved values. Without it, `$if{...}`
- *   segments cannot be evaluated and conditional files are missed entirely.
+ * @param {Record<string, any>} view - The resolved view; the plan renders
+ *   content, so a path-only partial is an error, not a smaller answer
  * @param {string} [extname] - Template file extension (default `.hbs`)
- * @returns {string[]} Output-relative paths that would be overwritten
+ * @returns {Promise<string[]>} Output-relative paths that would be overwritten
  */
-export function checkExistingFiles(
+export async function checkExistingFiles(
   templateDir,
   outDir,
   view,
   extname = TEMPLATE_EXT
 ) {
-  return listOutputPaths(templateDir, view, extname)
-    .filter(({ templateRel, outputRel }) => {
+  return (await listOutputPaths(templateDir, view, extname))
+    .filter(({ outputRel, content }) => {
       const dest = path.join(outDir, outputRel);
       if (!fs.existsSync(dest)) return false;
-
-      const template = fs.readFileSync(
-        path.join(templateDir, templateRel),
-        'utf8'
-      );
       const existing = fs.readFileSync(dest, 'utf8');
-      return !(hasManagedRegion(template) && hasManagedRegion(existing));
+      return !(hasManagedRegion(content) && hasManagedRegion(existing));
     })
     .map(({ outputRel }) => outputRel);
 }
@@ -50,38 +45,35 @@ export function checkExistingFiles(
  *
  * @param {string} templateDir - Path to template/ directory
  * @param {string} outDir - Target output directory
- * @param {Record<string, any>} [view] - Resolved values
+ * @param {Record<string, any>} view - The resolved view
  * @param {string} [extname] - Template file extension (default `.hbs`)
- * @returns {{ adopt: string[], overwrite: string[] }} output-relative paths
+ * @returns {Promise<{ adopt: string[], overwrite: string[] }>} output-relative paths
  */
-export function classifyConflicts(templateDir, outDir, view, extname) {
+export async function classifyConflicts(templateDir, outDir, view, extname) {
   /** @type {string[]} */
   const adopt = [];
   /** @type {string[]} */
   const overwrite = [];
 
-  for (const outputRel of checkExistingFiles(
+  const planned = await listOutputPaths(templateDir, view, extname);
+  const rendered = new Map(planned.map((p) => [p.outputRel, p.content]));
+
+  for (const outputRel of await checkExistingFiles(
     templateDir,
     outDir,
     view,
     extname
   )) {
-    const templateRel = listOutputPaths(templateDir, view, extname).find(
-      (p) => p.outputRel === outputRel
-    )?.templateRel;
-    if (!templateRel) {
+    const content = rendered.get(outputRel);
+    if (content === undefined) {
       overwrite.push(outputRel);
       continue;
     }
-    const template = fs.readFileSync(
-      path.join(templateDir, templateRel),
-      'utf8'
-    );
     // Valid regions were already excluded; what is left is marker-less
-    // (adoptable if the template owns a region) or broken (replace only).
+    // (adoptable if the render owns a region) or broken (replace only).
     const existing = fs.readFileSync(path.join(outDir, outputRel), 'utf8');
     const adoptable =
-      hasManagedRegion(template) && classifyRegion(existing).kind === 'none';
+      hasManagedRegion(content) && classifyRegion(existing).kind === 'none';
     (adoptable ? adopt : overwrite).push(outputRel);
   }
 
