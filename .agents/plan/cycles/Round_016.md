@@ -1,11 +1,11 @@
 # Round 016: Adopt js-tmpl 0.2.0 and drop the path mirror, for v0.3.0
 
-**Status**: In Progress
+**Status**: Complete
 **Part of**: standalone — stacked on Round 015's branch because both are
 v0.3.0 and both are breaking; the author decided on 2026-09-28 that the two
 land together and the release is a later conversation.
 **Date started**: 2026-09-28
-**Date completed**: —
+**Date completed**: 2026-09-28
 
 ## Goal
 
@@ -133,9 +133,27 @@ message.
 
 **Learnings**:
 
-- ...
+- **A mirror is a liability with a test attached.** The pinned test did its
+  job — it failed the moment the engine changed a rule — but the only fix
+  it could point at was "change the mirror too". The engine exporting its
+  plan removed the mirror and the test's reason to exist in one move.
+- **Cross-repo prototypes go stale; the numbers do not.** The patch no longer
+  applied, but its measurements (192 → 34, no staging, rendered-content
+  conflicts) were the spec. Reading a stale patch as a map cost an hour;
+  reapplying it would have cost more.
+- **When the engine renders content, there is no partial question.** The old
+  no-view mode returned raw `$if{…}` paths, the list that once missed every
+  gated stub. A plan cannot answer without a view, so the API stopped
+  pretending it could. Refusing was cheaper than documenting a half-answer.
+- **The ambient `.d.ts` is part of the upgrade.** The suite passed on 0.2.0
+  while `tsc` did not know `planRender` existed; an engine bump is not done
+  until the hand-written surface matches it.
+- **A CLI that only loads built-in templates cannot verify a template-level
+  error path.** The Check item was written for a capability the CLI does not
+  have; verify at the API and say so, rather than adding `--use <path>` to
+  make a test pass.
 
 **Promotions**:
 
-- [ ] → `memory/` : what the consumer-prototype loop taught (js-tmpl Round 08
-      already records its half)
+- [x] → `memory/` : nothing beyond what the two rounds' records and js-tmpl's
+      Round 08 already say; a memory file would restate them
